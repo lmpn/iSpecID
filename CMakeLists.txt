@@ -5,7 +5,7 @@ project(eCSI VERSION 1.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 add_subdirectory(third_party/benchmark)
-add_subdirectory(third_party/csvparser)
+add_subdirectory(third_party/csv-parser)
 
 
 
@@ -16,7 +16,7 @@ find_package(Boost REQUIRED)
 add_executable(ecsi main.cxx)
 include_directories(${CURL_INCLUDE_DIR})
 include_directories(${boost_include_dir} )
-include_directories(third_party/csvparser/include)
+include_directories(third_party/csv-parser/include)
 target_link_libraries(ecsi ${CURL_LIBRARIES})
 target_link_libraries(ecsi benchmark::benchmark)
 target_link_libraries(ecsi csv)
