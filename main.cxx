@@ -1,18 +1,13 @@
-#include <regex>
 #include <iostream>
+#include <regex>
 #include <fstream>
-#include <sstream>
 #include <string>
-#include <chrono>
-#include <map>
 #include <unordered_set>
 #include <vector>
 #include <algorithm>
 #include <numeric>
 #include <boost/algorithm/string.hpp>
-#include <stdexcept>
 #include <benchmark/benchmark.h>
-#include <tuple>
 #include <curl/curl.h>
 #include <csv.hpp>
 #include "include/tsvreader/TSVReader.hpp"
@@ -147,7 +142,6 @@ template <class T>
 T argParse(int argc, char *argv[], std::string flag, T defaultValue)
 {
 	for (int i = 0; i < argc; ++i){
-		PRINT(argv[i])
 		if (!flag.compare(argv[i]))
 		{
 			std::istringstream ss(argv[i + 1]);
@@ -488,6 +482,6 @@ void annotate(string& file_path){
 int main(int argc, char **argv)
 {
 	std::string file_path = argParse<std::string>(argc, argv, "--data", "Canidae_BIN.tsv");
-	
+	annotate(file_path);
 }
 
