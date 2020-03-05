@@ -1,3 +1,5 @@
+#ifndef TSVREADER_HPP
+#define TSVREADER_HPP
 #include <csv.hpp>
 #include <iostream>
 #include <vector>
@@ -9,6 +11,7 @@ class TSVReader : public csv::CSVReader{
             : csv::CSVReader(_format){ };
         TSVReader(std::string filename, csv::CSVFormat _format=tsv_format())
             : csv::CSVReader(filename,_format){};
+        
 
     static csv::CSVFormat tsv_format(){
         csv::CSVFormat format;
@@ -16,3 +19,4 @@ class TSVReader : public csv::CSVReader{
         return format;
     }
 };
+#endif 

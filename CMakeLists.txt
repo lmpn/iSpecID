@@ -4,25 +4,36 @@ project(eCSI VERSION 1.0)
 # specify the C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-add_subdirectory(third_party/benchmark)
+
+option(DEBUGP "Print intermediate results" OFF)
+if(DEBUGP)
+    add_definitions(-DDEBUG)
+endif(DEBUGP)
+unset(DEBUGP CACHE) 
+
+
 add_subdirectory(third_party/csv-parser)
-
-
-
-set(CURL_LIBRARY "-lcurl") 
-find_package(CURL REQUIRED) 
-find_package(Boost REQUIRED)
-
+add_subdirectory(modules/tsvreader)
+add_subdirectory(modules/miner)
+add_subdirectory(modules/utils)
+add_subdirectory(modules/annotatev1)
+add_subdirectory(modules/annotatev2)
+add_subdirectory(modules/annotatev3)
+add_subdirectory(modules/annotatev4)
+option(BENCH "Do benchmark" OFF)
+if(BENCH)
+    add_subdirectory(third_party/benchmark)
+    add_subdirectory(bench)
+endif()
+unset(BENCH CACHE) 
 add_executable(ecsi main.cxx)
-include_directories(${CURL_INCLUDE_DIR})
-include_directories(${boost_include_dir} )
-include_directories(third_party/csv-parser/include)
-target_link_libraries(ecsi ${CURL_LIBRARIES})
-target_link_libraries(ecsi benchmark::benchmark)
-target_link_libraries(ecsi csv)
 target_include_directories(ecsi PUBLIC
                            "${PROJECT_BINARY_DIR}"
                            )
-
-
-
+target_link_libraries(ecsi tsvreader)
+target_link_libraries(ecsi miner)
+target_link_libraries(ecsi utils)
+target_link_libraries(ecsi annotatev1)
+target_link_libraries(ecsi annotatev2)
+target_link_libraries(ecsi annotatev3)
+target_link_libraries(ecsi annotatev4)
