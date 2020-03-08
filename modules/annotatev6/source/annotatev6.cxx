@@ -1,9 +1,9 @@
-#include <annotateV5.hpp>
+#include <annotateV6.hpp>
 #include <functional>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/connected_components.hpp>
 
-namespace V5{
+namespace V6{
 using namespace std::placeholders;
 
 
@@ -232,20 +232,41 @@ Grade BINnearestNeighb(std::unordered_set<std::string_view> allBINsOfThisSpecies
 			if(ctr>1) return grade;
 		}
 	}
-	
+	/*
+	for(size_t i = 0; i < count; i++) {
+		/*
+			Fetch data into local variable
+			It is not necessary to iterate 
+			over all data if size if bigger than 1 return...
+		
+		std::string_view dataBin = data[i][bin_ind];
+		for(auto& bin: allBINsOfThisSpecies) {
+			if (dataBin == bin) {
+				species.insert(data[i][species_ind]);
+				if(species.size() > 1 ){
+					return grade;
+				}
+				break;
+			}
+		}
+	}*/
 	count = allBINsOfThisSpecies.size();
 	auto it = allBINsOfThisSpecies.begin();
-	matrix<float> outMatrix(count, std::vector<float>(count,0.0));
+	//matrix<float> outMatrix(count, std::vector<float>(count,0.0));
+	typedef boost::adjacency_list< boost::listS, boost::vecS, boost::undirectedS, boost::no_property, boost::property<boost::edge_weight_t, double>> ugraph;
+	ugraph graph(count);
 	for(size_t  i= 0; i < count; i++){
 		auto BINdata = parseBoldBINdata(*it);
 		auto ind = findi(std::begin(allBINsOfThisSpecies), std::end(allBINsOfThisSpecies), BINdata.neighbour);
 		if( ind != -1 && BINdata.distance <=2) {
-			outMatrix[i][ind]=BINdata.distance;
-			outMatrix[ind][i]=BINdata.distance;
+			boost::add_edge(i, ind, BINdata.distance, graph);
+			boost::add_edge(ind, i, BINdata.distance, graph);
 		}
 		it++;
 	}
-	if( checkAllInConnComp(outMatrix) ) {
+	std::vector<int> component (count);
+	size_t num_components = boost::connected_components (graph, &component[0]);
+	if( num_components == 1){
 		grade=Grade::C;
 	}
 	return grade;
