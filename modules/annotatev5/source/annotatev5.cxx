@@ -1,7 +1,9 @@
-#include <annotateV4.hpp>
+#include <annotateV5.hpp>
 #include <functional>
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/connected_components.hpp>
 
-namespace V4{
+namespace V5{
 using namespace std::placeholders;
 
 
@@ -29,17 +31,18 @@ I id(I arg){
 }
 
 
-template<class K, class I, class O, class GET, class FN>
-umap<K,std::vector<O>> 
-keyBy(std::vector<I> data, GET getKey, FN apply){
-	umap<K,std::vector<O>> result;
-	size_t count = data.size();
-	for (size_t i = 0; i < count; i++)
+template<class K, class I, class O, class GET>
+umap<K,O> 
+keyBy(I data, GET getKey){
+	umap<K,O> result;
+	static_assert(std::is_member_function_pointer<decltype(&O::push_back)>::value,
+                  "No push_back."); 
+	//size_t count = data.size();
+	for (auto& i : data)
 	{
-		O item = apply(data[i]);
-		K key = getKey(data[i]);
-		std::vector<O>& current = result[key];
-		current.push_back(item);
+		K key = getKey(i);
+		O& current = result[key];
+		current.push_back(i);
 	}
 	return result;
 }
@@ -81,17 +84,7 @@ std::vector<_Tp> unique_elems(vector<Entry> data, int index){
 	We can return when the size of the set is bigger than 1 but 
 	it requires one extra comparison each iteration
 */
-bool speciesPerBIN(vector<Entry> data, std::string_view BINname, int species_ind, int bin_ind)
-{
-	std::unordered_set<std::string_view> unique_set;
-	for(auto & entry : data){
-		if(entry[bin_ind] == BINname){
-			unique_set.insert(entry[species_ind]);
-			if(unique_set.size()>1) return false;
-		}
-	}
-	return true;
-}
+
 
 
 /*
@@ -100,7 +93,6 @@ bool speciesPerBIN(vector<Entry> data, std::string_view BINname, int species_ind
 Grade speciesCongruence(vector<Entry>& data, int institution_ind){
 	std::unordered_set<std::string_view> unique_set;
 	vector<Entry> mod_rows;
-	int count = data.size();
 	for (auto& item : data){
 		unique_set.insert(item[institution_ind]);
 	}
@@ -150,10 +142,9 @@ void _allInConnComp(matrix<float> mat, int next, int bin, std::vector<int>& visi
 bool checkAllInConnComp(matrix<float> mat){
 	vector<int> visited; 
 	int bin = 1;
-	size_t count = mat.size(); 
-	for(size_t v = 0; v < count; v++) 
+	for(int v = 0; v < mat.size(); v++) 
         visited.push_back(0);
-	for(size_t i = 0; i < count; i++){
+	for(int i = 0; i < mat.size(); i++){
 		if(visited[i] == 0)
 		{
 			_allInConnComp(mat, i, bin, visited);
@@ -196,17 +187,58 @@ BINData parseBoldBINdata(std::string_view bin){
 }
 
 
-Grade BINnearestNeighb(std::vector<std::string_view> allBINsOfThisSpecies, std::vector<Entry> data, int bin_ind, int species_ind)
+bool speciesPerBIN(umap<std::string_view, Species> data, std::string_view BINname, int species_ind, int bin_ind)
+{
+	std::unordered_set<std::string_view> unique_set;
+	size_t count = 0;
+	for(auto & entry : data){
+		auto fst = entry.second.bins.begin();
+		auto lst = entry.second.bins.end();
+		auto result = std::find( fst, lst, BINname);
+		if(lst != result && (++count) == 2){
+			return false;
+		}
+	}
+	return true;
+}
+
+template<class T>
+bool has_intersection(std::unordered_set<T> o1, std::unordered_set<T> o2){
+	size_t o1s = o1.size();
+	size_t o2s = o2.size();
+	if(o1s <= o2s){
+		auto o2e = o2.end();
+		for (auto i = o1.begin(); i != o1.end(); i++) {
+			if (o2.find(*i) != o2e) return true;
+		}
+	}else{
+		auto o1e = o1.end();
+		for (auto i = o2.begin(); i != o2.end(); i++) {
+			if (o1.find(*i) != o1e) return true;
+		}
+	}
+	return false;
+}
+
+Grade BINnearestNeighb(std::unordered_set<std::string_view> allBINsOfThisSpecies, umap<std::string_view,Species> data, int bin_ind, int species_ind)
 {
 	Grade grade=Grade::E2;
-	std::unordered_set<std::string_view> species;
 	size_t count = data.size();
+	size_t ctr = 0;
+	for(auto& pair : data){
+		auto bins = pair.second.bins;
+		if(has_intersection(bins,allBINsOfThisSpecies)){
+			ctr+=1;
+			if(ctr>1) return grade;
+		}
+	}
+	/*
 	for(size_t i = 0; i < count; i++) {
 		/*
 			Fetch data into local variable
 			It is not necessary to iterate 
 			over all data if size if bigger than 1 return...
-		*/
+		
 		std::string_view dataBin = data[i][bin_ind];
 		for(auto& bin: allBINsOfThisSpecies) {
 			if (dataBin == bin) {
@@ -217,18 +249,24 @@ Grade BINnearestNeighb(std::vector<std::string_view> allBINsOfThisSpecies, std::
 				break;
 			}
 		}
-	}
+	}*/
 	count = allBINsOfThisSpecies.size();
-	matrix<float> outMatrix(count, std::vector<float>(count,0.0));
+	auto it = allBINsOfThisSpecies.begin();
+	//matrix<float> outMatrix(count, std::vector<float>(count,0.0));
+	typedef boost::adjacency_list< boost::listS, boost::vecS, boost::undirectedS, boost::no_property, boost::property<boost::edge_weight_t, double>> ugraph;
+	ugraph graph(count);
 	for(size_t  i= 0; i < count; i++){
-		auto BINdata = parseBoldBINdata(allBINsOfThisSpecies[i]);
+		auto BINdata = parseBoldBINdata(*it);
 		auto ind = findi(std::begin(allBINsOfThisSpecies), std::end(allBINsOfThisSpecies), BINdata.neighbour);
 		if( ind != -1 && BINdata.distance <=2) {
-			outMatrix[i][ind]=BINdata.distance;
-			outMatrix[ind][i]=BINdata.distance;
+			boost::add_edge(i, ind, BINdata.distance, graph);
+			boost::add_edge(ind, i, BINdata.distance, graph);
 		}
+		it++;
 	}
-	if( checkAllInConnComp(outMatrix) ) {
+	std::vector<int> component (count);
+	size_t num_components = boost::connected_components (graph, &component[0]);
+	if( num_components == 1){
 		grade=Grade::C;
 	}
 	return grade;
@@ -243,29 +281,29 @@ void annotate(string& file_path){
 	umap<std::string,size_t> indexes = create_indixes(header);
 	size_t bin_ind         = indexes["bin_uri"];
 	size_t species_ind     = indexes["species_name"];
-	size_t institution_ind = indexes["institution_storing"];
 	data = remove_empty_col(data, species_ind);	
 	auto getKey = [](Entry item, size_t index) { return item[index];};
 	auto getKeySpecies = std::bind(getKey, _1, species_ind);
-	auto md = keyBy<std::string_view, Entry, Entry>(data, getKeySpecies, id<Entry>);
+	auto md = keyBy<std::string_view,vector<Entry>,Species>(data, getKeySpecies);
 
 
 	for(auto& pair : md){
-		auto& specimens = pair.second;
-		if(specimens.size() > 3){
-			auto bins = unique_elems<std::string_view>(specimens, bin_ind);
+		auto& species = pair.second;
+		Grade grade = Grade::D;
+		if(species.specimens.size() > 3){
 			Grade grade = Grade::E1;
-			if(bins.size() == 1){
-				bool BINSpeciesConcordance = speciesPerBIN(data,*std::begin(bins),species_ind,bin_ind);
+			if(species.bins.size() == 1){
+				bool BINSpeciesConcordance = speciesPerBIN(md,*species.bins.begin(),species_ind,bin_ind);
 				if(BINSpeciesConcordance){
-					grade = speciesCongruence(specimens,institution_ind);
+					grade = species.institution.size()==1 ? Grade::B : Grade::A;
+					//speciesCongruence(species.specimens,institution_ind);
 				}
 			}else{
-				grade = BINnearestNeighb(bins, data, bin_ind, species_ind);	
+				grade = BINnearestNeighb(species.bins, md, bin_ind, species_ind);	
 			}
-			for(auto & item: specimens) {
-				item.grade = grade;
-			}
+			species.grade = grade;
+		}else{
+			species.grade = grade;
 		}
 	}
 
@@ -273,8 +311,8 @@ void annotate(string& file_path){
 	PRINT("DATA")
 	for (auto& item : md)
 	{
-		for(auto& sitem: item.second)
-			PRINT(sitem[1] << ";" << static_cast<typename std::underlying_type<Grade>::type>(sitem.grade));
+		for(auto& sitem: item.second.specimens)
+			PRINT(sitem[1] << ";" << static_cast<typename std::underlying_type<Grade>::type>(item.second.grade));
 	}
 	#endif
 }
