@@ -68,6 +68,4 @@ Temporary Items
 build
 # VSCode definitions
 .vscode
-#misc directories
-bench
 # End of https://www.gitignore.io/api/c++,macos
