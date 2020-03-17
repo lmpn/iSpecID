@@ -4,16 +4,16 @@
 #include <tuple>
 #include <curl/curl.h>
 #include <utils.hpp>
-class miner{
+class Miner{
     public:
-    miner():curl_handle(curl_easy_init()){
+    Miner():curl_handle(curl_easy_init()){
         curl_global_init(CURL_GLOBAL_ALL);
     }
-    miner& operator=( miner& other ) = delete;
-    miner(miner& other) = delete;
-    miner& operator=(miner&& other);
-    miner(miner&& o) noexcept; 
-    ~miner();
+    Miner& operator=( Miner& other ) = delete;
+    Miner(Miner& other) = delete;
+    Miner& operator=(Miner&& other);
+    Miner(Miner&& o) noexcept; 
+    ~Miner();
     std::string getPage(const char* url);
     private:
         CURL *curl_handle;

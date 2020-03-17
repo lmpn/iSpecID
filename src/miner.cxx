@@ -2,18 +2,18 @@
 #include <cstring>
  
 
-miner::~miner(){
+Miner::~Miner(){
     if(this->curl_handle != nullptr)
         curl_easy_cleanup(curl_handle);
     curl_global_cleanup();
 }
-miner& miner::operator=(miner&& other)
+Miner& Miner::operator=(Miner&& other)
 {
     std::swap(this->curl_handle,other.curl_handle);
     return *this;
 }
 
-miner::miner(miner&& o) noexcept {
+Miner::Miner(Miner&& o) noexcept {
     std::swap(this->curl_handle,o.curl_handle);
 }
  
@@ -26,7 +26,7 @@ write_callback(void *contents, size_t size, size_t nmemb, void *userp)
   return realsize;
 }
  
-std::string miner::getPage(const char* url)
+std::string Miner::getPage(const char* url)
 {
     std::string data;
     if(this->curl_handle != nullptr){

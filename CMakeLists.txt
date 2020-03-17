@@ -1,43 +1,49 @@
-cmake_minimum_required(VERSION 3.10)
-project(eCSI VERSION 1.0)
+CMAKE_MINIMUM_REQUIRED (VERSION 3.10)
+PROJECT(iSpecIDCore VERSION 1.0)
 
 # specify the C++ standard
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(CMAKE_CXX_FLAGS_RELEASE "-fno-omit-frame-pointer -Wall -ggdb3 -O2")
-option(DEBUGP "Print intermediate results" OFF)
-message(${CMAKE_CXX_FLAGS_RELEASE})
-if(DEBUGP)
-    add_definitions(-DDEBUG)
-endif(DEBUGP)
-unset(DEBUGP CACHE) 
+SET(CMAKE_CXX_STANDARD 17)
+SET(CMAKE_CXX_STANDARD_REQUIRED True)
+SET(CMAKE_CXX_FLAGS_RELEASE  "${CMAKE_CXX_FLAGS_RELEASE} -fno-omit-frame-pointer -Wall")
 
-add_subdirectory(third_party/csv-parser)
-add_subdirectory(modules/tsvreader)
-add_subdirectory(modules/miner)
-add_subdirectory(modules/utils)
-add_subdirectory(modules/annotatev1)
-add_subdirectory(modules/annotatev2)
-add_subdirectory(modules/annotatev3)
-add_subdirectory(modules/annotatev4)
-add_subdirectory(modules/annotatev5)
-add_subdirectory(modules/annotatev6)
-option(BENCH "Do benchmark" ON)
-if(BENCH)
-    add_subdirectory(third_party/benchmark)
-    add_subdirectory(bench)
-endif()
-unset(BENCH CACHE) 
-add_executable(ecsi main.cxx)
-target_include_directories(ecsi PUBLIC
-                           "${PROJECT_BINARY_DIR}"
-                           )
-target_link_libraries(ecsi tsvreader)
-target_link_libraries(ecsi miner)
-target_link_libraries(ecsi utils)
-target_link_libraries(ecsi annotatev1)
-target_link_libraries(ecsi annotatev2)
-target_link_libraries(ecsi annotatev3)
-target_link_libraries(ecsi annotatev4)
-target_link_libraries(ecsi annotatev5)
-target_link_libraries(ecsi annotatev6)
+OPTION(BENCH "Do benchmark" ON)
+
+
+FIND_PACKAGE(Boost REQUIRED)
+FIND_PACKAGE(CURL REQUIRED) 
+SET(CURL_LIBRARY "-lcurl")
+include_directories(
+        ${PROJECT_SOURCE_DIR}/include
+        ${PROJECT_SOURCE_DIR}/src
+        ${Boost_INCLUDE_DIR}
+)
+file(GLOB all_SRCS
+        "${PROJECT_SOURCE_DIR}/src/*.cxx"
+)
+
+ADD_EXECUTABLE(isid ${all_SRCS} main.cxx )
+TARGET_INCLUDE_DIRECTORIES(isid PUBLIC 
+        "${PROJECT_BINARY_DIR}"
+        "${PROJECT_SOURCE_DIR}/include"
+        "${CURL_INCLUDE_DIR}"
+        "${Boost_INCLUDE_DIR}"
+)
+TARGET_LINK_LIBRARIES(isid ${CURL_LIBRARIES} -lpthread)
+
+IF(BENCH)
+    ADD_SUBDIRECTORY(third_party/benchmark)
+    ADD_SUBDIRECTORY(third_party/csv-parser)
+    ADD_SUBDIRECTORY(modules/tsvreader)
+    ADD_EXECUTABLE(benchRead ${all_SRCS} bench/read.cxx )
+    ADD_EXECUTABLE(benchAnnotate ${all_SRCS} bench/annotate.cxx )
+
+    TARGET_LINK_LIBRARIES(benchRead  benchmark::benchmark)
+    TARGET_LINK_LIBRARIES(benchRead ${CURL_LIBRARIES})
+    TARGET_LINK_LIBRARIES(benchRead -lpthread)
+    TARGET_LINK_LIBRARIES(benchRead tsvreader)
+    TARGET_LINK_LIBRARIES(benchAnnotate  benchmark::benchmark)
+    TARGET_LINK_LIBRARIES(benchAnnotate ${CURL_LIBRARIES})
+    TARGET_LINK_LIBRARIES(benchAnnotate -lpthread)
+    
+ENDIF()
+UNSET(BENCH CACHE) 

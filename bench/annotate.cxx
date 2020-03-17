@@ -1,9 +1,5 @@
-#include <annotatev1.hpp>
-#include <annotatev2.hpp>
-#include <annotatev3.hpp>
-#include <annotatev4.hpp>
-#include <annotatev5.hpp>
-#include <annotatev6.hpp>
+#include <annotator.hpp>
+
 #include <benchmark/benchmark.h>
 
 double kbest(const std::vector<double>& vec){
@@ -13,7 +9,7 @@ double kbest(const std::vector<double>& vec){
     double result = std::accumulate(cvec.begin(), cvec.begin()+best,0.0) / best;
     return result;
 }
-
+/*
 static void V1_culicidae(benchmark::State& state) {
 	std::string s("../datasets/tsv/culicidae.tsv");
     for (auto _ : state)
@@ -105,27 +101,69 @@ static void V5_canidae(benchmark::State& state) {
     for (auto _ : state)
         V5::annotate(s);
 }
-
+*/
 
 
 static void V6_culicidae(benchmark::State& state) {
-	std::string s("../datasets/tsv/culicidae.tsv");
+	std::string s("/Users/lmpn/Documents/dissertation/playground/datasets/tsv/culicidae.tsv");
     for (auto _ : state)
-        V6::annotate(s);
+    {
+        Annotator an;
+        an.annotate(s);
+        auto results = an.getGradeResults();
+        char g ='A';
+        for(auto& i : results){
+            PRINT(g++<<";"<<i.cnt<<";"<<i.perc);
+        }
+    };
 }
 
 static void V6_aves(benchmark::State& state) {
-	std::string s("../datasets/tsv/aves.tsv");
+	std::string s("/Users/lmpn/Documents/dissertation/playground/datasets/tsv/aves.tsv");
     for (auto _ : state)
-        V6::annotate(s);
+    {
+        Annotator an;
+        an.annotate(s);
+        auto results = an.getGradeResults();
+        char g ='A';
+        for(auto& i : results){
+            PRINT(g++<<";"<<i.cnt<<";"<<i.perc);
+        }
+    }
 }
 
 static void V6_canidae(benchmark::State& state) {
-	std::string s("../datasets/tsv/canidae.tsv");
+	std::string s("/Users/lmpn/Documents/dissertation/playground/datasets/tsv/canidae.tsv");
     for (auto _ : state)
-        V6::annotate(s);
+    {
+        Annotator an;
+        an.annotate(s);
+        auto results = an.getGradeResults();
+        char g ='A';
+        for(auto& i : results){
+            PRINT(g++<<";"<<i.cnt<<";"<<i.perc);
+        }
+    }
 }
 
+/*
+static void V7_culicidae(benchmark::State& state) {
+	std::string s("../datasets/tsv/culicidae.tsv");
+    for (auto _ : state)
+        V7::annotate(s);
+}
+
+static void V7_aves(benchmark::State& state) {
+	std::string s("../datasets/tsv/aves.tsv");
+    for (auto _ : state)
+        V7::annotate(s);
+}
+
+static void V7_canidae(benchmark::State& state) {
+	std::string s("../datasets/tsv/canidae.tsv");
+    for (auto _ : state)
+        V7::annotate(s);
+}*/
 
 BENCHMARK(V6_canidae)
     ->Unit(benchmark::kMillisecond)
@@ -140,6 +178,27 @@ BENCHMARK(V6_aves)
     ->ReportAggregatesOnly(true)
     ->ComputeStatistics("kbest", kbest);
 BENCHMARK(V6_culicidae)
+    ->Unit(benchmark::kMillisecond)
+    ->Iterations(1)
+    ->Repetitions(1)
+    ->ReportAggregatesOnly(true)
+    ->ComputeStatistics("kbest", kbest);
+
+
+/*
+BENCHMARK(V7_canidae)
+    ->Unit(benchmark::kMillisecond)
+    ->Iterations(1)
+    ->Repetitions(1)
+    ->ReportAggregatesOnly(true)
+    ->ComputeStatistics("kbest", kbest);
+BENCHMARK(V7_aves)
+    ->Unit(benchmark::kMillisecond)
+    ->Iterations(1)
+    ->Repetitions(1)
+    ->ReportAggregatesOnly(true)
+    ->ComputeStatistics("kbest", kbest);
+BENCHMARK(V7_culicidae)
     ->Unit(benchmark::kMillisecond)
     ->Iterations(1)
     ->Repetitions(1)
@@ -218,7 +277,6 @@ BENCHMARK(V2_culicidae)
     ->Repetitions(1)
     ->ReportAggregatesOnly(true)
     ->ComputeStatistics("kbest", kbest);
-    /*
 BENCHMARK(V1_canidae)
     ->Unit(benchmark::kMillisecond)
     ->Iterations(1)
