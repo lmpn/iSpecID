@@ -1,5 +1,5 @@
-#ifndef UTILS_HPP
-#define UTILS_HPP
+#ifndef UTILS_H
+#define UTILS_H
 #include <iostream>
 #include <string>
 #include <vector>
@@ -7,6 +7,7 @@
 #include <numeric>
 #include <sstream>
 #include <unordered_set>
+#include <type_traits>
 
 #define PRINT(X) std::cout << X << std::endl;
 #define PRINTV(X) for(auto x : X){ std::cout << x << " "; }  std::cout << std::endl;
@@ -14,6 +15,7 @@ namespace utils{
     enum class Grade{
         A, B, C, D, E1, E2, U
     };
+
 
     template <class T>
     T argParse(int argc, char *argv[], std::string prefix, T defaultValue)

@@ -1,9 +1,9 @@
-#ifndef MINER_HPP
-#define MINER_HPP
+#ifndef MINER_H
+#define MINER_H
 #include <string>
 #include <tuple>
 #include <curl/curl.h>
-#include <utils.hpp>
+#include <utils.h>
 class Miner{
     public:
     Miner():curl_handle(curl_easy_init()){
@@ -12,7 +12,7 @@ class Miner{
     Miner& operator=( Miner& other ) = delete;
     Miner(Miner& other) = delete;
     Miner& operator=(Miner&& other);
-    Miner(Miner&& o) noexcept; 
+    Miner(Miner&& o) noexcept;
     ~Miner();
     std::string getPage(const char* url);
     private:

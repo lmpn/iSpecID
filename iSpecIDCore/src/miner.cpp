@@ -1,6 +1,6 @@
-#include <miner.hpp>
+#include <miner.h>
 #include <cstring>
- 
+
 
 Miner::~Miner(){
     if(this->curl_handle != nullptr)
@@ -16,7 +16,7 @@ Miner& Miner::operator=(Miner&& other)
 Miner::Miner(Miner&& o) noexcept {
     std::swap(this->curl_handle,o.curl_handle);
 }
- 
+
 static size_t
 write_callback(void *contents, size_t size, size_t nmemb, void *userp)
 {
@@ -25,13 +25,13 @@ write_callback(void *contents, size_t size, size_t nmemb, void *userp)
   mem->append((char*)contents,realsize);
   return realsize;
 }
- 
+
 std::string Miner::getPage(const char* url)
 {
     std::string data;
     if(this->curl_handle != nullptr){
         CURLcode res;
-        curl_easy_setopt(this->curl_handle, CURLOPT_URL, url); 
+        curl_easy_setopt(this->curl_handle, CURLOPT_URL, url);
         curl_easy_setopt(this->curl_handle, CURLOPT_WRITEFUNCTION, write_callback);
         curl_easy_setopt(this->curl_handle, CURLOPT_WRITEDATA, (void *)&data);
         curl_easy_setopt(this->curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
