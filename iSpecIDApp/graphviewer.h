@@ -5,6 +5,7 @@
 #include <annotator.h>
 
 class Node;
+class Edge;
 
 class GraphViewer : public QGraphicsView
 {
@@ -21,6 +22,7 @@ public slots:
     void shuffle();
     void zoomIn();
     void zoomOut();
+    void componentChanged(Edge *);
     void setComponentVisible(QString key = QString::fromStdString(""));
 
 protected:
@@ -32,7 +34,7 @@ protected:
     void scaleView(qreal scaleFactor);
 
 private:
-    inline void setComponentVisibleDFS( Node *root, bool visible = true);
+    void setComponentVisibleDFS( Node *root, bool visible = true);
     int timerId = 0;
     Annotator *an;
     QMap<QString, QGraphicsItem*> nodes;

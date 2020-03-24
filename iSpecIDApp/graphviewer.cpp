@@ -25,6 +25,7 @@ GraphViewer::GraphViewer(Annotator *_an, QWidget *parent)
     for(auto& pair: data){
         auto bins = pair.second.bins;
         Node *node = new Node(QString::fromStdString(pair.first), Node::NODE_TYPE::SpeciesNode,this);
+        node->setPos(randomPos());
         scene->addItem(node);
         node->hide();
         nodes.insert(node->getName(), node);
@@ -33,12 +34,14 @@ GraphViewer::GraphViewer(Annotator *_an, QWidget *parent)
             Node *bin = qgraphicsitem_cast<Node *>(nodes[key]);
             if(bin == nullptr){
                 bin = new Node(key, Node::NODE_TYPE::BinNode, this);
+                bin->setPos(randomPos());
                 nodes.insert(key,bin);
                 bin->hide();
                 scene->addItem(bin);
             }
             Edge * edge = new Edge(node, bin);
-            //connect(edge, &Edge::componentChanged, this, &GraphViewer::setComponentVisible);
+            connect(edge, SIGNAL(edgeRemoval(Edge *)),
+                    this, SLOT(componentChanged(Edge *)));
             edges << edge;
             edge->hide();
             scene->addItem(edge);
@@ -47,17 +50,34 @@ GraphViewer::GraphViewer(Annotator *_an, QWidget *parent)
 
 }
 
+void GraphViewer::componentChanged(Edge *edge){
+    auto src = edge->sourceNode();
+    auto dest = edge->destNode();
+    auto species = src->getName().toStdString();
+    auto bin = dest->getName().toStdString();
+    an->filter([species, bin](Record item) {
+        return item["species_name"] == species && item["bin_uri"]==bin;
+    });
+    setComponentVisibleDFS(edge->destNode(), false);
+    setComponentVisibleDFS(edge->sourceNode(), false);
+    delete edge;
+    setComponentVisible();
+}
 
-inline void GraphViewer::setComponentVisibleDFS( Node *root, bool visible){
+void GraphViewer::setComponentVisibleDFS( Node *root, bool visible){
     if(root->isVisible() == visible) return;
     root->setVisible(visible);
-    root->setPos(randomPos());
+    std::cout << root->getName().toStdString() <<";" << visible << std::endl;
     for(auto& edge : root->edges()){
         edge->setVisible(visible);
         auto dest = edge->destNode();
         auto src = edge->sourceNode();
         setComponentVisibleDFS(dest, visible);
         setComponentVisibleDFS(src, visible);
+    }
+    if(root->edges().size() == 0){
+        scene()->removeItem(root);
+        nodes.remove(root->getName());
     }
 }
 
@@ -73,10 +93,6 @@ void GraphViewer::setComponentVisible(QString key){
     }
 
     setComponentVisibleDFS(root, true);
-
-
-
-
 }
 
 

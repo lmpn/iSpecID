@@ -4,15 +4,16 @@
 #include <QMainWindow>
 #include <QFileDialog>
 #include <QKeyEvent>
-#include <annotator.h>
 #include "graphviewer.h"
 #include "resultsmodel.h"
 #include "recordmodel.h"
+#include "iSpecIDApp/qannotator.h"
 #include <iostream>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
+
 
 class MainWindow : public QMainWindow
 {
@@ -30,9 +31,13 @@ private slots:
 
     void on_graph_combo_box_activated(const QString &arg1);
 
+    void on_annotateButton_clicked();
+
 private:
+    void setupRecordTable(QStringList unique);
+    void setupResultsTable();
     Ui::MainWindow *ui;
+    QAnnotator *qan;
     GraphViewer *graph;
-    Annotator *an;
 };
 #endif // MAINWINDOW_H

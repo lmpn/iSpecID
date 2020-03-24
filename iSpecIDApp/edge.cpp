@@ -143,10 +143,9 @@ void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *)
 
 
 void Edge::remove(){
-    source->removeEdge(this, dest->getName());
-    dest->removeEdge(this,source->getName());
-    delete this;
-    //emit componentChanged();
+    dest->removeEdge(this);
+    source->removeEdge(this);
+    emit edgeRemoval(this);
 }
 
 

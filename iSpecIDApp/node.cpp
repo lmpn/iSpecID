@@ -78,20 +78,9 @@ void Node::addEdge(Edge *edge)
     edge->adjust();
 }
 
-void Node::removeEdge(Edge *edge, QString other)
+void Node::removeEdge(Edge *edge)
 {
     edge_list.removeOne(edge);
-    /*
-    if(ntype == NODE_TYPE::SpeciesNode){
-        QString species = this->name;
-        graph->filter([species, other](Record item) {
-            return item["species_name"] == species.toStdString() && item["bin_uri"]==other.toStdString();
-        });
-    }
-    */
-    if(edge_list.size() == 0){
-        delete this;
-    }
 }
 
 

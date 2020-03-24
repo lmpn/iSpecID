@@ -6,6 +6,10 @@ void Annotator::annotate(std::string file_path){
     this->load(file_path);
     this->filter([](Record item) {return item["species_name"].empty();});
     this->group();
+    this->annotation_algo();
+}
+
+void Annotator::annotation_algo(){
     for(auto& pair : this->group_data){
         auto& species = pair.second;
         utils::Grade grade = utils::Grade::D;

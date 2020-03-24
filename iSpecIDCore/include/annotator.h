@@ -50,6 +50,7 @@ class Annotator{
     Annotator()= default;
 
     void annotate(std::string file_path);
+    void annotation_algo();
     void load(std::string file_path);
     void group();
 

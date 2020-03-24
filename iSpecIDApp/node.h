@@ -70,7 +70,7 @@ public:
     QVector<Edge *> edges() const;
     QString getName() const;
     void addEdge(Edge *edge);
-    void removeEdge(Edge *edge, QString other);
+    void removeEdge(Edge *edge);
 
 
     int getType(){ return this->node_type; }

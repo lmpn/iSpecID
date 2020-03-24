@@ -61,6 +61,7 @@ class Node;
 
 class Edge : public QObject, public QGraphicsItem
 {
+    Q_OBJECT
 public:
     Edge(Node *sourceNode, Node *destNode);
 
@@ -72,11 +73,10 @@ public:
     enum { Type = UserType + 2 };
     int type() const override { return Type; }
     void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
-//public slots:
     void remove();
 
 signals:
-    void componentChanged();
+    void edgeRemoval(Edge* edge);
 
 protected:
     void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
