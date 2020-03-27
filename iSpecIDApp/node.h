@@ -53,6 +53,7 @@
 
 #include <QGraphicsItem>
 #include <QVector>
+#include <QFont>
 
 class Edge;
 class GraphViewer;
@@ -60,20 +61,15 @@ class GraphViewer;
 class Node : public QGraphicsItem
 {
 public:
-    enum NODE_TYPE{
-        BinNode, SpeciesNode
-    };
-
-    Node(QString name, NODE_TYPE ntype, GraphViewer *graph);
+    Node(QString name, QString grade, GraphViewer *graph);
 
 
-    QVector<Edge *> edges() const;
+    QSet<Edge *> edges() const;
     QString getName() const;
     void addEdge(Edge *edge);
     void removeEdge(Edge *edge);
 
 
-    int getType(){ return this->node_type; }
     enum { Type = UserType + 1 };
     int type() const override { return Type; }
     QRectF boundingRect() const override;
@@ -81,6 +77,8 @@ public:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
     void calculateForces();
     bool advancePosition();
+    void setColor(QString grade);
+
 
 protected:
     QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
@@ -89,11 +87,11 @@ protected:
 
 private:
     QString name;
-    NODE_TYPE node_type;
     GraphViewer *graph;
-    QVector<Edge *> edge_list;
+    QSet<Edge *> edge_set;
     QPointF new_pos;
-    bool highlight;
+    QFont f;
+    QColor mc, dmc;
 };
 
 #endif // NODE_H

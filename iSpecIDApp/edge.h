@@ -62,6 +62,7 @@ class Node;
 class Edge : public QObject, public QGraphicsItem
 {
     Q_OBJECT
+    Q_INTERFACES(QGraphicsItem)
 public:
     Edge(Node *sourceNode, Node *destNode);
 

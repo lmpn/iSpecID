@@ -7,7 +7,7 @@
 #include "graphviewer.h"
 #include "resultsmodel.h"
 #include "recordmodel.h"
-#include "iSpecIDApp/qannotator.h"
+#include <annotator.h>
 #include <iostream>
 
 QT_BEGIN_NAMESPACE
@@ -24,20 +24,27 @@ public:
     void keyPressEvent(QKeyEvent *event) override;
     void removeRows();
     ~MainWindow();
+signals:
+    void updateGraph();
+    void updateColorGraph();
+    void updateRecords();
+    void updateResults();
+    void showComponent(QString);
 
 private slots:
 
     void on_load_file_triggered();
-
     void on_graph_combo_box_activated(const QString &arg1);
-
     void on_annotateButton_clicked();
+    void on_filter_triggered();
 
 private:
-    void setupRecordTable(QStringList unique);
+    QString createCompleter();
+    void setupRecordTable();
     void setupResultsTable();
+    void updateApp(QString name);
     Ui::MainWindow *ui;
-    QAnnotator *qan;
+    Annotator *an;
     GraphViewer *graph;
 };
 #endif // MAINWINDOW_H

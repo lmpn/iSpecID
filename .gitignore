@@ -69,3 +69,4 @@ build
 # VSCode definitions
 .vscode
 # End of https://www.gitignore.io/api/c++,macos
+third_party

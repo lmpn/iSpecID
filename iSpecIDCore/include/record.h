@@ -13,7 +13,7 @@ class Record{
     std::shared_ptr<std::unordered_map<std::string, size_t>> indexes;
     std::string data;
     std::vector<std::string> fields;
-    utils::Grade grade;
+    //utils::Grade grade;
 
     public:
     Record() = default;
@@ -21,13 +21,14 @@ class Record{
     Record(std::string _data){
         data = _data;
         boost::split(fields,data,[](char delim){return delim == '\t';});
-        grade = utils::Grade::U;
     };
 
     Record(std::string _data, std::shared_ptr<std::unordered_map<std::string, size_t>> _indexes): indexes(_indexes) {
         data = _data;
         boost::split(fields,data,[](char delim){return delim == '\t';});
-        grade = utils::Grade::U;
+        if(_indexes->size() > fields.size()){
+            fields.push_back("U");
+        }
     };
 
     bool empty() const;
@@ -36,8 +37,6 @@ class Record{
     std::string operator[](size_t index) const;
     void update(std::string field, std::string name);
     void update(std::string field, size_t index);
-    void setGrade(utils::Grade g);
-    utils::Grade getGrade() const;
     friend std::ostream & operator << (std::ostream &strm, Record obj) {
         strm << "data:" <<std::endl;
         for(auto& f : obj.fields)

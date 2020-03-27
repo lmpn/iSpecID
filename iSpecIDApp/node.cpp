@@ -58,9 +58,10 @@
 #include <QPainter>
 #include <QStyleOption>
 #include <QTextItem>
+#include <qdebug.h>
 
 
-Node::Node(QString name, NODE_TYPE ntype, GraphViewer *_graph)
+Node::Node(QString name, QString grade, GraphViewer *_graph)
     : graph(_graph)
 {
     setFlag(ItemIsMovable);
@@ -68,30 +69,57 @@ Node::Node(QString name, NODE_TYPE ntype, GraphViewer *_graph)
     setCacheMode(DeviceCoordinateCache);
     setZValue(-1);
     this->name = name;
-    this->node_type = ntype;
-    highlight = false;
+    setColor(grade);
+    f = QFont("unexistent");
+    f.setStyleHint(QFont::Monospace);
 }
 
 void Node::addEdge(Edge *edge)
 {
-    edge_list << edge;
+    edge_set << edge;
     edge->adjust();
 }
 
 void Node::removeEdge(Edge *edge)
 {
-    edge_list.removeOne(edge);
+    edge_set.remove(edge);
 }
 
 
-QVector<Edge *> Node::edges() const
+QSet<Edge *> Node::edges() const
 {
-    return edge_list;
+    return edge_set;
 }
 
 
 QString Node::getName() const{
     return name;
+}
+
+void Node::setColor(QString grade){
+    if(grade== "A"){
+        mc = QColor(Qt::green);
+        dmc = QColor(Qt::darkGreen);
+    }
+    else if( grade == "B"){
+        mc = QColor(Qt::cyan);
+        dmc = QColor(Qt::darkCyan);
+    }
+    else if( grade == "C"){
+        mc = QColor(Qt::yellow);
+        dmc = QColor(Qt::darkYellow);
+    }
+    else if( grade == "D"){
+        mc = QColor(Qt::gray);
+        dmc = QColor(Qt::darkGray);
+    }
+    else if( grade == "E1" || grade == "E2"){
+        mc = QColor(Qt::red);
+        dmc = QColor(Qt::darkRed);
+    }else{
+        mc = QColor(Qt::blue);
+        dmc = QColor(Qt::darkBlue);
+    }
 }
 
 
@@ -100,9 +128,10 @@ QRectF Node::boundingRect() const
     qreal adjust = 2;
     QRectF rect1( -10 - adjust, -10 - adjust, 23 + adjust, 23 + adjust);
     QString text(this->name);
-    QFont currentFont = scene()->font();
-    QFontMetricsF fontMetrics(currentFont);
+    QFontMetricsF fontMetrics(f);
     QRectF rect2 = fontMetrics.boundingRect(text).translated(20,20);
+    rect2.setWidth(rect2.width()*2);
+    rect2.setHeight(rect2.height()*2);
     return rect1.united(rect2);
 }
 
@@ -120,30 +149,25 @@ QPainterPath Node::shape() const
 
 void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *)
 {
+    painter->setFont(f);
     painter->setPen(Qt::NoPen);
     painter->setBrush(Qt::darkGray);
     painter->drawEllipse(-7, -7, 20, 20);
 
+
+    // d 237, 151, 12
+    // c 251, 255, 0
+    // b 175, 255, 3
+    // a 175, 255, 3
     QRadialGradient gradient(-3, -3, 10);
     if (option->state & QStyle::State_Sunken) {
         gradient.setCenter(3, 3);
         gradient.setFocalPoint(3, 3);
-        gradient.setColorAt(1, QColor(Qt::yellow).lighter(120));
-        gradient.setColorAt(0, QColor(Qt::darkYellow).lighter(120));
-    }
-    else if (highlight && option->state & QStyle::State_Sunken) {
-        gradient.setCenter(3, 3);
-        gradient.setFocalPoint(3, 3);
-        gradient.setColorAt(1, QColor(Qt::red).lighter(120));
-        gradient.setColorAt(0, QColor(Qt::darkRed).lighter(120));
-    }
-    else if(highlight){
-        gradient.setColorAt(0, Qt::red);
-        gradient.setColorAt(1, Qt::darkRed);
-
+        gradient.setColorAt(1, mc.lighter(120));
+        gradient.setColorAt(0, dmc.lighter(120));
     } else {
-        gradient.setColorAt(0, Qt::yellow);
-        gradient.setColorAt(1, Qt::darkYellow);
+        gradient.setColorAt(0, mc);
+        gradient.setColorAt(1, dmc);
     }
     painter->setBrush(gradient);
 
@@ -151,11 +175,11 @@ void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     painter->drawEllipse(-10, -10, 20, 20);
     // Text
 
-
-    QFont currentFont = scene()->font();
-    QFontMetricsF fontMetrics(currentFont);
+    QFontMetricsF fontMetrics(f);
     QRectF rect2 = fontMetrics.boundingRect(this->name).translated(12,12);
     painter->setPen(Qt::black);
+    rect2.setWidth(rect2.width()*2);
+    rect2.setHeight(rect2.height()*2);
     painter->drawText(rect2, this->name);
 }
 
@@ -165,7 +189,7 @@ QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)
 
     switch (change) {
     case ItemPositionHasChanged:
-        for (Edge *edge : qAsConst(edge_list))
+        for (Edge *edge : qAsConst(edge_set))
             edge->adjust();
         graph->itemMoved();
         break;
@@ -199,7 +223,7 @@ void Node::calculateForces()
     qreal xvel = 0;
     qreal yvel = 0;
     int count = 0;
-    for (auto& edge : edge_list) {
+    for (auto& edge : edge_set) {
         Node *node = edge->destNode() != this ? edge->destNode() : edge->sourceNode();
         count++;
         qreal dx = this->pos().x() - node->pos().x();
@@ -209,10 +233,10 @@ void Node::calculateForces()
     }
 
     if(count > 0){
-        xvel = -1*xvel/(count*10);
-        yvel = -1*yvel/(count*10);
+        xvel = -1*xvel/(count);
+        yvel = -1*yvel/(count);
     }
-    if (qAbs(xvel) <= 10 && qAbs(yvel) <= 10)
+    if (qAbs(xvel) <= 200 && qAbs(yvel) <= 200)
         xvel = yvel = 0;
 
     QRectF sceneRect = scene()->sceneRect();

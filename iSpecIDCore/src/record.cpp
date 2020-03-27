@@ -35,14 +35,6 @@ void Record::update(std::string field, size_t index){
     fields.at(index) = field;
 }
 
-utils::Grade Record::getGrade() const{
-    return grade;
-}
-
-void Record::setGrade(utils::Grade g){
-    this->grade = g;
-}
-
 Record::Iterator Record::begin()
 {
     return Iterator(this);

@@ -12,27 +12,28 @@ class Species{
     std::vector<Record> specimens;
     std::unordered_set<std::string> bins;
     std::unordered_set<std::string> institution;
-    utils::Grade grade;
+    std::string grade;
 
-    Species():grade(utils::Grade::U){}
+    Species():grade("U"){}
 
     Species(
         std::string_view _species_name,
         std::unordered_set<std::string> _bins = {},
         std::unordered_set<std::string> _institution = {},
-        utils::Grade _grade = utils::Grade::U):
+        std::string _grade = "U") :
         species_name(_species_name), bins(_bins), institution(_institution), grade(_grade){};
 
     void push_back(Record specimen){
         specimens.push_back(specimen);
-        bins.insert( specimen["bin_uri"]);
+        auto bin = specimen["bin_uri"];
+        bins.insert(bin);
         institution.insert( specimen["institution_storing"]);
         species_name = specimen["species_name"];
     }
 
     friend std::ostream & operator << (std::ostream &strm, const Species &obj) {
         strm << "Species name: " << std::string(obj.species_name) << std::endl <<
-            "utils::Grade: " << static_cast<typename std::underlying_type<utils::Grade>::type>(obj.grade) << std::endl<<
+            "utils::Grade: " << obj.grade << std::endl<<
             "Bins: {" << std::endl;
         for(auto b : obj.bins)
             strm << "\t" << b << std::endl;

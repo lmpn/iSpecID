@@ -4,81 +4,185 @@
 #include <QRandomGenerator>
 #include <QContextMenuEvent>
 #include <QMenu>
+#include <qdebug.h>
 #include "iSpecIDApp/edge.h"
 #include "iSpecIDApp/node.h"
 
 
 
-GraphViewer::GraphViewer(Annotator *_an, QWidget *parent)
+GraphViewer::GraphViewer(QWidget *parent, Annotator *_an)
     :  QGraphicsView(parent), an(_an), cur_root(nullptr)
 {
-    this->setGeometry(parent->rect());
     QGraphicsScene *scene = new QGraphicsScene(this);
     scene->setItemIndexMethod(QGraphicsScene::NoIndex);
-    scene->setSceneRect(parent->rect());
     setScene(scene);
+    auto srect = parent->rect();
+    this->setSceneRect(srect);
     setCacheMode(CacheBackground);
     setViewportUpdateMode(BoundingRectViewportUpdate);
     setRenderHint(QPainter::Antialiasing);
     setTransformationAnchor(AnchorUnderMouse);
-    auto data = an->getGroupData();
+    //fitInView(this->scene()->sceneRect(), Qt::IgnoreAspectRatio);
+    cur_root = nullptr;
+}
+
+void GraphViewer::generateItems(){
+
+    clearScene();
+    clean();
+
+    auto data = an->getGroupRecords();
     for(auto& pair: data){
         auto bins = pair.second.bins;
-        Node *node = new Node(QString::fromStdString(pair.first), Node::NODE_TYPE::SpeciesNode,this);
-        node->setPos(randomPos());
-        scene->addItem(node);
+        Node *node = new Node(QString::fromStdString(pair.first), QString::fromStdString(pair.second.grade), this);
+        scene()->addItem(node);
         node->hide();
         nodes.insert(node->getName(), node);
         for (auto bin_name : bins) {
+            if(bin_name == "") continue;
             auto key = QString::fromStdString(bin_name);
             Node *bin = qgraphicsitem_cast<Node *>(nodes[key]);
             if(bin == nullptr){
-                bin = new Node(key, Node::NODE_TYPE::BinNode, this);
-                bin->setPos(randomPos());
+                bin = new Node(key, QString::fromStdString("U"), this);
                 nodes.insert(key,bin);
                 bin->hide();
-                scene->addItem(bin);
+                scene()->addItem(bin);
             }
             Edge * edge = new Edge(node, bin);
             connect(edge, SIGNAL(edgeRemoval(Edge *)),
                     this, SLOT(componentChanged(Edge *)));
             edges << edge;
             edge->hide();
-            scene->addItem(edge);
+            scene()->addItem(edge);
         }
     }
+}
+
+
+void GraphViewer::onGraphChange(){
+    generateItems();
 
 }
+void GraphViewer::onGraphColorChange(){
+    auto group_records = an->getGroupRecords();
+    for(auto item: nodes){
+        auto node = qgraphicsitem_cast<Node *>(item);
+        std::string key =node->getName().toStdString();
+        Species sp = group_records[key];
+        node->setColor(QString::fromStdString(sp.grade));
+    }
+}
+
+void GraphViewer::drawBackground(QPainter *painter, const QRectF &rect)
+{
+    /*
+    Q_UNUSED(rect);
+
+    // Shadow
+    QRectF sceneRect = this->sceneRect();
+    QRectF rightShadow(sceneRect.right(), sceneRect.top() + 5, 5, sceneRect.height());
+    QRectF bottomShadow(sceneRect.left() + 5, sceneRect.bottom(), sceneRect.width(), 5);
+    if (rightShadow.intersects(rect) || rightShadow.contains(rect))
+        painter->fillRect(rightShadow, Qt::darkGray);
+    if (bottomShadow.intersects(rect) || bottomShadow.contains(rect))
+        painter->fillRect(bottomShadow, Qt::darkGray);
+
+    // Fill
+    QLinearGradient gradient(sceneRect.topLeft(), sceneRect.bottomRight());
+    gradient.setColorAt(0, Qt::white);
+    gradient.setColorAt(1, Qt::lightGray);
+    painter->fillRect(rect.intersected(sceneRect), gradient);
+    painter->setBrush(Qt::NoBrush);
+    painter->drawRect(sceneRect);
+
+    // Text
+    QRectF textRect(0,sceneRect.height() - 50,
+                    50,50);
+    painter->setBrush(Qt::black);
+    painter->setPen(Qt::black);
+    painter->drawRect(textRect);
+    /*
+    QString message(tr("Click and drag the nodes around, and zoom with the mouse "
+                       "wheel or the '+' and '-' keys"));
+
+    QFont font = painter->font();
+    font.setBold(true);
+    font.setPointSize(14);
+    painter->setFont(font);
+    painter->setPen(Qt::lightGray);
+    painter->drawText(textRect.translated(2, 2), message);
+    painter->drawText(textRect, message);*/
+
+}
+
 
 void GraphViewer::componentChanged(Edge *edge){
     auto src = edge->sourceNode();
     auto dest = edge->destNode();
     auto species = src->getName().toStdString();
     auto bin = dest->getName().toStdString();
+    setComponentVisibleDFS(edge->destNode(), false);
+    setComponentVisibleDFS(edge->sourceNode(), false);
+    setComponentVisible();
+
+    delete edge;
     an->filter([species, bin](Record item) {
         return item["species_name"] == species && item["bin_uri"]==bin;
     });
-    setComponentVisibleDFS(edge->destNode(), false);
-    setComponentVisibleDFS(edge->sourceNode(), false);
-    delete edge;
-    setComponentVisible();
+    an->clearGroup();
+    an->group();
+    an->calculateGradeResults();
+    emit updateRecords();
+    emit updateResults();
 }
 
 void GraphViewer::setComponentVisibleDFS( Node *root, bool visible){
     if(root->isVisible() == visible) return;
     root->setVisible(visible);
-    std::cout << root->getName().toStdString() <<";" << visible << std::endl;
+    QSet<Edge*> current = root->edges();
+    QSet<Edge*> next;
+    float h = this->rect().height();
+    float w = this->rect().width();
+    int size = current.size();
+    float offset = w/size;
+    float s_w = (w - offset*size)/2;
+    float s_h = (h/2) - 150;
+    auto it = current.begin();
+    root->setPos(h/2,w/2);
+    while(current.size() > 0){
+        for(int i = 0; i < size; i++){
+            auto edge = *(it + i);
+            auto dest = edge->destNode();
+            auto src = edge->sourceNode();
+            edge->setVisible(visible);
+            if(dest->isVisible() != visible){
+                dest->setVisible(visible);
+                next += dest->edges();
+                dest->setPos(s_w+i*offset,s_h);
+            }
+            if(src->isVisible() != visible){
+                src->setVisible(visible);
+                next += src->edges();
+                src->setPos(s_w+i*offset,s_h);
+            }
+        }
+        current = next;
+        next = QSet<Edge*>();
+        s_h -= 150;
+        size = current.size();
+        offset = w/size;
+        s_w = (w - offset*size)/2;
+        it = current.begin();
+    }
+    /*
     for(auto& edge : root->edges()){
-        edge->setVisible(visible);
-        auto dest = edge->destNode();
-        auto src = edge->sourceNode();
         setComponentVisibleDFS(dest, visible);
         setComponentVisibleDFS(src, visible);
     }
     if(root->edges().size() == 0){
         scene()->removeItem(root);
         nodes.remove(root->getName());
-    }
+    }*/
 }
 
 void GraphViewer::setComponentVisible(QString key){
@@ -91,15 +195,28 @@ void GraphViewer::setComponentVisible(QString key){
         cur_root = nodes[key];
         root = qgraphicsitem_cast<Node *>(cur_root);
     }
-
-    setComponentVisibleDFS(root, true);
+    if(root != nullptr)
+        setComponentVisibleDFS(root, true);
 }
 
+void GraphViewer::clearScene(){
+    const QList<QGraphicsItem *> items = scene()->items();
+    for (QGraphicsItem *item : items) {
+        scene()->removeItem(item);
+        delete item;
+    }
+}
+
+void GraphViewer::clean(){
+    this->nodes.clear();
+    this->edges.clear();
+    cur_root = nullptr;
+}
 
 
 GraphViewer::~GraphViewer()
 {
-
+    clearScene();
 }
 
 
@@ -168,8 +285,8 @@ void GraphViewer::zoomOut()
 
 void GraphViewer::itemMoved()
 {
-    if (!timerId)
-        timerId = startTimer(1000 / 25);
+    /*if (!timerId)
+        timerId = startTimer(1000 / 50);*/
 }
 
 void GraphViewer::timerEvent(QTimerEvent *event)

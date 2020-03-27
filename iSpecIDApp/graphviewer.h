@@ -6,12 +6,13 @@
 
 class Node;
 class Edge;
+class Record;
 
 class GraphViewer : public QGraphicsView
 {
     Q_OBJECT
 public:
-    GraphViewer(Annotator *_an, QWidget *parent);
+    GraphViewer(QWidget *parent, Annotator*_an);
     ~GraphViewer();
 
 
@@ -24,6 +25,12 @@ public slots:
     void zoomOut();
     void componentChanged(Edge *);
     void setComponentVisible(QString key = QString::fromStdString(""));
+    void onGraphChange();
+    void onGraphColorChange();
+
+signals:
+    void updateRecords();
+    void updateResults();
 
 protected:
     void timerEvent(QTimerEvent *event) override;
@@ -32,9 +39,13 @@ protected:
         void wheelEvent(QWheelEvent *event) override;
     #endif
     void scaleView(qreal scaleFactor);
+    void drawBackground(QPainter *painter, const QRectF &rect) override;
 
 private:
+    void clean();
+    void clearScene();
     void setComponentVisibleDFS( Node *root, bool visible = true);
+    void generateItems();
     int timerId = 0;
     Annotator *an;
     QMap<QString, QGraphicsItem*> nodes;

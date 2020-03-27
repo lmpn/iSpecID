@@ -102,8 +102,10 @@ class Reader{
             for(auto& r : results){
                 ind.insert(std::make_pair<>(r,idx++));
             }
+            if(ind.find("grade") == ind.end()){
+                ind.insert({"grade", ind.size()});
+            }
             this->indexes = std::make_shared<std::unordered_map<std::string, size_t>>(std::move(ind));
-
         };
 
         void close() {

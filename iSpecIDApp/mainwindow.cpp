@@ -1,8 +1,10 @@
 #include "iSpecIDApp/mainwindow.h"
 #include "./ui_mainwindow.h"
 #include <QCompleter>
-#include <QDebug>
+#include <qdebug.h>
 #include <string>
+#include "iSpecIDApp/filterform.h"
+#include <functional>
 
 
 MainWindow::MainWindow(QWidget *parent)
@@ -10,24 +12,57 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    qan = new QAnnotator(this);
+    an = new Annotator();
+    ResultsModel *res_m = new ResultsModel(ui->results_table,an);
+    RecordModel *rec_m = new RecordModel(ui->record_table,an);
+    ui->results_table->setModel(res_m);
+    ui->record_table->setModel(rec_m);
+    graph = new GraphViewer(ui->graph_viewer, an);
+
+
+    connect(this, SIGNAL(updateRecords()),
+            rec_m,SLOT(onRecordsChange()));
+
+    connect(this, SIGNAL(updateResults()),
+            res_m,SLOT(onResultsChange()));
+
+    connect(this, SIGNAL(updateColorGraph()),
+            graph,SLOT(onGraphColorChange()));
+    connect(this, SIGNAL(updateGraph()),
+            graph,SLOT(onGraphChange()));
+    connect(this, SIGNAL(showComponent(QString)),
+            graph,SLOT(setComponentVisible(QString)));
+
+
+    connect(graph, SIGNAL(updateRecords()),
+            rec_m,SLOT(onRecordsChange()));
+
+    connect(graph, SIGNAL(updateResults()),
+            res_m,SLOT(onResultsChange()));
+
+
+
     setupResultsTable();
-    showMaximized();
+    ui->record_table->resizeColumnsToContents();
+    graph->show();
+    ui->annotateButton->setEnabled(false);
+    ui->results_frame->hide();
+    auto actions = ui->menuData->actions();
+    for(auto ac : actions){
+        ac->setEnabled(false);
+    }
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
-    if(graph != nullptr){
-        delete graph;
-    }
+    delete an;
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
     switch (event->key()) {
     case Qt::Key_Backspace:
-        removeRows();
         break;
     default:
         QMainWindow::keyPressEvent(event);
@@ -35,26 +70,40 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 }
 
 
-void MainWindow::removeRows(){
-
-    QModelIndexList selection = ui->record_table->selectionModel()->selectedRows();
-    auto record_m = ui->record_table->model();
-    for(auto& idx : selection){
-        record_m->removeRow(idx.row(),QModelIndex());
-    }
-}
-
 void MainWindow::on_load_file_triggered()
 {
     //read file
     QString qfile_path = QFileDialog::getOpenFileName(this, tr("Input file"), "", tr("All Files (*)"));
     auto file_path = qfile_path.toStdString();
-    an->load(file_path);
-    an->filter([](Record item) {return item["species_name"].empty();});
-    an->group();
-    auto results = an->getGradeResults();
-    auto group_data = an->getGroupData();
+    if(file_path.empty()) return;
+    an->cleanLoad(file_path);
+    auto first = createCompleter();
+    updateApp(first);
+    ui->record_table->resizeColumnsToContents();
+    ui->results_frame->show();
+    ui->annotateButton->setEnabled(true);
+    auto actions = ui->menuData->actions();
+    for(auto ac : actions){
+        ac->setEnabled(true);
+    }
+}
 
+
+
+void MainWindow::updateApp(QString name){
+    emit updateRecords();
+    emit updateResults();
+    emit updateGraph();
+    if(!name.isEmpty()){
+        emit showComponent(name);
+    }
+}
+
+
+
+
+QString MainWindow::createCompleter(){
+    auto group_data = an->getGroupRecords();
     QSet<QString> set;
     for(auto& pair : group_data){
         set << QString::fromStdString(pair.first);
@@ -63,21 +112,15 @@ void MainWindow::on_load_file_triggered()
         }
 
     }
-    //Results
-    auto results_model = (ResultsModel*) ui->results_table->model();
-    results_model->setResults(results);
-    //Records
     auto unique = set.values();
     unique.sort();
-
-    setupRecordTable(unique);
-
-    if(graph != nullptr){
-        delete graph;
-    }
-    graph = new GraphViewer( an, ui->graph_viewer);
-    graph->show();
-    graph->setComponentVisible(unique.first());
+    QCompleter * completer = new QCompleter(unique, this);
+    ui->graph_combo_box->setCompleter(completer);
+    ui->graph_combo_box->clear();
+    ui->graph_combo_box->addItems(unique);
+    if(unique.size()>0)
+        return unique.first();
+    return QString();
 }
 
 void MainWindow::on_graph_combo_box_activated(const QString &arg1)
@@ -86,23 +129,7 @@ void MainWindow::on_graph_combo_box_activated(const QString &arg1)
 }
 
 
-
-void MainWindow::setupRecordTable(QStringList unique){
-    auto data = an->getData();
-    QCompleter * completer = new QCompleter(unique, this);
-    ui->graph_combo_box->setCompleter(completer);
-    ui->graph_combo_box->addItems(unique);
-    ui->record_table->setModel(new RecordModel(this, data));
-    ui->record_table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-}
-
-
-
-
-
 void MainWindow::setupResultsTable(){
-    auto results_model = new ResultsModel();
-    ui->results_table->setModel(results_model);
     ui->results_table->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     ui->results_table->verticalHeader()->hide();
     int w = 0, h = 0;
@@ -112,9 +139,9 @@ void MainWindow::setupResultsTable(){
     h += ui->results_table->horizontalHeader()->height();
 
     for (int i=0; i<ui->results_table->model()->columnCount(); ++i)
-    w += ui->results_table->columnWidth(i);
+        w += ui->results_table->columnWidth(i);
     for (int i=0; i<ui->results_table->model()->rowCount(); ++i)
-    h += ui->results_table->rowHeight(i);
+        h += ui->results_table->rowHeight(i);
 
     ui->results_table->setMaximumWidth(w-16);
     ui->results_table->setMaximumHeight(h);
@@ -122,7 +149,63 @@ void MainWindow::setupResultsTable(){
     ui->results_frame->setMaximumHeight(h+ui->record_frame->rect().height()+ ui->record_frame->contentsMargins().bottom()+ui->record_frame->contentsMargins().top());
 }
 
+
+
+
+
+
+
 void MainWindow::on_annotateButton_clicked()
 {
-    an->annotation_algo();
+    an->annotationAlgo();
+    an->gradeRecords();
+    emit updateColorGraph();
+    emit updateRecords();
+    emit updateResults();
+    ui->annotateButton->setEnabled(false);
+
+}
+
+void MainWindow::on_filter_triggered()
+{
+    std::vector<std::function<bool(Record)>> preds;
+    auto ff = new FilterForm();
+    ff->exec();
+    if(ff->isAccepted()){
+        auto species = ff->getSpecies().toStdString();
+        auto bin = ff->getBin().toStdString();
+        auto inst = ff->getInstitution().toStdString();
+        auto grade = ff->getGrade().toStdString();
+        if(!species.empty()){
+            preds.push_back([species](Record item){
+                return item["species_name"] == species;
+            });
+        }
+        if(!bin.empty()){
+            preds.push_back([bin](Record item){
+                return item["bin_uri"] == bin;
+            });
+        }
+        if(!inst.empty()){
+            preds.push_back([inst](Record item){
+                return item["institution_storing"] == inst;
+            });
+        }
+        if(!grade.empty()){
+            preds.push_back([grade](Record item){
+                return item["grade"] == grade;
+            });
+        }
+        int size = an->size();
+        an->filter(preds, ff->getMatch());
+        if(size != an->size()){
+            an->clearGroup();
+            an->group();
+            an->calculateGradeResults();
+            auto first = createCompleter();
+            updateApp(first);
+            ui->annotateButton->setEnabled(true);
+        }
+    }
+    delete ff;
 }
