@@ -10,6 +10,7 @@
 #include <utils.h>
 #include <iostream>
 #include <memory>
+#include <condition_variable>
 #include <fstream>
 #include <boost/algorithm/string.hpp>
 
