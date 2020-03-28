@@ -56,12 +56,12 @@
 #include <QFont>
 
 class Edge;
-class GraphViewer;
+class GraphScene;
 
 class Node : public QGraphicsItem
 {
 public:
-    Node(QString name, QString grade, GraphViewer *graph);
+    Node(QString name, QString grade, GraphScene *graph);
 
 
     QSet<Edge *> edges() const;
@@ -87,7 +87,7 @@ protected:
 
 private:
     QString name;
-    GraphViewer *graph;
+    GraphScene *graph;
     QSet<Edge *> edge_set;
     QPointF new_pos;
     QFont f;

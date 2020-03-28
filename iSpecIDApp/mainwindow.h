@@ -4,7 +4,7 @@
 #include <QMainWindow>
 #include <QFileDialog>
 #include <QKeyEvent>
-#include "graphviewer.h"
+#include "graphscene.h"
 #include "resultsmodel.h"
 #include "recordmodel.h"
 #include <annotator.h>
@@ -21,7 +21,6 @@ class MainWindow : public QMainWindow
 
 public:
     MainWindow(QWidget *parent = nullptr);
-    void keyPressEvent(QKeyEvent *event) override;
     void removeRows();
     ~MainWindow();
 signals:
@@ -30,9 +29,16 @@ signals:
     void updateRecords();
     void updateResults();
     void showComponent(QString);
+protected:
+    void keyPressEvent(QKeyEvent *event) override;
+    #if QT_CONFIG(wheelevent)
+        void wheelEvent(QWheelEvent *event) override;
+    #endif
+    void scaleView(qreal scaleFactor);
 
 private slots:
-
+    void zoomIn();
+    void zoomOut();
     void on_load_file_triggered();
     void on_graph_combo_box_activated(const QString &arg1);
     void on_annotateButton_clicked();
@@ -45,6 +51,6 @@ private:
     void updateApp(QString name);
     Ui::MainWindow *ui;
     Annotator *an;
-    GraphViewer *graph;
+    GraphScene *graph;
 };
 #endif // MAINWINDOW_H

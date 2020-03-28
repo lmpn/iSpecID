@@ -8,21 +8,17 @@ class Node;
 class Edge;
 class Record;
 
-class GraphViewer : public QGraphicsView
+class GraphScene : public QGraphicsScene
 {
     Q_OBJECT
 public:
-    GraphViewer(QWidget *parent, Annotator*_an);
-    ~GraphViewer();
+    GraphScene(QWidget *parent, Annotator*_an);
+    ~GraphScene();
 
 
-    void itemMoved();
     QPointF randomPos();
 
 public slots:
-    void shuffle();
-    void zoomIn();
-    void zoomOut();
     void componentChanged(Edge *);
     void setComponentVisible(QString key = QString::fromStdString(""));
     void onGraphChange();
@@ -31,15 +27,6 @@ public slots:
 signals:
     void updateRecords();
     void updateResults();
-
-protected:
-    void timerEvent(QTimerEvent *event) override;
-    void keyPressEvent(QKeyEvent *event) override;
-    #if QT_CONFIG(wheelevent)
-        void wheelEvent(QWheelEvent *event) override;
-    #endif
-    void scaleView(qreal scaleFactor);
-    void drawBackground(QPainter *painter, const QRectF &rect) override;
 
 private:
     void clean();

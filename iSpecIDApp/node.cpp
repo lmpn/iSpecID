@@ -50,7 +50,7 @@
 
 #include "iSpecIDApp/edge.h"
 #include "iSpecIDApp/node.h"
-#include "iSpecIDApp/graphviewer.h"
+#include "iSpecIDApp/graphscene.h"
 #include <utils.h>
 
 #include <QGraphicsScene>
@@ -58,10 +58,11 @@
 #include <QPainter>
 #include <QStyleOption>
 #include <QTextItem>
+#include <QFontDatabase>
 #include <qdebug.h>
 
 
-Node::Node(QString name, QString grade, GraphViewer *_graph)
+Node::Node(QString name, QString grade, GraphScene *_graph)
     : graph(_graph)
 {
     setFlag(ItemIsMovable);
@@ -70,7 +71,7 @@ Node::Node(QString name, QString grade, GraphViewer *_graph)
     setZValue(-1);
     this->name = name;
     setColor(grade);
-    f = QFont("unexistent");
+    f = QFontDatabase::systemFont(QFontDatabase::FixedFont);
     f.setStyleHint(QFont::Monospace);
 }
 
@@ -191,7 +192,7 @@ QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)
     case ItemPositionHasChanged:
         for (Edge *edge : qAsConst(edge_set))
             edge->adjust();
-        graph->itemMoved();
+        //graph->itemMoved();
         break;
     default:
         break;

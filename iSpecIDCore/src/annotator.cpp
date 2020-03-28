@@ -143,10 +143,11 @@ BoldData Annotator::parseBoldData(std::string bin){
     try{
         std::string s = mn.getPage(url.c_str());
         std::smatch matches;
-        std::regex_search (s,matches,nearest);
-        std::string nbin = matches[1];
-        std::regex_search (s,matches,dist);
+        std::regex_search (s,matches,all);
+        auto next = matches.suffix().str();
         float d = std::stof(matches[1]);
+        std::regex_search (next,matches,all);
+        std::string nbin = matches[2];
         bd.distance = d;
         bd.neighbour = nbin;
     }catch (const std::exception& e) {

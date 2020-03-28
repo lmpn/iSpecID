@@ -1,10 +1,11 @@
 #include "iSpecIDApp/mainwindow.h"
 #include "./ui_mainwindow.h"
 #include <QCompleter>
-#include <qdebug.h>
 #include <string>
 #include "iSpecIDApp/filterform.h"
 #include <functional>
+#include <qdebug.h>
+#include <QGraphicsView>
 
 
 MainWindow::MainWindow(QWidget *parent)
@@ -17,9 +18,12 @@ MainWindow::MainWindow(QWidget *parent)
     RecordModel *rec_m = new RecordModel(ui->record_table,an);
     ui->results_table->setModel(res_m);
     ui->record_table->setModel(rec_m);
-    graph = new GraphViewer(ui->graph_viewer, an);
-
-
+    graph = new GraphScene(this, an);
+    ui->graph_viewer->setScene(graph);
+    ui->graph_viewer->setCacheMode(QGraphicsView::CacheBackground);
+    ui->graph_viewer->setViewportUpdateMode(QGraphicsView::ViewportUpdateMode::BoundingRectViewportUpdate);
+    ui->graph_viewer->setRenderHint(QPainter::Antialiasing);
+    ui->graph_viewer->setTransformationAnchor(QGraphicsView::ViewportAnchor::AnchorUnderMouse);
     connect(this, SIGNAL(updateRecords()),
             rec_m,SLOT(onRecordsChange()));
 
@@ -44,7 +48,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     setupResultsTable();
     ui->record_table->resizeColumnsToContents();
-    graph->show();
     ui->annotateButton->setEnabled(false);
     ui->results_frame->hide();
     auto actions = ui->menuData->actions();
@@ -57,16 +60,6 @@ MainWindow::~MainWindow()
 {
     delete ui;
     delete an;
-}
-
-void MainWindow::keyPressEvent(QKeyEvent *event)
-{
-    switch (event->key()) {
-    case Qt::Key_Backspace:
-        break;
-    default:
-        QMainWindow::keyPressEvent(event);
-    }
 }
 
 
@@ -209,3 +202,46 @@ void MainWindow::on_filter_triggered()
     }
     delete ff;
 }
+
+
+
+void MainWindow::keyPressEvent(QKeyEvent *event)
+{
+    switch (event->key()) {
+    case Qt::Key_Plus:
+        zoomIn();
+        break;
+    case Qt::Key_Minus:
+        zoomOut();
+        break;
+    default:
+        QMainWindow::keyPressEvent(event);
+    }
+}
+
+#if QT_CONFIG(wheelevent)
+void MainWindow::wheelEvent(QWheelEvent *event)
+{
+    scaleView(pow(2., -event->angleDelta().y() / 240.0));
+}
+#endif
+
+void MainWindow::scaleView(qreal scaleFactor)
+{
+    qreal factor = this->ui->graph_viewer->transform().scale(scaleFactor, scaleFactor).mapRect(QRectF(0, 0, 1, 1)).width();
+    if (factor < 0.07 || factor > 100)
+        return;
+
+    this->ui->graph_viewer->scale(scaleFactor, scaleFactor);
+}
+
+void MainWindow::zoomIn()
+{
+    scaleView(qreal(1.2));
+}
+
+void MainWindow::zoomOut()
+{
+    scaleView(1 / qreal(1.2));
+}
+

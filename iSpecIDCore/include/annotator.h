@@ -124,5 +124,6 @@ private:
     umap<std::string, Species> group_records;
     std::regex dist= std::regex("Distance to Nearest Neighbor:</th>\\s*<td>(\\d+\\.\\d+)%");
     std::regex nearest = std::regex ("Nearest BIN URI:</th>\\s*<td>(.*)</td>");
+    std::regex all = std::regex ("Distance to Nearest Neighbor:</th>\\s*<td>(\\d+\\.\\d+)%.*</td>|Nearest BIN URI:</th>\\s*<td>(.*)</td>");
 };
 #endif
