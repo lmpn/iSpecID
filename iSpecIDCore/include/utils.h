@@ -65,6 +65,6 @@ namespace utils{
 
 
     double kbest(const std::vector<double>& vec);
-    std::vector<std::string_view> split(std::string_view sv, char delim);
+    std::vector<std::string> split(const std::string& str, const std::string& delims = "\t");
 }
 #endif

@@ -20,12 +20,14 @@ class Record{
 
     Record(std::string _data){
         data = _data;
-        boost::split(fields,data,[](char delim){return delim == '\t';});
+        //boost::split(fields,data,[](char delim){return delim == '\t';});
+        fields = utils::split(data,"\t");
     };
 
     Record(std::string _data, std::shared_ptr<std::unordered_map<std::string, size_t>> _indexes): indexes(_indexes) {
         data = _data;
-        boost::split(fields,data,[](char delim){return delim == '\t';});
+        //boost::split(fields,data,[](char delim){return delim == '\t';});
+        fields = utils::split(data,"\t");
         if(_indexes->size() > fields.size()){
             fields.push_back("U");
         }

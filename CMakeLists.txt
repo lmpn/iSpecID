@@ -25,9 +25,9 @@ FORCE)
 
 
 
-OPTION(BIN "BINARY" OFF)
+OPTION(BIN "BINARY" ON)
 OPTION(APP "APP" ON)
-OPTION(BENCH "Do benchmark" OFF)
+OPTION(BENCH "Do benchmark" ON)
 
 
 
@@ -66,6 +66,8 @@ IF(BENCH)
     TARGET_LINK_LIBRARIES(isid_bench  benchmark::benchmark)
     TARGET_LINK_LIBRARIES(isid_bench  -lcurl)
     TARGET_LINK_LIBRARIES(isid_bench  -lpthread)
+    ADD_EXECUTABLE(isid_split "${PROJECT_SOURCE_DIR}/iSpecIDCore/bench/string_split.cxx")
+    TARGET_LINK_LIBRARIES(isid_split  benchmark::benchmark)
 ENDIF()
 UNSET(BENCH CACHE)
 if(APP)

@@ -98,7 +98,8 @@ class Reader{
         void create_indexed_header(){
             std::unordered_map<std::string, size_t> ind;
             std::vector<std::string> results;
-            boost::split(results,this->header, [](char delim){return delim == '\t';});
+            //boost::split(results,this->header, [](char delim){return delim == '\t';});
+            results = utils::split(this->header,"\t");
             size_t idx = 0;
             for(auto& r : results){
                 ind.insert(std::make_pair<>(r,idx++));
