@@ -26,8 +26,8 @@ FORCE)
 
 
 OPTION(BIN "BINARY" ON)
-OPTION(APP "APP" ON)
-OPTION(BENCH "Do benchmark" ON)
+OPTION(APP "APP" OFF)
+OPTION(BENCH "Do benchmark" OFF)
 
 
 

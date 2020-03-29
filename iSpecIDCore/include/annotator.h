@@ -61,7 +61,7 @@ public:
      * Pre-processing functions
     */
     void load(std::string file_path);
-    void cleanLoad(std::string file_path);
+    //void cleanLoad(std::string file_path);
     void clearGroup();
     void group();
     void clear();

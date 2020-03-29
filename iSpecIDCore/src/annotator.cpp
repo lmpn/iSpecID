@@ -83,14 +83,14 @@ void Annotator::clear(){
     }
 }
 
-
+/*
 void Annotator::cleanLoad(std::string file_path){
     clear();
     load(file_path);
     filter([](Record item) {return item["species_name"].empty();});
     group();
 }
-
+*/
 void Annotator::load(std::string file_path){
     Reader<Record> reader(file_path);
     this->records = reader.get_records();

@@ -69,7 +69,11 @@ void MainWindow::on_load_file_triggered()
     QString qfile_path = QFileDialog::getOpenFileName(this, tr("Input file"), "", tr("All Files (*)"));
     auto file_path = qfile_path.toStdString();
     if(file_path.empty()) return;
-    an->cleanLoad(file_path);
+    //an->cleanLoad(file_path);
+    an->clear();
+    an->load(file_path);
+    an->filter([](Record item) {return item["species_name"].empty();});
+    an->group();
     auto first = createCompleter();
     updateApp(first);
     ui->record_table->resizeColumnsToContents();
