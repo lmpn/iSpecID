@@ -62,14 +62,14 @@
 #include <qdebug.h>
 
 
-Node::Node(QString name, QString grade, GraphScene *_graph)
-    : graph(_graph)
+Node::Node(QString name, QString grade)
 {
     setFlag(ItemIsMovable);
     setFlag(ItemSendsGeometryChanges);
     setCacheMode(DeviceCoordinateCache);
     setZValue(-1);
     this->name = name;
+    this->grade = grade;
     setColor(grade);
     f = QFontDatabase::systemFont(QFontDatabase::FixedFont);
     f.setStyleHint(QFont::Monospace);
@@ -121,6 +121,8 @@ void Node::setColor(QString grade){
         mc = QColor(Qt::blue);
         dmc = QColor(Qt::darkBlue);
     }
+    this->grade = grade;
+    update();
 }
 
 
@@ -128,7 +130,12 @@ QRectF Node::boundingRect() const
 {
     qreal adjust = 2;
     QRectF rect1( -10 - adjust, -10 - adjust, 23 + adjust, 23 + adjust);
-    QString text(this->name);
+    QString text;
+    if(grade.isEmpty()){
+         text = this->name;
+    }else{
+         text = this->name + QString::fromStdString(";") + this->grade;
+    }
     QFontMetricsF fontMetrics(f);
     QRectF rect2 = fontMetrics.boundingRect(text).translated(20,20);
     rect2.setWidth(rect2.width()*2);
@@ -177,11 +184,17 @@ void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     // Text
 
     QFontMetricsF fontMetrics(f);
-    QRectF rect2 = fontMetrics.boundingRect(this->name).translated(12,12);
+    QString text;
+    if(grade.isEmpty()){
+         text = this->name;
+    }else{
+         text = this->name + QString::fromStdString(";") + this->grade;
+    }
+    QRectF rect2 = fontMetrics.boundingRect(text).translated(12,12);
     painter->setPen(Qt::black);
     rect2.setWidth(rect2.width()*2);
     rect2.setHeight(rect2.height()*2);
-    painter->drawText(rect2, this->name);
+    painter->drawText(rect2, text);
 }
 
 

@@ -23,7 +23,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->graph_viewer->setCacheMode(QGraphicsView::CacheBackground);
     ui->graph_viewer->setViewportUpdateMode(QGraphicsView::ViewportUpdateMode::BoundingRectViewportUpdate);
     ui->graph_viewer->setRenderHint(QPainter::Antialiasing);
-    ui->graph_viewer->setTransformationAnchor(QGraphicsView::ViewportAnchor::AnchorUnderMouse);
+    ui->graph_viewer->setTransformationAnchor(QGraphicsView::ViewportAnchor::AnchorViewCenter);
     connect(this, SIGNAL(updateRecords()),
             rec_m,SLOT(onRecordsChange()));
 
@@ -37,7 +37,6 @@ MainWindow::MainWindow(QWidget *parent)
     connect(this, SIGNAL(showComponent(QString)),
             graph,SLOT(setComponentVisible(QString)));
 
-
     connect(graph, SIGNAL(updateRecords()),
             rec_m,SLOT(onRecordsChange()));
 
@@ -50,10 +49,12 @@ MainWindow::MainWindow(QWidget *parent)
     ui->record_table->resizeColumnsToContents();
     ui->annotateButton->setEnabled(false);
     ui->results_frame->hide();
+    /*
     auto actions = ui->menuData->actions();
     for(auto ac : actions){
         ac->setEnabled(false);
     }
+    */
 }
 
 MainWindow::~MainWindow()
@@ -160,7 +161,7 @@ void MainWindow::on_annotateButton_clicked()
     emit updateRecords();
     emit updateResults();
     ui->annotateButton->setEnabled(false);
-
+    ui->graph_viewer->update();
 }
 
 void MainWindow::on_filter_triggered()

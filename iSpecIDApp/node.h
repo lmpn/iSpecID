@@ -61,7 +61,7 @@ class GraphScene;
 class Node : public QGraphicsItem
 {
 public:
-    Node(QString name, QString grade, GraphScene *graph);
+    Node(QString name, QString grade);
 
 
     QSet<Edge *> edges() const;
@@ -87,7 +87,7 @@ protected:
 
 private:
     QString name;
-    GraphScene *graph;
+    QString grade;
     QSet<Edge *> edge_set;
     QPointF new_pos;
     QFont f;

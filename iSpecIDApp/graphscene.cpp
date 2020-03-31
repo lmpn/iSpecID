@@ -16,7 +16,6 @@ GraphScene::GraphScene(QWidget *parent, Annotator *_an)
     QGraphicsScene *scene = new QGraphicsScene(this);
     scene->setItemIndexMethod(QGraphicsScene::NoIndex);
     scene->setSceneRect(QRectF(0, 0, 5000, 5000));
-
     cur_root = nullptr;
 }
 
@@ -33,7 +32,7 @@ void GraphScene::generateItems(){
     auto data = an->getGroupRecords();
     for(auto& pair: data){
         auto bins = pair.second.bins;
-        Node *node = new Node(QString::fromStdString(pair.first), QString::fromStdString(pair.second.grade), this);
+        Node *node = new Node(QString::fromStdString(pair.first), QString::fromStdString(pair.second.grade));
         this->addItem(node);
         node->hide();
         nodes.insert(node->getName(), node);
@@ -42,7 +41,7 @@ void GraphScene::generateItems(){
             auto key = QString::fromStdString(bin_name);
             Node *bin = qgraphicsitem_cast<Node *>(nodes[key]);
             if(bin == nullptr){
-                bin = new Node(key, QString::fromStdString("U"), this);
+                bin = new Node(key, QString());
                 nodes.insert(key,bin);
                 bin->hide();
                 this->addItem(bin);
@@ -69,7 +68,8 @@ void GraphScene::onGraphColorChange(){
         auto node = qgraphicsitem_cast<Node *>(item);
         std::string key =node->getName().toStdString();
         Species sp = group_records[key];
-        node->setColor(QString::fromStdString(sp.grade));
+        if(sp.grade != "U")
+            node->setColor(QString::fromStdString(sp.grade));
     }
     update();
 }
@@ -102,7 +102,6 @@ void GraphScene::setComponentVisibleDFS( Node *root, bool visible){
     root->setVisible(visible);
     QSet<Edge*> current = root->edges();
     QSet<Edge*> next;
-    float h = this->sceneRect().height();
     float w = this->sceneRect().width();
     int size = current.size();
     float offset = w/size;
