@@ -1,21 +1,22 @@
-#include <annotator.h>
+#include "annotator.h"
 
 
+namespace annotator {
 
-
-void Annotator::annotationAlgo(){
-    for(auto& pair : this->group_records){
+void annotationAlgo(std::unordered_map<std::string, Species>& data){
+    for(auto& pair : data){
         auto& species = pair.second;
         std::string grade = "D";
         if(species.specimens.size() > 3){
             grade = "E1";
             if(species.bins.size() == 1){
-                bool BINSpeciesConcordance = speciesPerBIN(*species.bins.begin());
+                auto bin = (*species.bins.begin()).first;
+                auto BINSpeciesConcordance = speciesPerBIN(data, bin);
                 if(BINSpeciesConcordance){
                     grade = species.institution.size()==1 ? "B" : "A";
                 }
             }else{
-                grade = findBinsNeighbour(species.bins);
+                grade = findBinsNeighbour(data, species.bins);
             }
             species.grade = grade;
         }else{
@@ -24,109 +25,18 @@ void Annotator::annotationAlgo(){
     }
 }
 
-/*
- * Getters
-*/
-std::vector<Record> Annotator::getRecords(){
-    return this->records;
-}
-umap<std::string, Species> Annotator::getGroupRecords(){
-    return this->group_records;
-}
-
-std::vector<int> Annotator::getGradeResults() {
-    return results;
-}
 
 
 /*
- * Post-processing functions
-*/
+     * Core Algorithm Helpers
+    */
 
-void Annotator::calculateGradeResults(){
-    auto indexE1 = 4;
-    std::vector<int> counts(indexE1+2,0);
-    for(auto& pair : group_records){
-        auto grade = pair.second.grade;
-        size_t num = pair.second.specimens.size();
-        if( grade == "E1" || grade == "E2")
-        {
-            counts[indexE1] += num;
-        }
-        else{
-            auto index = grade[0] - 'A';
-            counts[index] += num;
-        }
-    }
-    counts.at(5) = records.size();
-    results = counts;
-}
-
-void Annotator::gradeRecords(){
-    for(auto& item : this->records){
-        auto key = item["species_name"];
-        auto grade = group_records[key].grade;
-        item.update(grade, "grade");
-    }
-
-}
-
-
-/*
- * Pre-processing functions
-*/
-void Annotator::clear(){
-    if(size() > 0){
-        results.clear();
-        records.clear();
-        group_records.clear();
-    }
-}
-
-/*
-void Annotator::cleanLoad(std::string file_path){
-    clear();
-    load(file_path);
-    filter([](Record item) {return item["species_name"].empty();});
-    group();
-}
-*/
-void Annotator::load(std::string file_path){
-    Reader<Record> reader(file_path);
-    this->records = reader.get_records();
-}
-
-void Annotator::clearGroup(){
-    for(auto& pair : group_records){
-        pair.second.bins.clear();
-        pair.second.specimens.clear();
-        pair.second.institution.clear();
-    }
-}
-
-void Annotator::group(){
-    for (auto& specimen : this->records)
-    {
-        auto key = specimen["species_name"];
-        auto& current = this->group_records[key];
-        current.push_back(specimen);
-    }
-}
-
-
-
-
-/*
- * Core Algorithm Helpers
-*/
-
-bool Annotator::speciesPerBIN(std::string bin){
+bool speciesPerBIN(std::unordered_map<std::string, Species>& data, std::string bin){
     std::unordered_set<std::string_view> unique_set;
     size_t count = 0;
-    for(auto & entry : group_records){
-        auto fst = entry.second.bins.begin();
+    for(auto & entry : data){
         auto lst = entry.second.bins.end();
-        auto result = std::find( fst, lst, bin);
+        auto result = entry.second.bins.find(bin);
         if(lst != result && (++count) == 2){
             return false;
         }
@@ -134,13 +44,14 @@ bool Annotator::speciesPerBIN(std::string bin){
     return true;
 }
 
-BoldData Annotator::parseBoldData(std::string bin){
+BoldData parseBoldData(std::string bin){
     BoldData bd;
     bd.distance = std::numeric_limits<int>::max();
     bd.neighbour = "";
     Miner mn;
     std::string url("http://v4.boldsystems.org/index.php/Public_BarcodeCluster?clusteruri=" + std::string(bin));
     try{
+        std::regex all = std::regex ("Distance to Nearest Neighbor:</th>\\s*<td>(\\d+\\.\\d+)%.*</td>|Nearest BIN URI:</th>\\s*<td>(.*)</td>");
         std::string s = mn.getPage(url.c_str());
         std::smatch matches;
         std::regex_search (s,matches,all);
@@ -158,34 +69,41 @@ BoldData Annotator::parseBoldData(std::string bin){
 
 
 
-std::string Annotator::findBinsNeighbour(uset<std::string> bins)
+std::string findBinsNeighbour(std::unordered_map<std::string, Species>& data, std::unordered_map<std::string, int> bins)
 {
+    size_t ctr, count, num_components;
     auto grade = "E2";
-    size_t count = records.size();
-    size_t ctr = 0;
-    for(auto& pair : group_records){
+
+    ctr = 0;
+    for(auto& pair : data){
         auto cur_bins = pair.second.bins;
+
         if(utils::hasIntersection(bins,cur_bins)){
             ctr+=1;
             if(ctr>1) return grade;
         }
     }
+
+
     count = bins.size();
     auto it = bins.begin();
     ugraph graph(count);
-    for(size_t  i= 0; i < count; i++){
-        auto bold = parseBoldData(*it);
-        auto ind  = utils::findIndex(std::begin(bins), std::end(bins), bold.neighbour);
-        if( ind != -1 && bold.distance <=2) {
+    for(size_t  i = 0; i < count; i++){
+        auto bold = parseBoldData((*it).first);
+        auto item = bins.find(bold.neighbour);
+        size_t ind = std::distance(item, bins.end());
+        if( ind >=0 && bold.distance <=2) {
             boost::add_edge(i, ind, bold.distance, graph);
             boost::add_edge(ind, i, bold.distance, graph);
         }
         it++;
     }
     std::vector<int> component (count);
-    size_t num_components = boost::connected_components (graph, &component[0]);
+    num_components = boost::connected_components (graph, &component[0]);
     if( num_components == 1){
         grade="C";
     }
     return grade;
+}
+
 }

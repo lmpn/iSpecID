@@ -48,20 +48,27 @@
 **
 ****************************************************************************/
 
-#include "iSpecIDApp/edge.h"
-#include "iSpecIDApp/node.h"
+#include "edge.h"
+#include <qdebug.h>
 #include <iostream>
 #include <QPainter>
 #include <QtMath>
+#include <QFontDatabase>
 
 
-Edge::Edge(Node *sourceNode, Node *destNode)
+Edge::Edge(Node *sourceNode, Node *destNode, int count)
     : source(sourceNode), dest(destNode)
 {
+    setFlag(ItemSendsGeometryChanges);
+    setCacheMode(DeviceCoordinateCache);
     setAcceptHoverEvents(true);
+    setZValue(1);
     source->addEdge(this);
     dest->addEdge(this);
     adjust();
+    this->count = count;
+    f = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+    f.setStyleHint(QFont::Monospace);
 }
 
 
@@ -92,8 +99,10 @@ void Edge::adjust()
         QPointF edgeOffset((line.dx() * 10) / length, (line.dy() * 10) / length);
         sourcePoint = line.p1() + edgeOffset;
         destPoint = line.p2() - edgeOffset;
+        auto mid =line.center();
+        midPoint = QPointF(mid.x(), mid.y()+20);
     } else {
-        sourcePoint = destPoint = line.p1();
+        sourcePoint = destPoint = midPoint = line.p1();
     }
 }
 
@@ -102,50 +111,58 @@ void Edge::adjust()
 QRectF Edge::boundingRect() const
 {
     if (!source || !dest)
-        return QRectF();
+            return QRectF();
 
-    qreal penWidth = 1;
-    qreal extra = (penWidth + arrowSize) / 2.0;
-
-    return QRectF(sourcePoint, QSizeF(destPoint.x() - sourcePoint.x(),
-                                      destPoint.y() - sourcePoint.y()))
-        .normalized()
-        .adjusted(-extra, -extra, extra, extra);
+        qreal penWidth = 1;
+        qreal extra = (penWidth + arrowSize) / 2.0;
+        auto countStr = QString::number(count);
+        QFontMetricsF fontMetrics(f);
+        QRectF text = fontMetrics.boundingRect(countStr);
+        text.translate(midPoint.x(),midPoint.y());
+        text.setWidth(text.width()*1.5);
+        return QRectF(sourcePoint, QSizeF(destPoint.x() - sourcePoint.x(),
+                                          destPoint.y() - sourcePoint.y()))
+                .united(text)
+                .normalized()
+                .adjusted(-extra, -extra, extra, extra);
 }
 
+//QPainterPath Edge::shape() const
+//{
+//    QPainterPath path;
+//    path.addRect(QRectF(sourcePoint,destPoint));
+
+//    return path;
+//}
 
 
 void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *)
 {
+    painter->setPen(m_pen);
     if (!source || !dest)
         return;
+    painter->drawRect(this->boundingRect());
 
     QLineF line(sourcePoint, destPoint);
     if (qFuzzyCompare(line.length(), qreal(0.)))
         return;
-    painter->setPen(m_pen);
     painter->drawLine(line);
-    double angle = std::atan2(-line.dy(), line.dx());
-
-    QPointF sourceArrowP1 = sourcePoint + QPointF(sin(angle + M_PI / 3) * arrowSize,
-                                                  cos(angle + M_PI / 3) * arrowSize);
-    QPointF sourceArrowP2 = sourcePoint + QPointF(sin(angle + M_PI - M_PI / 3) * arrowSize,
-                                                  cos(angle + M_PI - M_PI / 3) * arrowSize);
-    QPointF destArrowP1 = destPoint + QPointF(sin(angle - M_PI / 3) * arrowSize,
-                                              cos(angle - M_PI / 3) * arrowSize);
-    QPointF destArrowP2 = destPoint + QPointF(sin(angle - M_PI + M_PI / 3) * arrowSize,
-                                              cos(angle - M_PI + M_PI / 3) * arrowSize);
-
-    painter->setBrush(Qt::black);
-    painter->drawPolygon(QPolygonF() << line.p1() << sourceArrowP1 << sourceArrowP2);
-    painter->drawPolygon(QPolygonF() << line.p2() << destArrowP1 << destArrowP2);
+    auto countStr = QString::number(count);
+    QFontMetricsF fontMetrics(f);
+    QRectF textRect = fontMetrics.boundingRect(countStr);
+    painter->setPen(Qt::black);
+    textRect.translate(midPoint.x(),midPoint.y());
+    textRect.setWidth(textRect.width()*1.5);
+    m_pen.setColor(Qt::black);
+    painter->drawText(textRect, Qt::AlignCenter, countStr);
+    painter->drawRect(textRect);
 }
 
 
 void Edge::remove(){
     dest->removeEdge(this);
     source->removeEdge(this);
-    emit edgeRemoval(this);
+    emit removeEdge(this);
 }
 
 

@@ -1,19 +1,18 @@
-#include "iSpecIDApp/recordmodel.h"
 #include <QItemSelectionRange>
+#include <QDataStream>
+#include "csv.hpp"
+#include "recordmodel.h"
 
-RecordModel::RecordModel(QObject *parent, Annotator *an)
-    :QAbstractTableModel(parent)
+RecordModel::RecordModel(QObject *parent,IEngine *engine)
+    : QAbstractTableModel(parent), cur_count(0), engine(engine)
 {
-    this->an = an;
-    auto tmp = an->getRecords();
-    records = QVector<Record>(tmp.begin(), tmp.end());
-
+    remove = false;
 }
 
 
 int RecordModel::rowCount(const QModelIndex & /*parent*/) const
 {
-    return records.size();
+    return cur_count;//engine->getEntries().size();
 }
 
 int RecordModel::columnCount(const QModelIndex & /*parent*/) const
@@ -45,8 +44,16 @@ QVariant RecordModel::headerData(int section, Qt::Orientation orientation, int r
 
 QVariant RecordModel::data(const QModelIndex &index, int role) const
 {
+    auto& records = engine->getEntries();
     int row = index.row();
     int col = index.column();
+    int size = records.size();
+
+
+    if (!index.isValid())
+        return QVariant();
+    if (index.row() >= size)
+        return QVariant();
     if (col == 0 && (role == Qt::DisplayRole ||
             role == Qt::EditRole)) {
         return QString::fromStdString( records[row]["species_name"] );
@@ -66,37 +73,31 @@ QVariant RecordModel::data(const QModelIndex &index, int role) const
 bool RecordModel::removeRow(int row, const QModelIndex &parent)
 {
     bool success = removeRows(row,1,parent);
-    PRINT(records.size());
     return success;
 }
 
 bool RecordModel::removeRows(int position, int rows, const QModelIndex &parent){
     Q_UNUSED(parent);
-    beginRemoveRows(parent,position, position+rows);
+    beginRemoveRows(QModelIndex(), position, position+rows-1);
+    auto& records = engine->getEntries();
     for (int row=0; row < rows; ++row) {
-        records.erase(records.begin()+position);
+        if(remove){
+            records.erase(records.begin()+position);
+            cur_count--;
+        }
     }
     endRemoveRows();
     return true;
 }
 
-bool RecordModel::insertRows(int position, int rows, const QModelIndex &index)
-{
-    Q_UNUSED(index);
-    beginInsertRows(QModelIndex(), position, position+rows-1);
-    endInsertRows();
-    return true;
-}
-
 void RecordModel::onRecordsChange(){
     beginResetModel();
-    size_t cur_count = this->records.size();
     if(cur_count!=0){
         removeRows(0, cur_count, QModelIndex());
     }
-    auto tmp = an->getRecords();
-    records = QVector<Record>(tmp.begin(), tmp.end());
-    cur_count = this->records.size();
+    auto& records = engine->getEntries();
+    std::sort(records.begin(), records.end(), [](Record a, Record b){ return a["species_name"].compare(b["species_name"]) < 0;});
+    cur_count = records.size();
     insertRows(0, cur_count, QModelIndex());
     endResetModel();
 }
@@ -104,8 +105,6 @@ void RecordModel::onRecordsChange(){
 bool RecordModel::setData(const QModelIndex &index, const QVariant &value, int role){
     int row = index.row();
     int col = index.column();
-    PRINT("row: " << row);
-    PRINT("col: " << col);
     if(role == Qt::EditRole && col != 3){
         std::string field_name;
         switch(col){
@@ -121,9 +120,24 @@ bool RecordModel::setData(const QModelIndex &index, const QVariant &value, int r
             default:
                 return false;
         }
+
+
         auto field_value = value.toString().toStdString();
-        records[row].update(field_value,field_name);
-        emit dataChanged(index, index, {Qt::DisplayRole});
+        auto& records = engine->getEntries();
+        auto& entry = records[row];
+        auto mod_value = entry["modification"];
+        if(field_value != entry[field_name]){
+            entry.update(field_value,field_name);
+            if(mod_value.empty()){
+                mod_value += field_name;
+            }else{
+                mod_value = mod_value + ";" + field_name;
+            }
+            entry.update(mod_value, "modification");
+            emit dataChanged(index, index, {Qt::DisplayRole});
+            emit updateGraph();
+            emit updateComboBox();
+        }
         return true;
     }
     return false;
@@ -136,5 +150,7 @@ Qt::ItemFlags RecordModel::flags(const QModelIndex &index) const
     if (!index.isValid())
         return Qt::ItemIsEnabled;
 
-    return QAbstractItemModel::flags(index) ;
+    return QAbstractItemModel::flags(index) | Qt::ItemIsEditable;
 }
+
+

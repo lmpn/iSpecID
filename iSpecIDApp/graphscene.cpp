@@ -1,22 +1,19 @@
-#include "iSpecIDApp/graphscene.h"
 //#include <math.h>
 #include <QKeyEvent>
 #include <QRandomGenerator>
 #include <QContextMenuEvent>
 #include <QMenu>
 #include <qdebug.h>
-#include "iSpecIDApp/edge.h"
-#include "iSpecIDApp/node.h"
+#include "graphscene.h"
 
 
 
-GraphScene::GraphScene(QWidget *parent, Annotator *_an)
-    :  QGraphicsScene(parent), an(_an), cur_root(nullptr)
+GraphScene::GraphScene(QWidget *parent, IEngine * engine)
+    :  QGraphicsScene(parent), engine(engine), cur_root(nullptr)
 {
     QGraphicsScene *scene = new QGraphicsScene(this);
     scene->setItemIndexMethod(QGraphicsScene::NoIndex);
-    scene->setSceneRect(QRectF(0, 0, 5000, 5000));
-    cur_root = nullptr;
+    scene->setSceneRect(QRectF(0, 0, 0, 0));
 }
 
 
@@ -25,30 +22,26 @@ GraphScene::GraphScene(QWidget *parent, Annotator *_an)
 
 
 void GraphScene::generateItems(){
-
-    clearScene();
-    clean();
-
-    auto data = an->getGroupRecords();
+    auto data = engine->getGroupedEntries();
     for(auto& pair: data){
         auto bins = pair.second.bins;
         Node *node = new Node(QString::fromStdString(pair.first), QString::fromStdString(pair.second.grade));
         this->addItem(node);
         node->hide();
         nodes.insert(node->getName(), node);
-        for (auto bin_name : bins) {
-            if(bin_name == "") continue;
-            auto key = QString::fromStdString(bin_name);
+        for (auto bin_pair : bins) {
+            if(bin_pair.first == "") continue;
+            auto key = QString::fromStdString(bin_pair.first);
             Node *bin = qgraphicsitem_cast<Node *>(nodes[key]);
             if(bin == nullptr){
                 bin = new Node(key, QString());
-                nodes.insert(key,bin);
+                nodes.insert(key,bin/*, bin_pair.second*/);
                 bin->hide();
                 this->addItem(bin);
             }
-            Edge * edge = new Edge(node, bin);
-            connect(edge, SIGNAL(edgeRemoval(Edge *)),
-                    this, SLOT(componentChanged(Edge *)));
+            Edge * edge = new Edge(node, bin, bin_pair.second);
+            connect(edge, SIGNAL(removeEdge(Edge *)),
+                    this, SLOT(onRemoveEdge(Edge *)));
             edges << edge;
             edge->hide();
             this->addItem(edge);
@@ -59,14 +52,16 @@ void GraphScene::generateItems(){
 
 
 void GraphScene::onGraphChange(){
+    clearScene();
+    clean();
     generateItems();
-
+    this->setSceneRect(this->itemsBoundingRect());                          // Re-shrink the scene to it's bounding contents
 }
 void GraphScene::onGraphColorChange(){
-    auto group_records = an->getGroupRecords();
+    auto group_records = engine->getGroupedEntries();
     for(auto item: nodes){
         auto node = qgraphicsitem_cast<Node *>(item);
-        std::string key =node->getName().toStdString();
+        std::string key = node->getName().toStdString();
         Species sp = group_records[key];
         if(sp.grade != "U")
             node->setColor(QString::fromStdString(sp.grade));
@@ -76,7 +71,7 @@ void GraphScene::onGraphColorChange(){
 
 
 
-void GraphScene::componentChanged(Edge *edge){
+void GraphScene::onRemoveEdge(Edge *edge){
     auto src = edge->sourceNode();
     auto dest = edge->destNode();
     auto species = src->getName().toStdString();
@@ -87,15 +82,31 @@ void GraphScene::componentChanged(Edge *edge){
     update();
 
     delete edge;
-    an->filter([species, bin](Record item) {
+    engine->filter([species, bin](Record item) {
         return item["species_name"] == species && item["bin_uri"]==bin;
     });
-    an->clearGroup();
-    an->group();
-    an->calculateGradeResults();
+    engine->group();
+    emit updateComboBox();
     emit updateRecords();
     emit updateResults();
 }
+
+
+void GraphScene::onSaveGraph(QString path){
+    this->clearSelection();                                                  // Selections would also render to the file
+    this->setSceneRect(this->itemsBoundingRect());                          // Re-shrink the scene to it's bounding contents
+    QImage *image = new QImage(this->sceneRect().size().toSize(), QImage::Format_ARGB32);  // Create the image with the exact size of the shrunk scene
+    image->fill(Qt::transparent);                                              // Start all pixels transparent
+
+    QPainter painter(image);
+    this->render(&painter);
+    Node * n = qgraphicsitem_cast<Node*>(cur_root);
+    if(n != nullptr) {
+        qDebug() << path+n->getName()+".png";
+        image->save(path+"/"+n->getName()+".png");
+    }
+}
+
 
 void GraphScene::setComponentVisibleDFS( Node *root, bool visible){
     if(root->isVisible() == visible) return;
@@ -170,15 +181,8 @@ GraphScene::~GraphScene()
     clearScene();
 }
 
-
-
-
-QPointF GraphScene::randomPos(){
-    int mid_w =sceneRect().width()/2;
-    int mid_h =sceneRect().height()/2;
-    int w = -mid_w + QRandomGenerator::global()->bounded(mid_w, sceneRect().width());
-    int h = -mid_h + QRandomGenerator::global()->bounded(mid_h, sceneRect().height());
-    return QPointF(w,h);
+void GraphScene::drawBackground(QPainter *painter, const QRectF &rect)
+{
+    Q_UNUSED(rect);
 }
-
 

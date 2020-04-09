@@ -1,4 +1,4 @@
-#include <annotator.h>
+#include <iengine.h>
 #include <benchmark/benchmark.h>
 
 double kbest(const std::vector<double>& vec){
@@ -13,11 +13,11 @@ static void V6_culicidae(benchmark::State& state) {
     std::string s("culicidae.tsv");
     for (auto _ : state)
     {
-        Annotator an;
+        IEngine an;
         an.load(s);
         an.filter([](Record item) {return item["species_name"].empty();});
         an.group();
-        an.annotationAlgo();
+        an.annotate();
         an.calculateGradeResults();
     };
 }
@@ -26,11 +26,11 @@ static void V6_aves(benchmark::State& state) {
     std::string s("aves.tsv");
     for (auto _ : state)
     {
-        Annotator an;
+        IEngine an;
         an.load(s);
-       an.filter([](Record item) {return item["species_name"].empty();});
+        an.filter([](Record item) {return item["species_name"].empty();});
         an.group();
-        an.annotationAlgo();
+        an.annotate();
         an.calculateGradeResults();
     }
 }
@@ -39,11 +39,11 @@ static void V6_canidae(benchmark::State& state) {
     std::string s("canidae.tsv");
     for (auto _ : state)
     {
-        Annotator an;
+        IEngine an;
         an.load(s);
-       an.filter([](Record item) {return item["species_name"].empty();});
+        an.filter([](Record item) {return item["species_name"].empty();});
         an.group();
-        an.annotationAlgo();
+        an.annotate();
         an.calculateGradeResults();
     }
 }

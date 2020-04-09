@@ -1,4 +1,4 @@
-#include <miner.h>
+#include "miner.h"
 #include <cstring>
 
 

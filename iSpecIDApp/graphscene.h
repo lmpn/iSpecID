@@ -2,7 +2,9 @@
 #define GRAPHVIEWER_H
 #include <QGraphicsView>
 #include <QGraphicsItem>
-#include <annotator.h>
+#include "iengine.h"
+#include "edge.h"
+#include "node.h"
 
 class Node;
 class Edge;
@@ -12,29 +14,28 @@ class GraphScene : public QGraphicsScene
 {
     Q_OBJECT
 public:
-    GraphScene(QWidget *parent, Annotator*_an);
+    GraphScene(QWidget *parent, IEngine *engine);
+    void drawBackground(QPainter *painter, const QRectF &rect) override;
     ~GraphScene();
 
-
-    QPointF randomPos();
-
 public slots:
-    void componentChanged(Edge *);
+    void onRemoveEdge(Edge *);
     void setComponentVisible(QString key = QString::fromStdString(""));
     void onGraphChange();
     void onGraphColorChange();
+    void onSaveGraph(QString);
 
 signals:
     void updateRecords();
     void updateResults();
+    void updateComboBox();
 
 private:
     void clean();
     void clearScene();
     void setComponentVisibleDFS( Node *root, bool visible = true);
     void generateItems();
-    int timerId = 0;
-    Annotator *an;
+    IEngine * engine;
     QMap<QString, QGraphicsItem*> nodes;
     QVector<QGraphicsItem*> edges;
     QGraphicsItem* cur_root;

@@ -4,11 +4,14 @@
 #include <QMainWindow>
 #include <QFileDialog>
 #include <QKeyEvent>
+#include <iostream>
+
 #include "graphscene.h"
 #include "resultsmodel.h"
 #include "recordmodel.h"
-#include <annotator.h>
-#include <iostream>
+#include "annotator.h"
+#include "iengine.h"
+
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -29,6 +32,9 @@ signals:
     void updateRecords();
     void updateResults();
     void showComponent(QString);
+    void updateCurrentResults();
+    void saveGraph(QString);
+
 protected:
     void keyPressEvent(QKeyEvent *event) override;
     #if QT_CONFIG(wheelevent)
@@ -43,14 +49,21 @@ private slots:
     void on_graph_combo_box_activated(const QString &arg1);
     void on_annotateButton_clicked();
     void on_filter_triggered();
+    void onComboBoxChange();
+
+    void on_pushButton_clicked();
+
+    void on_save_triggered();
 
 private:
+    void deleteRecordRows();
     QString createCompleter();
-    void setupRecordTable();
-    void setupResultsTable();
     void updateApp(QString name);
     Ui::MainWindow *ui;
-    Annotator *an;
+    IEngine *engine;
+
     GraphScene *graph;
+    void setupGraphScene(RecordModel *rec_m, ResultsModel *res_m);
+    void enableMenuDataActions(bool enable);
 };
 #endif // MAINWINDOW_H

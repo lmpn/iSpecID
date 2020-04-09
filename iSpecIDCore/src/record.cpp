@@ -1,4 +1,4 @@
-#include <record.h>
+#include "record.h"
 
 
 
@@ -33,49 +33,4 @@ void Record::update(std::string field, std::string name){
 
 void Record::update(std::string field, size_t index){
     fields.at(index) = field;
-}
-
-Record::Iterator Record::begin()
-{
-    return Iterator(this);
-}
-
-Record::Iterator Record::end()
-{
-    return Iterator(nullptr);
-}
-
-
-
-
-Record::Iterator& Record::Iterator::operator=(Record* it)
-{
-    this->it = it->fields.begin();
-    return *this;
-}
-
-// Prefix ++ overload
-Record::Iterator& Record::Iterator::operator++()
-{
-    it++;
-    return *this;
-}
-
-
-
-Record::Iterator& Record::Iterator::operator--()
-{
-    it--;
-    return *this;
-}
-
-
-bool Record::Iterator::operator!=(const Iterator& iterator)
-{
-    return iterator.it != it;
-}
-
-std::string_view Record::Iterator::operator*()
-{
-    return *it;
 }

@@ -7,8 +7,10 @@
 #include <numeric>
 #include <sstream>
 #include <unordered_set>
+#include <unordered_map>
 #include <type_traits>
 #include <iterator>
+#include <memory>
 
 #define PRINT(X) std::cout << X << std::endl;
 #define PRINTV(X) for(auto x : X){ std::cout << x << " "; }  std::cout << std::endl;
@@ -44,28 +46,62 @@ namespace utils{
     };
 
 
-    template<class T>
-    bool hasIntersection(std::unordered_set<T>& o1, std::unordered_set<T>& o2){
+    template<class K, class V>
+    bool hasIntersection(std::unordered_map<K,V>& o1, std::unordered_map<K,V>& o2){
         size_t o1s = o1.size();
         size_t o2s = o2.size();
         if(o1s <= o2s){
             auto o2e = o2.end();
-            for (auto i = o1.begin(); i != o1.end(); i++) {
-                if (o2.find(*i) != o2e) return true;
+            for (auto item : o1){ //= o1.begin(); i != o1.end(); i++) {
+                if(o2.find(item.first) != o2e) return true;
             }
         }else{
             auto o1e = o1.end();
-            for (auto i = o2.begin(); i != o2.end(); i++) {
-                if (o1.find(*i) != o1e) return true;
+            for (auto item : o2){ //= o1.begin(); i != o1.end(); i++) {
+                if(o1.find(item.first) != o1e) return true;
             }
         }
         return false;
     }
 
 
-
+    std::shared_ptr<std::unordered_map<std::string, size_t>>  create_indexed_header(std::vector<std::string> header);
 
     double kbest(const std::vector<double>& vec);
     std::vector<std::string> split(const std::string& str, const std::string& delims = "\t");
+
+
+
+    template<class Key, class Value>
+    using Aggregation  = std::unordered_map<Key, Value>;
+
+    template<class Item>
+    using Table = std::vector<Item>;
+
+
+    template<class Item, class Predicate>
+    Table<Item> filter(Table<Item> tbl, Predicate pred, Table<Item>& filtered = {}){
+        Table<Item> accept;
+        for(auto& item : tbl){
+            if(!pred(item)){
+                accept.push_back(item);
+            }else{
+                filtered.push_back(item);
+            }
+        }
+        return accept;
+    }
+
+    template<class Item, class Key, class Value>
+    Aggregation<Key, Value> group(Table<Item>& tbl, Key get_key(Item), void join_op(Value&, Item)){
+        Aggregation<Key, Value> result;
+        for (auto& item : tbl)
+        {
+            Key item_key = get_key(item);
+            Value& current_value = result[item_key];
+            join_op(current_value, item);
+        }
+        return result;
+    }
 }
 #endif

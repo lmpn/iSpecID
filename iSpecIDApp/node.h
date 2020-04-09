@@ -54,6 +54,9 @@
 #include <QGraphicsItem>
 #include <QVector>
 #include <QFont>
+#include "edge.h"
+#include "graphscene.h"
+#include "utils.h"
 
 class Edge;
 class GraphScene;
@@ -78,6 +81,7 @@ public:
     void calculateForces();
     bool advancePosition();
     void setColor(QString grade);
+    QString getName() { return name;}
 
 
 protected:

@@ -1,13 +1,13 @@
 #ifndef RESULTSMODEL_H
 #define RESULTSMODEL_H
 #include <QAbstractTableModel>
-#include <annotator.h>
+#include "iengine.h"
 
 class ResultsModel : public QAbstractTableModel
 {
     Q_OBJECT
 public:
-    ResultsModel(QObject *parent, Annotator *an);
+    ResultsModel(QObject *parent, IEngine *engine);
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
@@ -16,7 +16,7 @@ public:
 public slots:
     void onResultsChange();
 private:
-    Annotator *an;
+    IEngine *engine;
     std::vector<int> results;
     float perc;
 };

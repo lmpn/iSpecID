@@ -1,20 +1,15 @@
-#include "iSpecIDApp/resultsmodel.h"
+#include "resultsmodel.h"
 #include <iostream>
 #include <qdebug.h>
 
-ResultsModel::ResultsModel(QObject *parent, Annotator *an)
-    :QAbstractTableModel(parent)
+ResultsModel::ResultsModel(QObject *parent, IEngine *engine)
+    :QAbstractTableModel(parent), engine(engine)
 {
-    this->an = an;
-    this->an->calculateGradeResults();
-    this->results = this->an->getGradeResults();
-    this->perc = this->an->size() == 0 ? 0 : 1/this->an->size();
-
 }
 
 int ResultsModel::rowCount(const QModelIndex & /*parent*/) const
 {
-   return results.size();
+   return 6;
 }
 
 int ResultsModel::columnCount(const QModelIndex & /*parent*/) const
@@ -24,11 +19,10 @@ int ResultsModel::columnCount(const QModelIndex & /*parent*/) const
 
 
 void ResultsModel::onResultsChange(){
-    this->an->calculateGradeResults();
-    this->results = an->getGradeResults();
-    this->perc = this->an->size() == 0 ? 0 : 1.f/this->an->size();
-    auto top_left = this->index(0,1,QModelIndex());
-    auto bottom_right = this->index(rowCount(),columnCount(),QModelIndex());
+    results = engine->calculateGradeResults();
+    perc = 1.f/engine->getEntries().size();
+    auto top_left = index(0,1,QModelIndex());
+    auto bottom_right = index(rowCount(),columnCount(),QModelIndex());
     emit dataChanged(top_left, bottom_right, {Qt::EditRole});
 }
 
@@ -44,7 +38,7 @@ QVariant ResultsModel::headerData(int section, Qt::Orientation orientation, int 
             case 1:
                 return QString("Count");
             case 2:
-                return QString("Weight");
+                return QString("Frequency (%)");
             default:
                 return QVariant();
 
@@ -55,7 +49,6 @@ QVariant ResultsModel::headerData(int section, Qt::Orientation orientation, int 
     return QVariant();
 }
 
-//NIKE M2K tEKNO DESERT SAND/PHANTOM
 
 QVariant ResultsModel::data(const QModelIndex &index, int role) const
 {
@@ -71,29 +64,15 @@ QVariant ResultsModel::data(const QModelIndex &index, int role) const
     }else if(col == 1 && role == Qt::DisplayRole){
         return results.at(row);
     }else if(col == 2 && role == Qt::DisplayRole){
-        return QString::number(results.at(row)*perc*100, 'G', 4);
+        return QString::number(results.at(row)*perc*100, 'G', 2);
     }
     return QVariant();
 }
 
 
 bool ResultsModel::setData(const QModelIndex &index, const QVariant &value, int role){
-    int row = index.row();
-    int col = index.column();
-    if(role == Qt::EditRole){
-        if(col == 1){
-            bool valid;
-            auto count = value.toInt(&valid);
-            if(valid){
-                results.at(row) = count;
-                emit dataChanged(index, index, {role});
-            }
-            return valid;
-        }
-        else if (col == 2){
-            emit dataChanged(index, index, {role});
-            return true;
-        }
-    }
+    Q_UNUSED(index);
+    Q_UNUSED(value);
+    Q_UNUSED(role);
     return false;
 }

@@ -1,4 +1,4 @@
-#include <utils.h>
+#include "utils.h"
 namespace utils{
     double kbest(const std::vector<double>& vec){
         int best = vec.size() * 0.625;
@@ -21,4 +21,14 @@ namespace utils{
 
         return output;
     }
+
+    std::shared_ptr<std::unordered_map<std::string, size_t>>
+    create_indexed_header(std::vector<std::string> header){
+        std::unordered_map<std::string, size_t> ind;
+        size_t idx = 0;
+        for(auto& col : header){
+            ind.insert(std::make_pair<>(col,idx++));
+        }
+        return std::make_shared<std::unordered_map<std::string, size_t>>(std::move(ind));
+    };
 }

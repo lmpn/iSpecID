@@ -48,11 +48,7 @@
 **
 ****************************************************************************/
 
-#include "iSpecIDApp/edge.h"
-#include "iSpecIDApp/node.h"
-#include "iSpecIDApp/graphscene.h"
-#include <utils.h>
-
+#include "node.h"
 #include <QGraphicsScene>
 #include <QGraphicsSceneMouseEvent>
 #include <QPainter>
@@ -117,9 +113,12 @@ void Node::setColor(QString grade){
     else if( grade == "E1" || grade == "E2"){
         mc = QColor(Qt::red);
         dmc = QColor(Qt::darkRed);
-    }else{
+    }else if( grade == "U"){
         mc = QColor(Qt::blue);
         dmc = QColor(Qt::darkBlue);
+    }else{
+        mc = QColor(Qt::gray);
+        dmc = QColor(Qt::black);
     }
     this->grade = grade;
     update();
@@ -129,7 +128,7 @@ void Node::setColor(QString grade){
 QRectF Node::boundingRect() const
 {
     qreal adjust = 2;
-    QRectF rect1( -10 - adjust, -10 - adjust, 23 + adjust, 23 + adjust);
+    QRectF nodeRect( -10 - adjust, -10 - adjust, 23 + adjust, 23 + adjust);
     QString text;
     if(grade.isEmpty()){
          text = this->name;
@@ -137,10 +136,9 @@ QRectF Node::boundingRect() const
          text = this->name + QString::fromStdString(";") + this->grade;
     }
     QFontMetricsF fontMetrics(f);
-    QRectF rect2 = fontMetrics.boundingRect(text).translated(20,20);
-    rect2.setWidth(rect2.width()*2);
-    rect2.setHeight(rect2.height()*2);
-    return rect1.united(rect2);
+    QRectF textRect = fontMetrics.boundingRect(text);
+    textRect.setWidth(textRect.width()*1.2);
+    return nodeRect.united(textRect);
 }
 
 
@@ -150,7 +148,16 @@ QPainterPath Node::shape() const
 {
     QPainterPath path;
     path.addEllipse(-10, -10, 20, 20);
-
+    QString text;
+    if(grade.isEmpty()){
+         text = this->name;
+    }else{
+         text = this->name + QString::fromStdString(";") + this->grade;
+    }
+    QFontMetricsF fontMetrics(f);
+    QRectF textRect = fontMetrics.boundingRect(text);
+    textRect.setWidth(textRect.width()*1.2);
+    path.addRect(textRect);
     return path;
 }
 
@@ -163,10 +170,6 @@ void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     painter->drawEllipse(-7, -7, 20, 20);
 
 
-    // d 237, 151, 12
-    // c 251, 255, 0
-    // b 175, 255, 3
-    // a 175, 255, 3
     QRadialGradient gradient(-3, -3, 10);
     if (option->state & QStyle::State_Sunken) {
         gradient.setCenter(3, 3);
@@ -181,7 +184,6 @@ void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
     painter->setPen(QPen(Qt::black, 0));
     painter->drawEllipse(-10, -10, 20, 20);
-    // Text
 
     QFontMetricsF fontMetrics(f);
     QString text;
@@ -190,11 +192,12 @@ void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     }else{
          text = this->name + QString::fromStdString(";") + this->grade;
     }
-    QRectF rect2 = fontMetrics.boundingRect(text).translated(12,12);
+
+    painter->setBrush(Qt::white);
+    QRectF textRect = fontMetrics.boundingRect(text).translated(12,12);
     painter->setPen(Qt::black);
-    rect2.setWidth(rect2.width()*2);
-    rect2.setHeight(rect2.height()*2);
-    painter->drawText(rect2, text);
+    textRect.setWidth(textRect.width()*1.2);
+    painter->drawText(textRect, text);
 }
 
 

@@ -12,7 +12,6 @@
 #include <memory>
 #include <condition_variable>
 #include <fstream>
-#include <boost/algorithm/string.hpp>
 
 template<class T>
 class Reader{

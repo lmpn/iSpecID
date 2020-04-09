@@ -56,6 +56,9 @@
 #include <QMenu>
 #include <QPen>
 #include <QGraphicsSceneHoverEvent>
+#include <QFont>
+#include "edge.h"
+#include "node.h"
 
 class Node;
 
@@ -64,7 +67,7 @@ class Edge : public QObject, public QGraphicsItem
     Q_OBJECT
     Q_INTERFACES(QGraphicsItem)
 public:
-    Edge(Node *sourceNode, Node *destNode);
+    Edge(Node *sourceNode, Node *destNode, int count);
 
     Node *sourceNode() const;
     Node *destNode() const;
@@ -74,10 +77,12 @@ public:
     enum { Type = UserType + 2 };
     int type() const override { return Type; }
     void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
+//    QPainterPath shape() const override;
+
     void remove();
 
 signals:
-    void edgeRemoval(Edge* edge);
+    void removeEdge(Edge* edge);
 
 protected:
     void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
@@ -87,12 +92,14 @@ protected:
 
 private:
     Node *source, *dest;
-
+    int count;
     bool paintItem;
     QPointF sourcePoint;
+    QPointF midPoint;
     QPointF destPoint;
     qreal arrowSize = 10;
     QPen m_pen;
+    QFont f;
 };
 //! [0]
 

@@ -2,7 +2,7 @@ QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-CONFIG += c++11
+CONFIG += c++17
 
 # The following define makes your compiler emit warnings if you use
 # any Qt feature that has been marked deprecated (the exact warnings
@@ -26,16 +26,18 @@ SOURCES += \
         iSpecIDApp/recordmodel.cpp \
         iSpecIDCore/src/annotator.cpp \
         iSpecIDCore/src/record.cpp \
+        iSpecIDCore/src/iengine.cpp \
         iSpecIDCore/src/miner.cpp \
         iSpecIDCore/src/utils.cpp
 
 HEADERS += \
+        iSpecIDCore/include/iengine.h \
         iSpecIDCore/include/annotator.h \
-        iSpecIDCore/include/reader.h \
         iSpecIDCore/include/species.h \
         iSpecIDCore/include/miner.h \
         iSpecIDCore/include/record.h \
         iSpecIDCore/include/utils.h \
+        iSpecIDCore/include/csv.hpp \
         iSpecIDApp/edge.h \
         iSpecIDApp/graphscene.h \
         iSpecIDApp/node.h \
@@ -48,10 +50,10 @@ FORMS += \
     iSpecIDApp/mainwindow.ui \
     iSpecIDApp/filterform.ui
 
-INCLUDEPATH += iSpecIDCore/include
-INCLUDEPATH += "/Users/lmpn/Test/third_party/curl/include"
-INCLUDEPATH += "/Users/lmpn/Test/third_party/boost/include"
-LIBS += "-L/Users/lmpn/Test/third_party/curl/lib" -lcurl
+INCLUDEPATH += "iSpecIDCore/include"
+INCLUDEPATH += "third_party/curl/include"
+INCLUDEPATH += "third_party/boost/include"
+LIBS += "-L/Users/lmpn/Documents/dissertation/playground/iSpecID/third_party/curl/lib" -lcurl
 
 
 

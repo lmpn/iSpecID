@@ -3,14 +3,14 @@
 #include <string>
 #include <vector>
 #include <unordered_set>
-#include <record.h>
-#include <utils.h>
+#include "record.h"
+#include "utils.h"
 
 class Species{
     public:
     std::string species_name;
     std::vector<Record> specimens;
-    std::unordered_set<std::string> bins;
+    std::unordered_map<std::string, int> bins;
     std::unordered_set<std::string> institution;
     std::string grade;
 
@@ -18,17 +18,17 @@ class Species{
 
     Species(
         std::string_view _species_name,
-        std::unordered_set<std::string> _bins = {},
+        std::unordered_map<std::string, int> _bins = {},
         std::unordered_set<std::string> _institution = {},
         std::string _grade = "U") :
         species_name(_species_name), bins(_bins), institution(_institution), grade(_grade){};
 
     void push_back(Record specimen){
         specimens.push_back(specimen);
-        auto bin = specimen["bin_uri"];
-        bins.insert(bin);
+        bins[specimen["bin_uri"]] += 1;
         institution.insert( specimen["institution_storing"]);
         species_name = specimen["species_name"];
+        grade = specimen["grade"];
     }
 
     friend std::ostream & operator << (std::ostream &strm, const Species &obj) {
@@ -36,7 +36,7 @@ class Species{
             "utils::Grade: " << obj.grade << std::endl<<
             "Bins: {" << std::endl;
         for(auto b : obj.bins)
-            strm << "\t" << b << std::endl;
+            strm << "\t" << b.first << " count: " << b.second << std::endl;
         strm << "}" << std::endl;
         return strm;
     }
