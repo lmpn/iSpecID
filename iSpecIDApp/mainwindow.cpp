@@ -167,8 +167,14 @@ void MainWindow::on_annotateButton_clicked()
 
 void MainWindow::on_filter_triggered()
 {
-
-    auto ff = new FilterDialog();
+    QStringList headers;
+    auto model = ui->record_table->model();
+    auto count = model->columnCount();
+    for(int i = 0; i < count; i++)
+    {
+        headers << model->headerData(i, Qt::Horizontal).toString();
+    }
+    auto ff = new FilterDialog(headers);
     ff->exec();
     /*
     std::vector<std::function<bool(Record)>> preds;

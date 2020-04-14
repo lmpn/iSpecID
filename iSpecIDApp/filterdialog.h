@@ -10,9 +10,10 @@ QT_END_NAMESPACE
 class FilterDialog : public QDialog
 {
     Q_OBJECT
+    QStringList header;
 
 public:
-    FilterDialog(QWidget *parent = nullptr);
+    FilterDialog(QStringList header,QWidget *parent = nullptr);
     ~FilterDialog();
 
 private slots:

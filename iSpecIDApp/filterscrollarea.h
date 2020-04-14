@@ -51,13 +51,14 @@ public:
     }
 
 public slots:
-    void addWidget(){
+    void addWidget(QStringList header){
         auto count = vlayout->rowCount();
         if(count > 1){
             vlayout->addWidget(new FilterOp(), count, 1);
             count++;
         }
         auto filterComboBox = new QComboBox();
+        filterComboBox->addItems(header);
         auto filterCondition = new QTextEdit();
         filterCondition->setMaximumSize(QSize(16777215, 25));
         filterCondition->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);

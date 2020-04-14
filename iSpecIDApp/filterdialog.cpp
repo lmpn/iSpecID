@@ -1,14 +1,15 @@
 #include "filterdialog.h"
 #include "ui_filterdialog.h"
 
-FilterDialog::FilterDialog(QWidget *parent)
+FilterDialog::FilterDialog(QStringList header, QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::FilterDialog)
 {
     ui->setupUi(this);
+    this->header = header;
     ui->horizontalLayout->setAlignment(Qt::AlignHCenter);
     connect(ui->addBtn, &QPushButton::clicked,
-            ui->fsarea,[this](){ui->fsarea->addWidget();});
+            ui->fsarea,[this](){ui->fsarea->addWidget(this->header);});
 }
 
 
