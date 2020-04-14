@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <unordered_set>
+#include <unordered_map>
 #include "record.h"
 #include "utils.h"
 
@@ -17,11 +18,11 @@ class Species{
     Species():grade("U"){}
 
     Species(
-        std::string_view _species_name,
-        std::unordered_map<std::string, int> _bins = {},
-        std::unordered_set<std::string> _institution = {},
+        std::string species_name,
+        std::unordered_map<std::string, int> _bins,
+        std::unordered_set<std::string> _institution,
         std::string _grade = "U") :
-        species_name(_species_name), bins(_bins), institution(_institution), grade(_grade){};
+        species_name(species_name), bins(_bins), institution(_institution), grade(_grade){};
 
     void push_back(Record specimen){
         specimens.push_back(specimen);

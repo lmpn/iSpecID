@@ -96,7 +96,7 @@ void GraphScene::onSaveGraph(QString path){
     this->clearSelection();                                                  // Selections would also render to the file
     this->setSceneRect(this->itemsBoundingRect());                          // Re-shrink the scene to it's bounding contents
     QImage *image = new QImage(this->sceneRect().size().toSize(), QImage::Format_ARGB32);  // Create the image with the exact size of the shrunk scene
-    image->fill(Qt::transparent);                                              // Start all pixels transparent
+    image->fill(Qt::white);                                              // Start all pixels transparent
 
     QPainter painter(image);
     this->render(&painter);
@@ -184,5 +184,6 @@ GraphScene::~GraphScene()
 void GraphScene::drawBackground(QPainter *painter, const QRectF &rect)
 {
     Q_UNUSED(rect);
+    Q_UNUSED(painter);
 }
 

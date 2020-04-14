@@ -77,14 +77,14 @@ std::unordered_map<std::string,int> IEngine::countFilterBadEntries(){
             species++;
             filteredEntries.push_back(item);
         }
-        else if(item["bin_uri"].empty()){
+        /*else if(item["bin_uri"].empty()){
             bin++;
             filteredEntries.push_back(item);
         }
         else if(item["institution_storing"].empty()){
             institution++;
             filteredEntries.push_back(item);
-        }else{
+        }*/else{
             tmp.push_back(item);
         }
     }
@@ -95,15 +95,15 @@ std::unordered_map<std::string,int> IEngine::countFilterBadEntries(){
 std::vector<int> IEngine::calculateGradeResults(){
     auto indexE1 = 4;
     std::vector<int> counts(indexE1+2,0);
-    for(auto& item : groupedEntries){
-        auto grade = item.second.grade;
+    for(auto& item : entries){
+        auto grade = item["grade"];
         if( grade == "E1" || grade == "E2")
         {
-            counts[indexE1] += item.second.specimens.size();
+            counts[indexE1] ++;
         }
         else{
             auto index = grade[0] - 'A';
-            counts[index] += item.second.specimens.size();
+            counts[index]++;
         }
     }
     counts.at(5) = entries.size();

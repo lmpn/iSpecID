@@ -2,7 +2,12 @@ QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-CONFIG += c++17
+win32 {
+        CONFIG += c++11
+}
+macx {
+        CONFIG += c++17 app_bundle
+}
 
 # The following define makes your compiler emit warnings if you use
 # any Qt feature that has been marked deprecated (the exact warnings
@@ -21,14 +26,15 @@ SOURCES += \
         iSpecIDApp/graphscene.cpp \
         iSpecIDApp/node.cpp \
         iSpecIDApp/resultsmodel.cpp \
-        iSpecIDApp/filterform.cpp \
         iSpecIDApp/mainwindow.cpp \
         iSpecIDApp/recordmodel.cpp \
         iSpecIDCore/src/annotator.cpp \
         iSpecIDCore/src/record.cpp \
         iSpecIDCore/src/iengine.cpp \
         iSpecIDCore/src/miner.cpp \
-        iSpecIDCore/src/utils.cpp
+        iSpecIDCore/src/utils.cpp \
+        iSpecIDApp/filterdialog.cpp
+
 
 HEADERS += \
         iSpecIDCore/include/iengine.h \
@@ -42,18 +48,21 @@ HEADERS += \
         iSpecIDApp/graphscene.h \
         iSpecIDApp/node.h \
         iSpecIDApp/resultsmodel.h \
-        iSpecIDApp/filterform.h \
         iSpecIDApp/mainwindow.h \
-        iSpecIDApp/recordmodel.h
+        iSpecIDApp/recordmodel.h \
+        iSpecIDApp/filterdialog.h \
+        iSpecIDApp/filterOp.h \
+        iSpecIDApp/filterscrollarea.h
 
 FORMS += \
     iSpecIDApp/mainwindow.ui \
-    iSpecIDApp/filterform.ui
+    iSpecIDApp/filterdialog.ui
 
 INCLUDEPATH += "iSpecIDCore/include"
-INCLUDEPATH += "third_party/curl/include"
-INCLUDEPATH += "third_party/boost/include"
-LIBS += "-L/Users/lmpn/Documents/dissertation/playground/iSpecID/third_party/curl/lib" -lcurl
+INCLUDEPATH += "/usr/local/Cellar/boost/1.72.0/include/"
+INCLUDEPATH += "/usr/local/include"
+
+LIBS += "-lcurl"
 
 
 

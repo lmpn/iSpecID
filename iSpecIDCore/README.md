@@ -16,9 +16,13 @@ $ cmake --build build --config Release --target all -- -j 6
 ```
 If your main compiler isn't GCC 7.5.0 use the following command to configure:
 ```bash
-$ cmake -DCMAKE_BUILD_TYPE:STRING=Release
-	-DCMAKE_C_COMPILER:FILEPATH=/usr/local/bin/gcc-7
-	-DCMAKE_CXX_COMPILER:FILEPATH=/usr/local/bin/g++-7
-	-H. -Bbuild -G "Unix Makefiles"
-$ cmake --build build --config Release --target all -- -j 6
+$ cmake --no-warn-unused-cli 
+	-DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE 
+	-DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo 
+	-DCMAKE_C_COMPILER:FILEPATH=<C_compiler_path>
+	-DCMAKE_CXX_COMPILER:FILEPATH=<CXX_compiler_path>
+	-H<cmake_lists_dir>
+	-B<build_dir>
+	-G "Unix Makefiles"
+$  cmake --build . --config RelWithDebInfo --target all -- -j 
 ```

@@ -37,9 +37,10 @@ signals:
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
+    /*
     #if QT_CONFIG(wheelevent)
         void wheelEvent(QWheelEvent *event) override;
-    #endif
+    #endif*/
     void scaleView(qreal scaleFactor);
 
 private slots:

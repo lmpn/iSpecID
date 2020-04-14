@@ -4,6 +4,8 @@
 #include <tuple>
 #include <curl/curl.h>
 #include "utils.h"
+
+
 class Miner{
     public:
     Miner():curl_handle(curl_easy_init()){

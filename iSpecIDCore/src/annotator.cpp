@@ -1,4 +1,6 @@
 #include "annotator.h"
+//#include <libxml2/libxml/tree.h>
+//#include <libxml2/libxml/HTMLparser.h>
 
 
 namespace annotator {
@@ -44,6 +46,8 @@ bool speciesPerBIN(std::unordered_map<std::string, Species>& data, std::string b
     return true;
 }
 
+
+
 BoldData parseBoldData(std::string bin){
     BoldData bd;
     bd.distance = std::numeric_limits<int>::max();
@@ -62,7 +66,7 @@ BoldData parseBoldData(std::string bin){
         bd.distance = d;
         bd.neighbour = nbin;
     }catch (const std::exception& e) {
-        PRINT("Error fetching URL: " << url <<std::endl << "Reason: "<< e.what());
+        //PRINT("Error fetching URL: " << url <<std::endl << "Reason: "<< e.what());
     }
     return bd;
 }
@@ -77,7 +81,6 @@ std::string findBinsNeighbour(std::unordered_map<std::string, Species>& data, st
     ctr = 0;
     for(auto& pair : data){
         auto cur_bins = pair.second.bins;
-
         if(utils::hasIntersection(bins,cur_bins)){
             ctr+=1;
             if(ctr>1) return grade;
@@ -85,18 +88,19 @@ std::string findBinsNeighbour(std::unordered_map<std::string, Species>& data, st
     }
 
 
-    count = bins.size();
-    auto it = bins.begin();
+
+    std::vector<std::string> bin_names;
+    for(auto& item : bins) bin_names.push_back(item.first);
+    count = bin_names.size();
+
     ugraph graph(count);
     for(size_t  i = 0; i < count; i++){
-        auto bold = parseBoldData((*it).first);
-        auto item = bins.find(bold.neighbour);
-        size_t ind = std::distance(item, bins.end());
+        auto bold = parseBoldData(bin_names[i]);
+        auto item = std::find(bin_names.begin(), bin_names.end(), bold.neighbour);
+        size_t ind = std::distance(bin_names.begin(),item );
         if( ind >=0 && bold.distance <=2) {
             boost::add_edge(i, ind, bold.distance, graph);
-            boost::add_edge(ind, i, bold.distance, graph);
         }
-        it++;
     }
     std::vector<int> component (count);
     num_components = boost::connected_components (graph, &component[0]);

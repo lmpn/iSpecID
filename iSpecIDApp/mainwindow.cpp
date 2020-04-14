@@ -2,11 +2,11 @@
 #include "./ui_mainwindow.h"
 #include <QCompleter>
 #include <string>
-#include "filterform.h"
 #include <functional>
 #include <qdebug.h>
 #include <QGraphicsView>
 #include <QMessageBox>
+#include "filterdialog.h"
 
 
 void MainWindow::setupGraphScene(RecordModel *record_model, ResultsModel *results_model)
@@ -77,9 +77,6 @@ MainWindow::MainWindow(QWidget *parent)
     ResultsModel *current_results_model = new ResultsModel(ui->current_results_table,engine);
     ui->current_results_table->setModel(current_results_model);
     ui->current_results_frame->hide();
-    //ui->current_results_table->setColumnWidth(0,ui->current_results_frame->width()/3);
-    //ui->current_results_table->setColumnWidth(1,ui->current_results_frame->width()/3);
-    //ui->current_results_table->setColumnWidth(2,ui->current_results_frame->width()/3);
     connect(this, SIGNAL(updateCurrentResults()),
             current_results_model,SLOT(onResultsChange()));
 
@@ -170,10 +167,11 @@ void MainWindow::on_annotateButton_clicked()
 
 void MainWindow::on_filter_triggered()
 {
+
+    auto ff = new FilterDialog();
+    ff->exec();
     /*
     std::vector<std::function<bool(Record)>> preds;
-    auto ff = new FilterForm();
-    ff->exec();
     if(ff->isAccepted()){
         auto species = ff->getSpecies().toStdString();
         auto bin = ff->getBin().toStdString();
@@ -256,13 +254,14 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     }
 }
 
+/*
 #if QT_CONFIG(wheelevent)
 void MainWindow::wheelEvent(QWheelEvent *event)
 {
     scaleView(pow(2., -event->angleDelta().y() / 240.0));
 }
 #endif
-
+*/
 void MainWindow::scaleView(qreal scaleFactor)
 {
     qreal factor = this->ui->graph_viewer->transform().scale(scaleFactor, scaleFactor).mapRect(QRectF(0, 0, 1, 1)).width();

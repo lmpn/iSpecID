@@ -52,7 +52,7 @@
 #include <qdebug.h>
 #include <iostream>
 #include <QPainter>
-#include <QtMath>
+//#include <QtMath>
 #include <QFontDatabase>
 
 
@@ -141,7 +141,6 @@ void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *)
     painter->setPen(m_pen);
     if (!source || !dest)
         return;
-    painter->drawRect(this->boundingRect());
 
     QLineF line(sourcePoint, destPoint);
     if (qFuzzyCompare(line.length(), qreal(0.)))

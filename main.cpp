@@ -9,5 +9,6 @@ int main(int argc, char **argv)
     engine.filter([](Record item) {return item["species_name"].empty();});
     engine.group();
     engine.annotate();
+    engine.gradeRecords();
     PRINTV(engine.calculateGradeResults());
 }
