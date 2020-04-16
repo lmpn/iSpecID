@@ -2,6 +2,8 @@
 #define FILTERDIALOG_H
 
 #include <QDialog>
+#include "iSpecIDApp/filterscrollarea.h"
+#include "ui_filterdialog.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class FilterDialog; }
@@ -15,13 +17,28 @@ class FilterDialog : public QDialog
 public:
     FilterDialog(QStringList header,QWidget *parent = nullptr);
     ~FilterDialog();
+    template<class T>
+    using Func = std::function<bool(T)>;
+    template<class T>
+    Func<T> getFilterFunc(){
+        bool keep = ui->keepCheckBox->isChecked();
+        auto func = fs->getFilterFunc<T>();
+        if(keep){
+            func = [func](T item) {return !func(item);};
+        }
+        return func;
+    }
+
+
+    bool accepted(){return ok;}
 
 private slots:
     void on_buttonBox_rejected();
-
     void on_buttonBox_accepted();
 
 private:
+    bool ok = false;
+    FilterScrollArea *fs;
     Ui::FilterDialog *ui;
 };
 #endif // FILTERDIALOG_H

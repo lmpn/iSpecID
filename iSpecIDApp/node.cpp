@@ -133,7 +133,7 @@ QRectF Node::boundingRect() const
     if(grade.isEmpty()){
          text = this->name;
     }else{
-         text = this->name + QString::fromStdString(";") + this->grade;
+         text = this->name + "(" + this->grade + ")";
     }
     QFontMetricsF fontMetrics(f);
     QRectF textRect = fontMetrics.boundingRect(text);

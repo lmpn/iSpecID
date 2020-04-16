@@ -28,8 +28,13 @@ public:
     void gradeRecords();
 
     inline std::vector<Record>& getEntries() { return entries;}
+    inline std::vector<Record> getEntriesCopy() { return entries;}
+    inline std::vector<Record> getFilteredEntriesCopy() { return filteredEntries;}
+    inline void setEntries(std::vector<Record> entries) { this->entries = entries ;}
+    inline void setFilteredEntries(std::vector<Record> filteredEntries) { this->filteredEntries = filteredEntries ;}
     inline std::vector<Record>& getFilteredEntries() { return filteredEntries;}
     inline std::unordered_map<std::string, Species> getGroupedEntries() {return groupedEntries;}
+    inline int size() {return entries.size();};
 
 
 private:

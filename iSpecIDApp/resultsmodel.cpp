@@ -62,8 +62,10 @@ QVariant ResultsModel::data(const QModelIndex &index, int role) const
         return QString("%1")
                    .arg(grade);
     }else if(col == 1 && role == Qt::DisplayRole){
+        if(results.size() == 0) return 0;
         return results.at(row);
     }else if(col == 2 && role == Qt::DisplayRole){
+        if(results.size() == 0) return 0;
         return QString::number(results.at(row)*perc*100, 'G', 2);
     }
     return QVariant();

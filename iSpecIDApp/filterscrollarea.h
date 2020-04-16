@@ -34,14 +34,14 @@ public:
 
         QComboBox *qbl = static_cast<QComboBox*>(vlayout->itemAtPosition(1,0)->widget());
         QTextEdit *tel = static_cast<QTextEdit*>(vlayout->itemAtPosition(1,1)->widget());
-        auto col = qbl->currentText().toStdString();
+        auto col = convertToColumnName(qbl->currentText().toStdString());
         auto val = tel->toPlainText().toStdString();
         Func<T> fn = [col, val](T item){ return item[col] == val;};
 
         for (int i = 3; i < count; i+=2) {
             QComboBox *qbr = static_cast<QComboBox*>(vlayout->itemAtPosition(i,0)->widget());
             QTextEdit *ter = static_cast<QTextEdit*>(vlayout->itemAtPosition(i,1)->widget());
-            auto col = qbr->currentText().toStdString();
+            auto col = convertToColumnName(qbr->currentText().toStdString());
             auto val = ter->toPlainText().toStdString();
             Func<T> fn_i = [col, val](T item){ return item[col] == val;};
             FilterOp * fo = static_cast<FilterOp*>(vlayout->itemAtPosition(i-1,1)->widget());
@@ -51,6 +51,7 @@ public:
     }
 
 public slots:
+
     void addWidget(QStringList header){
         auto count = vlayout->rowCount();
         if(count > 1){
@@ -66,7 +67,22 @@ public slots:
         vlayout->addWidget(filterComboBox, count, 0);
         vlayout->addWidget(filterCondition, count, 1);
     }
-
+private:
+    std::string convertToColumnName(std::string name){
+        if(name == "Species"){
+            return "species_name";
+        }
+        if(name == "Bin"){
+            return "bin_uri";
+        }
+        if(name == "Institution"){
+            return "institution_storing";
+        }
+        if(name == "Grade"){
+            return "grade";
+        }
+        return "";
+    }
 };
 
 #endif // FILTERSCROLLAREA_H

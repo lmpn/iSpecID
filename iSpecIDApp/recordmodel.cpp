@@ -2,6 +2,7 @@
 #include <QDataStream>
 #include "csv.hpp"
 #include "recordmodel.h"
+#include <qdebug.h>
 
 RecordModel::RecordModel(QObject *parent,IEngine *engine)
     : QAbstractTableModel(parent), cur_count(0), engine(engine)
@@ -127,6 +128,7 @@ bool RecordModel::setData(const QModelIndex &index, const QVariant &value, int r
         auto& entry = records[row];
         auto mod_value = entry["modification"];
         if(field_value != entry[field_name]){
+            emit actionPerformed();
             entry.update(field_value,field_name);
             if(mod_value.empty()){
                 mod_value += field_name;
@@ -134,6 +136,7 @@ bool RecordModel::setData(const QModelIndex &index, const QVariant &value, int r
                 mod_value = mod_value + ";" + field_name;
             }
             entry.update(mod_value, "modification");
+            engine->group();
             emit dataChanged(index, index, {Qt::DisplayRole});
             emit updateGraph();
             emit updateComboBox();

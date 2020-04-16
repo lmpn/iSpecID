@@ -29,6 +29,7 @@ signals:
     void updateRecords();
     void updateResults();
     void updateComboBox();
+    void actionPerformed();
 
 private:
     void clean();

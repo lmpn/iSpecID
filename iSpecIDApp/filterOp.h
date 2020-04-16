@@ -37,12 +37,11 @@ public:
 
     template<class T>
     Func<T> operate(Func<T> left, Func<T> right){
-        auto op = andRadioBtn->isChecked() ? std::logical_and<Func<T>>() : std::logical_or<Func<T>>();
-        Func<T> fn = [left, right, op](T item){
-            return op(left(item), right(item));
-        };
-        return fn;
+        if(andRadioBtn->isChecked()){
+            return [left, right](T item){return left(item) && right(item);};
+        }else{
+            return [left, right](T item){return left(item) || right(item);};
+        }
     }
-
 };
 #endif // FILTEROP_H

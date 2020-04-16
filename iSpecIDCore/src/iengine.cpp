@@ -77,14 +77,14 @@ std::unordered_map<std::string,int> IEngine::countFilterBadEntries(){
             species++;
             filteredEntries.push_back(item);
         }
-        /*else if(item["bin_uri"].empty()){
+        else if(item["bin_uri"].empty()){
             bin++;
             filteredEntries.push_back(item);
         }
         else if(item["institution_storing"].empty()){
             institution++;
             filteredEntries.push_back(item);
-        }*/else{
+        }else{
             tmp.push_back(item);
         }
     }

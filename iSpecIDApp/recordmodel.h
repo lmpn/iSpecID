@@ -24,6 +24,7 @@ public:
 public slots:
     void onRecordsChange();
 signals:
+    void actionPerformed();
     void updateGraph();
     void updateResults();
     void updateComboBox();

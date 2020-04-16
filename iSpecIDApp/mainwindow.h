@@ -17,7 +17,7 @@ QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
 
-
+class QTableView;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -51,18 +51,21 @@ private slots:
     void on_annotateButton_clicked();
     void on_filter_triggered();
     void onComboBoxChange();
-
-    void on_pushButton_clicked();
-
+    void onActionPerformed();
+    void on_saveGraphButton_clicked();
     void on_save_triggered();
 
+    void on_undoButton_clicked();
+
 private:
+    void gradingTableAdjust(QTableView *tableView);
     void deleteRecordRows();
     QString createCompleter();
     void updateApp(QString name);
     Ui::MainWindow *ui;
     IEngine *engine;
-
+    std::vector<Record> undoEntries;
+    std::vector<Record> undoFilteredEntries;
     GraphScene *graph;
     void setupGraphScene(RecordModel *rec_m, ResultsModel *res_m);
     void enableMenuDataActions(bool enable);

@@ -72,6 +72,7 @@ void GraphScene::onGraphColorChange(){
 
 
 void GraphScene::onRemoveEdge(Edge *edge){
+    emit actionPerformed();
     auto src = edge->sourceNode();
     auto dest = edge->destNode();
     auto species = src->getName().toStdString();
