@@ -2,12 +2,7 @@ QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-win32 {
-        CONFIG += c++11
-}
-macx {
-        CONFIG += c++17 app_bundle
-}
+
 
 # The following define makes your compiler emit warnings if you use
 # any Qt feature that has been marked deprecated (the exact warnings
@@ -58,11 +53,24 @@ FORMS += \
     iSpecIDApp/mainwindow.ui \
     iSpecIDApp/filterdialog.ui
 
-INCLUDEPATH += "iSpecIDCore/include"
-INCLUDEPATH += "/usr/local/Cellar/boost/1.72.0/include/"
-INCLUDEPATH += "/usr/local/include"
+RESOURCES += \
+    icons.qrc
 
-LIBS += "-lcurl"
+win32:{
+        CONFIG += c++11
+        RC_ICONS = main_icon.ico
+}
+macx:{
+        CONFIG += c++17 app_bundle
+        INCLUDEPATH += "iSpecIDCore/include"
+        INCLUDEPATH += "/usr/local/Cellar/boost/1.72.0/include/"
+        INCLUDEPATH += "/usr/local/include"
+        LIBS += "-lcurl"
+        ICON = icons/main_icon.icns
+}
+
+
+
 
 
 
@@ -73,7 +81,4 @@ qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
-RESOURCES += \
-    icons.qrc
 
-ICON = icons/main_icon.icns
