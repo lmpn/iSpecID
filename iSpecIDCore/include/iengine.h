@@ -18,7 +18,7 @@ public:
     void save(std::string filePath);
     template<class Predicate>
     void filter(Predicate pred){
-        entries = utils::filter(entries, pred, filteredEntries);
+        entries = utils::filter(entries, pred, filtered_entries);
     }
     void group();
     void annotate();
@@ -29,19 +29,19 @@ public:
 
     inline std::vector<Record>& getEntries() { return entries;}
     inline std::vector<Record> getEntriesCopy() { return entries;}
-    inline std::vector<Record> getFilteredEntriesCopy() { return filteredEntries;}
+    inline std::vector<Record> getFilteredEntriesCopy() { return filtered_entries;}
     inline void setEntries(std::vector<Record> entries) { this->entries = entries ;}
-    inline void setFilteredEntries(std::vector<Record> filteredEntries) { this->filteredEntries = filteredEntries ;}
-    inline std::vector<Record>& getFilteredEntries() { return filteredEntries;}
-    inline std::unordered_map<std::string, Species> getGroupedEntries() {return groupedEntries;}
+    inline void setFilteredEntries(std::vector<Record> filteredEntries) { this->filtered_entries = filteredEntries ;}
+    inline std::vector<Record>& getFilteredEntries() { return filtered_entries;}
+    inline std::unordered_map<std::string, Species> getGroupedEntries() {return grouped_entries;}
     inline int size() {return entries.size();};
 
 
 private:
     std::vector<std::string> header;
     std::vector<Record> entries;
-    std::vector<Record> filteredEntries;
-    std::unordered_map<std::string, Species> groupedEntries;
+    std::vector<Record> filtered_entries;
+    std::unordered_map<std::string, Species> grouped_entries;
 };
 
 #endif // IENGINE_H

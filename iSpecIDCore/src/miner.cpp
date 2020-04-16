@@ -18,7 +18,7 @@ Miner::Miner(Miner&& o) noexcept {
 }
 
 static size_t
-write_callback(void *contents, size_t size, size_t nmemb, void *userp)
+writeCallback(void *contents, size_t size, size_t nmemb, void *userp)
 {
   size_t realsize = size * nmemb;
   std::string *mem = (std::string *)userp;
@@ -32,7 +32,7 @@ std::string Miner::getPage(const char* url)
     if(this->curl_handle != nullptr){
         CURLcode res;
         curl_easy_setopt(this->curl_handle, CURLOPT_URL, url);
-        curl_easy_setopt(this->curl_handle, CURLOPT_WRITEFUNCTION, write_callback);
+        curl_easy_setopt(this->curl_handle, CURLOPT_WRITEFUNCTION, writeCallback);
         curl_easy_setopt(this->curl_handle, CURLOPT_WRITEDATA, (void *)&data);
         curl_easy_setopt(this->curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
         res = curl_easy_perform(curl_handle);

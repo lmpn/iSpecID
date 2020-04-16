@@ -52,7 +52,7 @@ public:
 
 public slots:
 
-    void addWidget(QStringList header){
+    void add_widget(QStringList header){
         auto count = vlayout->rowCount();
         if(count > 1){
             vlayout->addWidget(new FilterOp(), count, 1);

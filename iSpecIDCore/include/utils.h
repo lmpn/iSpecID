@@ -65,7 +65,7 @@ namespace utils{
     }
 
 
-    std::shared_ptr<std::unordered_map<std::string, size_t>>  create_indexed_header(std::vector<std::string> header);
+    std::shared_ptr<std::unordered_map<std::string, size_t>>  createIndexedHeader(std::vector<std::string> header);
 
     double kbest(const std::vector<double>& vec);
     std::vector<std::string> split(const std::string& str, const std::string& delims = "\t");

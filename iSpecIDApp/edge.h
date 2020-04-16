@@ -71,18 +71,14 @@ public:
 
     Node *sourceNode() const;
     Node *destNode() const;
-
     void adjust();
-
     enum { Type = UserType + 2 };
     int type() const override { return Type; }
     void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
-//    QPainterPath shape() const override;
-
     void remove();
 
 signals:
-    void removeEdge(Edge* edge);
+    void remove_edge(Edge* edge);
 
 protected:
     void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;

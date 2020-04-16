@@ -11,8 +11,8 @@ IEngine::IEngine()
 
 void IEngine::load(std::string filePath){
     entries.clear();
-    filteredEntries.clear();
-    groupedEntries.clear();
+    filtered_entries.clear();
+    grouped_entries.clear();
 
 
     csv::CSVFormat format;
@@ -25,7 +25,7 @@ void IEngine::load(std::string filePath){
     if(std::find(header.begin(),header.end(),"modification") == header.end()){
         header.push_back("modification");
     }
-    auto indexes = utils::create_indexed_header(header);
+    auto indexes = utils::createIndexedHeader(header);
     for (auto& row: reader) {
         Record record(row.operator std::vector<std::string>(), indexes);
         entries.push_back(record);
@@ -63,7 +63,7 @@ void join(Species& species, Record record){
 };
 
 void IEngine::group(){
-    groupedEntries = utils::group(entries, getKey, join);
+    grouped_entries = utils::group(entries, getKey, join);
 }
 
 
@@ -75,15 +75,15 @@ std::unordered_map<std::string,int> IEngine::countFilterBadEntries(){
     for(auto& item : entries){
         if(item["species_name"].empty()){
             species++;
-            filteredEntries.push_back(item);
+            filtered_entries.push_back(item);
         }
         else if(item["bin_uri"].empty()){
             bin++;
-            filteredEntries.push_back(item);
+            filtered_entries.push_back(item);
         }
         else if(item["institution_storing"].empty()){
             institution++;
-            filteredEntries.push_back(item);
+            filtered_entries.push_back(item);
         }else{
             tmp.push_back(item);
         }
@@ -113,13 +113,13 @@ std::vector<int> IEngine::calculateGradeResults(){
 
 
 void IEngine::annotate(){
-    annotator::annotationAlgo(groupedEntries);
+    annotator::annotationAlgo(grouped_entries);
 }
 
 void IEngine::gradeRecords(){
     for(auto& item : entries){
         auto key = item["species_name"];
-        auto grade = groupedEntries[key].grade;
+        auto grade = grouped_entries[key].grade;
         item.update(grade, "grade");
     }
 }

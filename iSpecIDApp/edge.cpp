@@ -161,7 +161,7 @@ void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *)
 void Edge::remove(){
     dest->removeEdge(this);
     source->removeEdge(this);
-    emit removeEdge(this);
+    emit remove_edge(this);
 }
 
 

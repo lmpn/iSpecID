@@ -9,7 +9,7 @@ FilterDialog::FilterDialog(QStringList header, QWidget *parent)
     fs = ui->fsarea;
     ui->horizontalLayout->setAlignment(Qt::AlignHCenter);
     connect(ui->addBtn, &QPushButton::clicked,
-            fs,[this](){fs->addWidget(this->header);});
+            fs,[this](){fs->add_widget(this->header);});
 }
 
 

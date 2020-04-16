@@ -23,7 +23,7 @@ namespace utils{
     }
 
     std::shared_ptr<std::unordered_map<std::string, size_t>>
-    create_indexed_header(std::vector<std::string> header){
+    createIndexedHeader(std::vector<std::string> header){
         std::unordered_map<std::string, size_t> ind;
         size_t idx = 0;
         for(auto& col : header){

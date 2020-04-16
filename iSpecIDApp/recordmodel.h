@@ -24,10 +24,10 @@ public:
 public slots:
     void onRecordsChange();
 signals:
-    void actionPerformed();
-    void updateGraph();
-    void updateResults();
-    void updateComboBox();
+    void action_performed();
+    void update_graph();
+    void update_results();
+    void update_combobox();
 
 private:
     //QVector<Record> records;

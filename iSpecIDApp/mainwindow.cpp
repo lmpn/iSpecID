@@ -18,37 +18,37 @@ void MainWindow::setupGraphScene(RecordModel *record_model, ResultsModel *result
     ui->graph_viewer->setViewportUpdateMode(QGraphicsView::ViewportUpdateMode::BoundingRectViewportUpdate);
     ui->graph_viewer->setRenderHint(QPainter::Antialiasing);
     ui->graph_viewer->setTransformationAnchor(QGraphicsView::ViewportAnchor::AnchorViewCenter);
-    connect(this, SIGNAL(saveGraph(QString)),
-            graph,SLOT(onSaveGraph(QString)));
-    connect(this, SIGNAL(updateGraph()),
-            graph,SLOT(onGraphChange()));
-    connect(this, SIGNAL(updateColorGraph()),
-            graph,SLOT(onGraphColorChange()));
-    connect(this, SIGNAL(showComponent(QString)),
-            graph,SLOT(setComponentVisible(QString)));
-    connect(graph, SIGNAL(updateComboBox()),
-            this,SLOT(onComboBoxChange()));
-    connect(graph, SIGNAL(actionPerformed()),
-            this,SLOT((onActionPerformed)));
-    connect(graph, SIGNAL(updateResults()),
-            results_model,SLOT(onResultsChange()));
-    connect(graph, SIGNAL(updateRecords()),
-            record_model,SLOT(onRecordsChange()));
-    connect(record_model, SIGNAL(updateGraph()),
-            graph, SLOT(onGraphChange()));
+    connect(this, SIGNAL(save_graph(QString)),
+            graph,SLOT(on_save_graph(QString)));
+    connect(this, SIGNAL(update_graph()),
+            graph,SLOT(on_graph_change()));
+    connect(this, SIGNAL(update_color_graph()),
+            graph,SLOT(on_graph_color_change()));
+    connect(this, SIGNAL(show_component(QString)),
+            graph,SLOT(set_component_visible(QString)));
+    connect(graph, SIGNAL(update_combobox()),
+            this,SLOT(on_combobox_changed()));
+    connect(graph, SIGNAL(action_performed()),
+            this,SLOT((on_action_performed)));
+    connect(graph, SIGNAL(update_results()),
+            results_model,SLOT(on_results_changed()));
+    connect(graph, SIGNAL(update_records()),
+            record_model,SLOT(on_records_changed()));
+    connect(record_model, SIGNAL(update_graph()),
+            graph, SLOT(on_graph_change()));
 }
 
 void MainWindow::enableMenuDataActions(bool enable)
 {
-    auto actions = ui->menuData->actions();
+    auto actions = ui->menu_data->actions();
     for(auto ac : actions){
         ac->setEnabled(enable);
     }
 }
 
-void MainWindow::onComboBoxChange(){
+void MainWindow::on_combobox_changed(){
     auto first = createCompleter();
-    emit showComponent(first);
+    emit show_component(first);
 }
 
 void MainWindow::gradingTableAdjust(QTableView *tableView)
@@ -93,10 +93,10 @@ MainWindow::MainWindow(QWidget *parent)
     connect(record_model, SIGNAL(updateComboBox()),
             this, SLOT(onComboBoxChange()));
     //Setup results table
-    ResultsModel *results_model = new ResultsModel(ui->results_table,engine);
-    ui->results_table->setModel(results_model);
-    gradingTableAdjust(ui->results_table);
-    ui->results_frame->hide();
+    ResultsModel *results_model = new ResultsModel(ui->initial_results_table,engine);
+    ui->initial_results_table->setModel(results_model);
+    gradingTableAdjust(ui->initial_results_table);
+    ui->initial_results_frame->hide();
     connect(this, SIGNAL(updateResults()),
             results_model,SLOT(onResultsChange()));
 
@@ -138,12 +138,8 @@ void MainWindow::on_load_file_triggered()
         msgBox.setInformativeText(QString("Number of removed entries due to empty species name: %1\n\nNumber of removed entries due to empty bin: %2\n\nNumber of removed entries due to empty institution: %3").arg(r["species"]).arg(r["bin"]).arg(r["institution"]));
         msgBox.setStandardButtons(QMessageBox::Ok);
         msgBox.setDefaultButton(QMessageBox::Ok);
-        engine->group();
-        auto first = createCompleter();
-        enableMenuDataActions(true);
-        emit updateRecords();
-        emit updateGraph();
-        emit showComponent(first);
+        updateApp();
+
         ui->record_table->resizeColumnsToContents();
         msgBox.exec();
     }
@@ -176,7 +172,7 @@ QString MainWindow::createCompleter(){
 void MainWindow::on_graph_combo_box_activated(const QString &arg1)
 {
     //Change graph component
-    emit showComponent(arg1);
+    emit show_component(arg1);
 }
 
 
@@ -188,14 +184,14 @@ void MainWindow::on_annotateButton_clicked()
     undoFilteredEntries = engine->getFilteredEntriesCopy();
     engine->annotate();
     engine->gradeRecords();
-    emit updateColorGraph();
-    emit updateRecords();
+    emit update_color_graph();
+    emit update_records();
     if(!ui->results_frame->isVisible()){
         ui->results_frame->show();
-        emit updateResults();
+        emit update_results();
     }
     ui->current_results_frame->show();
-    emit updateCurrentResults();
+    emit update_current_results();
 }
 
 void MainWindow::on_filter_triggered()
@@ -208,18 +204,14 @@ void MainWindow::on_filter_triggered()
         headers << model->headerData(i, Qt::Horizontal).toString();
     }
     auto ff = new FilterDialog(headers);
-    auto rc = ff->exec();
+    ff->exec();
     if(ff->accepted()){
         undoEntries = engine->getEntriesCopy();
         undoFilteredEntries = engine->getFilteredEntriesCopy();
         auto pred = ff->getFilterFunc<Record>();
         engine->filter(pred);
-        engine->group();
-        emit updateGraph();
-        emit updateRecords();
-        emit updateCurrentResults();
-        auto first = createCompleter();
-        emit showComponent(first);
+        updateApp();
+
     }
 }
 
@@ -246,10 +238,12 @@ void MainWindow::deleteRecordRows(){
     model->remove = false;
     engine->group();
     auto first = createCompleter();
-    emit updateCurrentResults();
-    emit updateGraph();
-    emit showComponent(first);
+    emit update_current_results();
+    emit update_graph();
+    emit show_component(first);
 }
+
+
 
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
@@ -303,7 +297,7 @@ void MainWindow::on_saveGraphButton_clicked()
     if (fileName.isEmpty())
         return;
     else {
-        emit saveGraph(fileName);
+        emit save_graph(fileName);
     }
 }
 
@@ -320,11 +314,21 @@ void MainWindow::on_save_triggered()
     }
 }
 
-void MainWindow::onActionPerformed(){
+void MainWindow::on_action_performed(){
     undoEntries = engine->getEntriesCopy();
     undoFilteredEntries = engine->getFilteredEntriesCopy();
 }
 
+
+void MainWindow::updateApp()
+{
+    engine->group();
+    emit update_graph();
+    emit update_records();
+    emit update_current_results();
+    auto first = createCompleter();
+    emit show_component(first);
+}
 
 void MainWindow::on_undoButton_clicked()
 {
@@ -333,10 +337,16 @@ void MainWindow::on_undoButton_clicked()
     engine->setFilteredEntries(undoFilteredEntries);
     undoEntries = {};
     undoFilteredEntries = {};
-    engine->group();
-    emit updateGraph();
-    emit updateRecords();
-    emit updateCurrentResults();
-    auto first = createCompleter();
-    emit showComponent(first);
+    updateApp();
 }
+
+/*
+void MainWindow::updateApp(){
+    engine->group();
+    emit update_graph();
+    emit update_records();
+    emit update_current_results();
+    auto first = createCompleter();
+    emit show_component(first);
+}
+*/

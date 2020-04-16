@@ -128,7 +128,7 @@ bool RecordModel::setData(const QModelIndex &index, const QVariant &value, int r
         auto& entry = records[row];
         auto mod_value = entry["modification"];
         if(field_value != entry[field_name]){
-            emit actionPerformed();
+            emit action_performed();
             entry.update(field_value,field_name);
             if(mod_value.empty()){
                 mod_value += field_name;
@@ -138,8 +138,8 @@ bool RecordModel::setData(const QModelIndex &index, const QVariant &value, int r
             entry.update(mod_value, "modification");
             engine->group();
             emit dataChanged(index, index, {Qt::DisplayRole});
-            emit updateGraph();
-            emit updateComboBox();
+            emit update_graph();
+            emit update_combobox();
         }
         return true;
     }

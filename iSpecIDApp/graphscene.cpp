@@ -40,8 +40,8 @@ void GraphScene::generateItems(){
                 this->addItem(bin);
             }
             Edge * edge = new Edge(node, bin, bin_pair.second);
-            connect(edge, SIGNAL(removeEdge(Edge *)),
-                    this, SLOT(onRemoveEdge(Edge *)));
+            connect(edge, SIGNAL(remove_edge(Edge *)),
+                    this, SLOT(on_remove_edge(Edge *)));
             edges << edge;
             edge->hide();
             this->addItem(edge);
@@ -51,13 +51,13 @@ void GraphScene::generateItems(){
 }
 
 
-void GraphScene::onGraphChange(){
+void GraphScene::on_graph_changed(){
     clearScene();
     clean();
     generateItems();
     this->setSceneRect(this->itemsBoundingRect());                          // Re-shrink the scene to it's bounding contents
 }
-void GraphScene::onGraphColorChange(){
+void GraphScene::on_graph_color_changed(){
     auto group_records = engine->getGroupedEntries();
     for(auto item: nodes){
         auto node = qgraphicsitem_cast<Node *>(item);
@@ -71,15 +71,15 @@ void GraphScene::onGraphColorChange(){
 
 
 
-void GraphScene::onRemoveEdge(Edge *edge){
-    emit actionPerformed();
+void GraphScene::on_remove_edge(Edge *edge){
+    emit action_performed();
     auto src = edge->sourceNode();
     auto dest = edge->destNode();
     auto species = src->getName().toStdString();
     auto bin = dest->getName().toStdString();
     setComponentVisibleDFS(edge->destNode(), false);
     setComponentVisibleDFS(edge->sourceNode(), false);
-    setComponentVisible();
+    set_component_visible();
     update();
 
     delete edge;
@@ -87,13 +87,13 @@ void GraphScene::onRemoveEdge(Edge *edge){
         return item["species_name"] == species && item["bin_uri"]==bin;
     });
     engine->group();
-    emit updateComboBox();
-    emit updateRecords();
-    emit updateResults();
+    emit update_combobox();
+    emit update_records();
+    emit update_results();
 }
 
 
-void GraphScene::onSaveGraph(QString path){
+void GraphScene::on_save_graph(QString path){
     this->clearSelection();                                                  // Selections would also render to the file
     this->setSceneRect(this->itemsBoundingRect());                          // Re-shrink the scene to it's bounding contents
     QImage *image = new QImage(this->sceneRect().size().toSize(), QImage::Format_ARGB32);  // Create the image with the exact size of the shrunk scene
@@ -148,7 +148,7 @@ void GraphScene::setComponentVisibleDFS( Node *root, bool visible){
     }
 }
 
-void GraphScene::setComponentVisible(QString key){
+void GraphScene::set_component_visible(QString key){
     Node *root;
     if(cur_root != nullptr){
         root = qgraphicsitem_cast<Node *>(cur_root);
