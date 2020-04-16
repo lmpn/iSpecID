@@ -152,7 +152,7 @@ QPainterPath Node::shape() const
     if(grade.isEmpty()){
          text = this->name;
     }else{
-         text = this->name + QString::fromStdString(";") + this->grade;
+         text = this->name + "(" + this->grade + ")";
     }
     QFontMetricsF fontMetrics(f);
     QRectF textRect = fontMetrics.boundingRect(text);
@@ -190,7 +190,7 @@ void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     if(grade.isEmpty()){
          text = this->name;
     }else{
-         text = this->name + QString::fromStdString(";") + this->grade;
+         text = this->name + "(" + this->grade + ")";
     }
 
     painter->setBrush(Qt::white);

@@ -96,7 +96,7 @@ MainWindow::MainWindow(QWidget *parent)
     ResultsModel *results_model = new ResultsModel(ui->initial_results_table,engine);
     ui->initial_results_table->setModel(results_model);
     gradingTableAdjust(ui->initial_results_table);
-    ui->initial_results_frame->hide();
+//    ui->initial_results_frame->hide();
     connect(this, SIGNAL(update_results()),
             results_model,SLOT(on_results_changed()));
 
@@ -104,7 +104,7 @@ MainWindow::MainWindow(QWidget *parent)
     ResultsModel *current_results_model = new ResultsModel(ui->current_results_table,engine);
     ui->current_results_table->setModel(current_results_model);
     gradingTableAdjust(ui->current_results_table);
-    ui->current_results_frame->hide();
+//    ui->current_results_frame->hide();
     connect(this, SIGNAL(update_current_results()),
             current_results_model,SLOT(on_results_changed()));
 
