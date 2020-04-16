@@ -47,13 +47,13 @@ private slots:
     void zoomOut();
     void on_load_file_triggered();
     void on_graph_combo_box_activated(const QString &arg1);
-    void on_annotateButton_clicked();
+    void on_annotate_button_clicked();
     void on_filter_triggered();
-    void on_combobox_changed();
+    void on_graph_combo_box_changed();
     void on_action_performed();
-    void on_saveGraphButton_clicked();
+    void on_save_graph_button_clicked();
     void on_save_triggered();
-    void on_undoButton_clicked();
+    void on_undo_button_clicked();
 
 private:
     Ui::MainWindow *ui;

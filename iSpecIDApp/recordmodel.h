@@ -22,7 +22,7 @@ public:
     bool removeRow(int row, const QModelIndex &parent = QModelIndex());
     bool removeRows(int position, int row, const QModelIndex &parent = QModelIndex()) override;
 public slots:
-    void onRecordsChange();
+    void on_records_changed();
 signals:
     void action_performed();
     void update_graph();

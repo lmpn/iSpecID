@@ -21,21 +21,21 @@ void MainWindow::setupGraphScene(RecordModel *record_model, ResultsModel *result
     connect(this, SIGNAL(save_graph(QString)),
             graph,SLOT(on_save_graph(QString)));
     connect(this, SIGNAL(update_graph()),
-            graph,SLOT(on_graph_change()));
+            graph,SLOT(on_graph_changed()));
     connect(this, SIGNAL(update_color_graph()),
-            graph,SLOT(on_graph_color_change()));
+            graph,SLOT(on_graph_color_changed()));
     connect(this, SIGNAL(show_component(QString)),
             graph,SLOT(set_component_visible(QString)));
     connect(graph, SIGNAL(update_combobox()),
-            this,SLOT(on_combobox_changed()));
+            this,SLOT(on_graph_combo_box_changed()));
     connect(graph, SIGNAL(action_performed()),
-            this,SLOT((on_action_performed)));
+            this,SLOT(on_action_performed()));
     connect(graph, SIGNAL(update_results()),
             results_model,SLOT(on_results_changed()));
     connect(graph, SIGNAL(update_records()),
             record_model,SLOT(on_records_changed()));
     connect(record_model, SIGNAL(update_graph()),
-            graph, SLOT(on_graph_change()));
+            graph, SLOT(on_graph_changed()));
 }
 
 void MainWindow::enableMenuDataActions(bool enable)
@@ -46,7 +46,7 @@ void MainWindow::enableMenuDataActions(bool enable)
     }
 }
 
-void MainWindow::on_combobox_changed(){
+void MainWindow::on_graph_combo_box_changed(){
     auto first = createCompleter();
     emit show_component(first);
 }
@@ -88,25 +88,27 @@ MainWindow::MainWindow(QWidget *parent)
     RecordModel *record_model = new RecordModel(ui->record_table,engine);
     ui->record_table->setModel(record_model);
     ui->record_table->setSelectionBehavior(QAbstractItemView::SelectionBehavior::SelectRows);
-    connect(this, SIGNAL(updateRecords()),
-            record_model,SLOT(onRecordsChange()));
-    connect(record_model, SIGNAL(updateComboBox()),
-            this, SLOT(onComboBoxChange()));
+    connect(this, SIGNAL(update_records()),
+            record_model,SLOT(on_records_changed()));
+    connect(record_model, SIGNAL(update_combobox()),
+            this, SLOT(on_graph_combo_box_changed()));
     //Setup results table
     ResultsModel *results_model = new ResultsModel(ui->initial_results_table,engine);
     ui->initial_results_table->setModel(results_model);
     gradingTableAdjust(ui->initial_results_table);
     ui->initial_results_frame->hide();
-    connect(this, SIGNAL(updateResults()),
-            results_model,SLOT(onResultsChange()));
+    connect(this, SIGNAL(update_results()),
+            results_model,SLOT(on_results_changed()));
 
     //Setup current results table
     ResultsModel *current_results_model = new ResultsModel(ui->current_results_table,engine);
     ui->current_results_table->setModel(current_results_model);
     gradingTableAdjust(ui->current_results_table);
     ui->current_results_frame->hide();
-    connect(this, SIGNAL(updateCurrentResults()),
-            current_results_model,SLOT(onResultsChange()));
+    connect(this, SIGNAL(update_current_results()),
+            current_results_model,SLOT(on_results_changed()));
+
+    ui->results_frame->hide();
 
     //Setup graph
     setupGraphScene(record_model, current_results_model);
@@ -177,7 +179,7 @@ void MainWindow::on_graph_combo_box_activated(const QString &arg1)
 
 
 
-void MainWindow::on_annotateButton_clicked()
+void MainWindow::on_annotate_button_clicked()
 {
     if(engine->size() == 0) return;
     undoEntries = engine->getEntriesCopy();
@@ -188,6 +190,7 @@ void MainWindow::on_annotateButton_clicked()
     emit update_records();
     if(!ui->results_frame->isVisible()){
         ui->results_frame->show();
+        ui->initial_results_frame->show();
         emit update_results();
     }
     ui->current_results_frame->show();
@@ -289,7 +292,7 @@ void MainWindow::zoomOut()
     scaleView(1 / qreal(1.2));
 }
 
-void MainWindow::on_saveGraphButton_clicked()
+void MainWindow::on_save_graph_button_clicked()
 {
     QString fileName = QFileDialog::getSaveFileName(this,
                                                     tr("Save "), "",
@@ -330,7 +333,7 @@ void MainWindow::updateApp()
     emit show_component(first);
 }
 
-void MainWindow::on_undoButton_clicked()
+void MainWindow::on_undo_button_clicked()
 {
     if(undoEntries.size() == 0) return;
     engine->setEntries(undoEntries);
