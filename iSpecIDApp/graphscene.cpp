@@ -103,8 +103,7 @@ void GraphScene::on_save_graph(QString path){
     this->render(&painter);
     Node * n = qgraphicsitem_cast<Node*>(cur_root);
     if(n != nullptr) {
-        qDebug() << path+n->getName()+".png";
-        image->save(path+"/"+n->getName()+".png");
+        image->save(path);
     }
 }
 

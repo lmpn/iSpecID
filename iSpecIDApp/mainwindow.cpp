@@ -141,7 +141,7 @@ void MainWindow::on_load_file_triggered()
         msgBox.setStandardButtons(QMessageBox::Ok);
         msgBox.setDefaultButton(QMessageBox::Ok);
         updateApp();
-
+        enableMenuDataActions(true);
         ui->record_table->resizeColumnsToContents();
         msgBox.exec();
     }

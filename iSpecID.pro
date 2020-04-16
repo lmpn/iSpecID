@@ -53,12 +53,17 @@ FORMS += \
     iSpecIDApp/mainwindow.ui \
     iSpecIDApp/filterdialog.ui
 
-RESOURCES += \
-    icons.qrc
-
 win32:{
-        CONFIG += c++11
-        RC_ICONS = main_icon.ico
+        CONFIG += c++17
+        INCLUDEPATH += "iSpecIDCore/include"
+        INCLUDEPATH += "C:\boost\include\boost-1_72"
+win32: LIBS += -L$$PWD/winbuild/curl-7.69.1-win64-mingw/lib/ -llibcurl.dll
+
+INCLUDEPATH += $$PWD/winbuild/curl-7.69.1-win64-mingw/include
+        DEPENDPATH += $$PWD/winbuild/curl-7.69.1-win64-mingw/include
+
+        win32-g++: PRE_TARGETDEPS += $$PWD/winbuild/curl-7.69.1-win64-mingw/lib/libcurl.dll.a
+        RC_ICONS = icons/main_icon.ico
 }
 macx:{
         CONFIG += c++17 app_bundle
@@ -80,5 +85,8 @@ macx:{
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+
+
 
 
