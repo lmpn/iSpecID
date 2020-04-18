@@ -67,16 +67,22 @@ INCLUDEPATH += $$PWD/winbuild/curl-7.69.1-win64-mingw/include
 }
 macx:{
         CONFIG += c++17 app_bundle
-        INCLUDEPATH += "iSpecIDCore/include"
+        LIBS += -L$$PWD/../../../../../../usr/local/lib/ -lcurl
+        INCLUDEPATH += $$PWD/../../../../../../usr/local/include
+        DEPENDPATH += $$PWD/../../../../../../usr/local/include
+        PRE_TARGETDEPS += $$PWD/../../../../../../usr/local/lib/libcurl.a
         INCLUDEPATH += "/usr/local/Cellar/boost/1.72.0/include/"
-        INCLUDEPATH += "/usr/local/include"
-        LIBS += "-lcurl"
+        INCLUDEPATH += "iSpecIDCore/include"
+#        INCLUDEPATH += "/usr/local/include"
+#        LIBS += "-lcurl"
+
         ICON = icons/main_icon.icns
+message($$PWD)
 }
 
 
 
-
+message($${TARGET})
 
 
 
@@ -85,6 +91,9 @@ macx:{
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+
+
 
 
 
