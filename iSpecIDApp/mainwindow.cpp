@@ -7,6 +7,7 @@
 #include <QGraphicsView>
 #include <QMessageBox>
 #include <QScrollBar>
+#include <thread>
 #include "filterdialog.h"
 
 
@@ -96,7 +97,7 @@ MainWindow::MainWindow(QWidget *parent)
     ResultsModel *results_model = new ResultsModel(ui->initial_results_table,engine);
     ui->initial_results_table->setModel(results_model);
     gradingTableAdjust(ui->initial_results_table);
-//    ui->initial_results_frame->hide();
+    ui->initial_results_frame->hide();
     connect(this, SIGNAL(update_results()),
             results_model,SLOT(on_results_changed()));
 
@@ -104,7 +105,7 @@ MainWindow::MainWindow(QWidget *parent)
     ResultsModel *current_results_model = new ResultsModel(ui->current_results_table,engine);
     ui->current_results_table->setModel(current_results_model);
     gradingTableAdjust(ui->current_results_table);
-//    ui->current_results_frame->hide();
+    ui->current_results_frame->hide();
     connect(this, SIGNAL(update_current_results()),
             current_results_model,SLOT(on_results_changed()));
 
@@ -181,20 +182,25 @@ void MainWindow::on_graph_combo_box_activated(const QString &arg1)
 
 void MainWindow::on_annotate_button_clicked()
 {
-    if(engine->size() == 0) return;
-    undoEntries = engine->getEntriesCopy();
-    undoFilteredEntries = engine->getFilteredEntriesCopy();
-    engine->annotate();
-    engine->gradeRecords();
-    emit update_color_graph();
-    emit update_records();
-    if(!ui->results_frame->isVisible()){
+    ui->annotate_button->setDisabled(true);
+    std::thread t([this](){
+        if(engine->size() == 0) return;
+        undoEntries = engine->getEntriesCopy();
+        undoFilteredEntries = engine->getFilteredEntriesCopy();
+        engine->annotate();
+        engine->gradeRecords();
+        emit update_color_graph();
+        emit update_records();
+        if(!ui->results_frame->isVisible()){
         ui->results_frame->show();
         ui->initial_results_frame->show();
         emit update_results();
-    }
-    ui->current_results_frame->show();
-    emit update_current_results();
+        }
+        ui->current_results_frame->show();
+        emit update_current_results();
+        ui->annotate_button->setDisabled(false);
+    });
+    t.detach();
 }
 
 void MainWindow::on_filter_triggered()
