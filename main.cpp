@@ -10,5 +10,6 @@ int main(int argc, char **argv)
     engine.group();
     engine.annotate();
     engine.gradeRecords();
+    engine.save("output.tsv");
     //PRINTV(engine.calculateGradeResults());
 }

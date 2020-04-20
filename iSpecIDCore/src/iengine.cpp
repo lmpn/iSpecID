@@ -42,6 +42,9 @@ void IEngine::save(std::string filePath){
         for(auto& item : entries){
             writer << item.getFields();
         }
+        for(auto& item : filtered_entries){
+            writer << item.getFields();
+        }
         ofs.flush();
         ofs.close();
     }

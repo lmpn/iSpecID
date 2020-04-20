@@ -84,9 +84,9 @@ namespace utils{
         Table<Item> accept;
         for(auto& item : tbl){
             if(!pred(item)){
-                accept.push_back(item);
+                accept.push_back(std::move(item));
             }else{
-                filtered.push_back(item);
+                filtered.push_back(std::move(item));
             }
         }
         return accept;
