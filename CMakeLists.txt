@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(iSpecID LANGUAGES CXX VERSION 1.0)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set( CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_VERBOSE_MAKEFILE OFF)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-Wall -Wabi -g -fno-omit-frame-pointer -O2 -DNDEBUG -fno-inline-functions -fno-optimize-sibling-calls -mavx -g -qopenmp -qopt-report5")
@@ -17,7 +17,7 @@ endif()
 
 
 option(BIN "Create binary" ON)
-option(BENCH "Create benchmark binary" OFF)
+option(BENCH "Create benchmark binary" ON)
 if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 8.0)
   set(CMAKE_CXX17_STANDARD_COMPILE_OPTION "-std=c++17")
   set(CMAKE_CXX17_EXTENSION_COMPILE_OPTION "-std=gnu++17")
@@ -29,6 +29,7 @@ endif()
 
 find_package(CURL REQUIRED)
 find_package(Boost REQUIRED)
+find_package(LibXml2 REQUIRED)
 if(CURL_FOUND)
     message(STATUS "Found CURL version: ${CURL_VERSION_STRING}")
     message(STATUS "Using CURL include dir(s): ${CURL_INCLUDE_DIRS}")
@@ -44,7 +45,6 @@ else()
 endif()
 
 
-
 include_directories(
     ${PROJECT_SOURCE_DIR}/iSpecIDCore/include
     ${PROJECT_SOURCE_DIR}/iSpecIDCore/src
@@ -57,6 +57,9 @@ file(GLOB core
     "${PROJECT_SOURCE_DIR}/iSpecIDCore/include/*.h"
     )
 
+message(${LIBXML2_LIBRARIES})
+message(${LIBXML2_INCLUDE_DIRS})
+
 if(BIN)
     if(COMMAND cmake_policy)
         cmake_policy(SET CMP0003 NEW)
@@ -64,6 +67,7 @@ if(BIN)
 
     add_executable( isid "${PROJECT_SOURCE_DIR}/main.cpp" ${core}  )
     target_link_libraries(isid ${CURL_LIBRARIES})
+    target_link_libraries(isid ${LIBXML2_LIBRARIES})
     target_link_libraries(isid -lpthread)
 endif()
 if(BENCH)
@@ -71,18 +75,25 @@ if(BENCH)
         cmake_policy(SET CMP0003 NEW)
     endif(COMMAND cmake_policy)
 
-    add_subdirectory(third_party/benchmark)
+    add_subdirectory("${PROJECT_SOURCE_DIR}/third_party/benchmark")
 
     add_executable(isid_bench "${PROJECT_SOURCE_DIR}/iSpecIDCore/bench/annotate.cxx" ${core}  )
     target_link_libraries(isid_bench  benchmark::benchmark)
+    target_link_libraries(isid_bench ${LIBXML2_LIBRARIES})
     target_link_libraries(isid_bench ${CURL_LIBRARIES})
     target_link_libraries(isid_bench  -lpthread)
 
     add_executable(isid_group "${PROJECT_SOURCE_DIR}/iSpecIDCore/bench/group.cxx" ${core}  )
     target_link_libraries(isid_group  benchmark::benchmark)
+    target_link_libraries(isid_group ${LIBXML2_LIBRARIES})
     target_link_libraries(isid_group  ${CURL_LIBRARIES})
     target_link_libraries(isid_group  -lpthread)
 
+    add_executable(isid_get_page "${PROJECT_SOURCE_DIR}/iSpecIDCore/bench/get_page.cxx" ${core}  )
+    target_link_libraries(isid_get_page  benchmark::benchmark)
+    target_link_libraries(isid_get_page ${LIBXML2_LIBRARIES})
+    target_link_libraries(isid_get_page  ${CURL_LIBRARIES})
+    target_link_libraries(isid_get_page  -lpthread)
 
     add_executable(isid_split "${PROJECT_SOURCE_DIR}/iSpecIDCore/bench/string_split.cxx")
     target_link_libraries(isid_split  benchmark::benchmark)

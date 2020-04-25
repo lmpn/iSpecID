@@ -1,4 +1,4 @@
-QT       += core gui
+QT       += core gui concurrent sql
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -18,6 +18,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         app.cpp \
         iSpecIDApp/edge.cpp \
+        iSpecIDApp/gradingoptionsdialog.cpp \
         iSpecIDApp/graphscene.cpp \
         iSpecIDApp/node.cpp \
         iSpecIDApp/resultsmodel.cpp \
@@ -32,6 +33,8 @@ SOURCES += \
 
 
 HEADERS += \
+        iSpecIDApp/filterItem.h \
+        iSpecIDApp/gradingoptionsdialog.h \
         iSpecIDCore/include/iengine.h \
         iSpecIDCore/include/annotator.h \
         iSpecIDCore/include/species.h \
@@ -47,11 +50,16 @@ HEADERS += \
         iSpecIDApp/recordmodel.h \
         iSpecIDApp/filterdialog.h \
         iSpecIDApp/filterOp.h \
+        iSpecIDApp/filterItem.h \
         iSpecIDApp/filterscrollarea.h
 
+
 FORMS += \
+    iSpecIDApp/gradingoptionsdialog.ui \
     iSpecIDApp/mainwindow.ui \
     iSpecIDApp/filterdialog.ui
+
+RESOURCES += icons.qrc
 
 win32:{
         CONFIG += c++17
@@ -67,10 +75,13 @@ macx:{
         CONFIG += c++17 app_bundle
         INCLUDEPATH += "/usr/local/Cellar/boost/1.72.0/include/"
         INCLUDEPATH += "iSpecIDCore/include"
-LIBS += -L$$PWD/../../../../../usr/lib/ -lcurl.4
+        LIBS += -L$$PWD/../../../../../usr/lib/ -lcurl.4
+        INCLUDEPATH += $$PWD/../../../../../usr
+        DEPENDPATH += $$PWD/../../../../../usr
+        LIBS += -L$$PWD/../../../../../usr/local/Cellar/libxml2/2.9.10/lib/ -lxml2.2
 
-INCLUDEPATH += $$PWD/../../../../../usr
-DEPENDPATH += $$PWD/../../../../../usr
+        INCLUDEPATH += $$PWD/../../../../../usr/local/Cellar/libxml2/2.9.10/include
+        DEPENDPATH += $$PWD/../../../../../usr/local/Cellar/libxml2/2.9.10/include
 #        INCLUDEPATH += "/usr/local/include"
 #        LIBS += "-lcurl"
 
@@ -82,3 +93,6 @@ qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
+
+
+macx:

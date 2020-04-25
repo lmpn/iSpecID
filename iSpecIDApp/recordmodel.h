@@ -23,6 +23,7 @@ public:
     bool removeRows(int position, int row, const QModelIndex &parent = QModelIndex()) override;
 public slots:
     void on_records_changed();
+    void sort_by_section(int col = 0);
 signals:
     void action_performed();
     void update_graph();
@@ -33,6 +34,8 @@ private:
     //QVector<Record> records;
     size_t cur_count;
     IEngine *engine;
+    QVector<bool> sort_order;
+    int last_col;
 };
 
 #endif // RECORDMODEL_H

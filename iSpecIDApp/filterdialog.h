@@ -15,7 +15,7 @@ class FilterDialog : public QDialog
     QStringList header;
 
 public:
-    FilterDialog(QStringList header,QWidget *parent = nullptr);
+    FilterDialog(QStringList header, QList<QStringList> completions, QWidget *parent = nullptr);
     ~FilterDialog();
     template<class T>
     using Func = std::function<bool(T)>;
@@ -40,5 +40,6 @@ private:
     bool ok = false;
     FilterScrollArea *fs;
     Ui::FilterDialog *ui;
+
 };
 #endif // FILTERDIALOG_H

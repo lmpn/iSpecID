@@ -8,8 +8,51 @@ RecordModel::RecordModel(QObject *parent,IEngine *engine)
     : QAbstractTableModel(parent), cur_count(0), engine(engine)
 {
     remove = false;
+    sort_order = QVector<bool>(this->columnCount(), true);
+    last_col = -1;
 }
 
+void sort_column(std::vector<Record>& entries, std::string key, bool order){
+    if(order)
+        std::sort(entries.begin(), entries.end(), [&key](Record a, Record b){ return a[key].compare(b[key]) < 0;});
+    else
+        std::sort(entries.begin(), entries.end(), [&key](Record a, Record b){ return a[key].compare(b[key]) > 0;});
+}
+
+
+
+
+void RecordModel::sort_by_section(int col){
+    beginResetModel();
+    if(cur_count!=0){
+        removeRows(0, cur_count, QModelIndex());
+    }
+    auto& entries = engine->getEntries();
+    if(col== 0){
+        if(last_col == col)
+            sort_order[col]=!sort_order[col];
+        sort_column(entries, "species_name" , sort_order[col]);
+    }
+    else if(col== 1){
+        if(last_col == col)
+            sort_order[col]=!sort_order[col];
+        sort_column(entries, "bin_uri" , sort_order[col]);
+    }
+    else if(col== 2){
+        if(last_col == col)
+            sort_order[col]=!sort_order[col];
+        sort_column(entries, "institution_storing" , sort_order[col]);
+    }
+    else if(col== 3){
+        if(last_col == col)
+            sort_order[col]=!sort_order[col];
+        sort_column(entries, "grade" , sort_order[col]);
+    }
+    last_col = col;
+    cur_count = entries.size();
+    insertRows(0, cur_count, QModelIndex());
+    endResetModel();
+}
 
 int RecordModel::rowCount(const QModelIndex & /*parent*/) const
 {
@@ -21,18 +64,23 @@ int RecordModel::columnCount(const QModelIndex & /*parent*/) const
     return 4;
 }
 
+
 QVariant RecordModel::headerData(int section, Qt::Orientation orientation, int role) const{
     if (role == Qt::DisplayRole && orientation == Qt::Horizontal)
     {
+        QString sort = "";
+        if(last_col == section){
+            sort = sort_order[last_col] ? "(ASC)" : "(DESC)";
+        }
         switch (section) {
         case 0:
-            return QString("Species");
+            return QString("Species") + sort;
         case 1:
-            return QString("Bin");
+            return QString("Bin")+sort;
         case 2:
-            return QString("Institution");
+            return QString("Source")+sort;
         case 3:
-            return QString("Grade");
+            return QString("Grade")+sort;
         default:
             return QVariant();
 
@@ -45,10 +93,10 @@ QVariant RecordModel::headerData(int section, Qt::Orientation orientation, int r
 
 QVariant RecordModel::data(const QModelIndex &index, int role) const
 {
-    auto& records = engine->getEntries();
+    auto& entries = engine->getEntries();
     int row = index.row();
     int col = index.column();
-    int size = records.size();
+    int size = entries.size();
 
 
     if (!index.isValid())
@@ -57,15 +105,15 @@ QVariant RecordModel::data(const QModelIndex &index, int role) const
         return QVariant();
     if (col == 0 && (role == Qt::DisplayRole ||
             role == Qt::EditRole)) {
-        return QString::fromStdString( records[row]["species_name"] );
+        return QString::fromStdString( entries[row]["species_name"] );
     }else if(col == 1 && (role == Qt::DisplayRole ||
             role == Qt::EditRole)) {
-        return QString::fromStdString( records.at(row)["bin_uri"] );
+        return QString::fromStdString( entries.at(row)["bin_uri"] );
     }else if(col == 2 && (role == Qt::DisplayRole ||
             role == Qt::EditRole)) {
-        return QString::fromStdString( records[row]["institution_storing"]);
+        return QString::fromStdString( entries[row]["institution_storing"]);
     }else if(col == 3 && role == Qt::DisplayRole){
-        return QString::fromStdString( records[row]["grade"]);
+        return QString::fromStdString( entries[row]["grade"]);
     }
     return QVariant();
 }
@@ -80,10 +128,10 @@ bool RecordModel::removeRow(int row, const QModelIndex &parent)
 bool RecordModel::removeRows(int position, int rows, const QModelIndex &parent){
     Q_UNUSED(parent);
     beginRemoveRows(QModelIndex(), position, position+rows-1);
-    auto& records = engine->getEntries();
+    auto& entries = engine->getEntries();
     for (int row=0; row < rows; ++row) {
         if(remove){
-            records.erase(records.begin()+position);
+            entries.erase(entries.begin()+position);
             cur_count--;
         }
     }
@@ -92,15 +140,7 @@ bool RecordModel::removeRows(int position, int rows, const QModelIndex &parent){
 }
 
 void RecordModel::on_records_changed(){
-    beginResetModel();
-    if(cur_count!=0){
-        removeRows(0, cur_count, QModelIndex());
-    }
-    auto& records = engine->getEntries();
-    std::sort(records.begin(), records.end(), [](Record a, Record b){ return a["species_name"].compare(b["species_name"]) < 0;});
-    cur_count = records.size();
-    insertRows(0, cur_count, QModelIndex());
-    endResetModel();
+    sort_by_section();
 }
 
 bool RecordModel::setData(const QModelIndex &index, const QVariant &value, int role){
@@ -124,8 +164,8 @@ bool RecordModel::setData(const QModelIndex &index, const QVariant &value, int r
 
 
         auto field_value = value.toString().toStdString();
-        auto& records = engine->getEntries();
-        auto& entry = records[row];
+        auto& entries = engine->getEntries();
+        auto& entry = entries[row];
         auto mod_value = entry["modification"];
         if(field_value != entry[field_name]){
             emit action_performed();

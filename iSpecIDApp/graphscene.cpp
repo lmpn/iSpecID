@@ -9,11 +9,11 @@
 
 
 GraphScene::GraphScene(QWidget *parent, IEngine * engine)
-    :  QGraphicsScene(parent), engine(engine), cur_root(nullptr)
+    : engine(engine), cur_root(nullptr)
 {
-    QGraphicsScene *scene = new QGraphicsScene(this);
-    scene->setItemIndexMethod(QGraphicsScene::NoIndex);
-    scene->setSceneRect(QRectF(0, 0, 0, 0));
+    this->setParent(parent);
+    this->setItemIndexMethod(QGraphicsScene::NoIndex);
+    this->setSceneRect(QRectF(0, 0, 0, 0));
 }
 
 
@@ -151,7 +151,9 @@ void GraphScene::set_component_visible(QString key){
     Node *root;
     if(cur_root != nullptr){
         root = qgraphicsitem_cast<Node *>(cur_root);
-        setComponentVisibleDFS(root, false);
+        if(root->getName() != key){
+            setComponentVisibleDFS(root, false);
+        }
     }
     if(!key.isEmpty()){
         cur_root = nodes[key];

@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QFileDialog>
 #include <QKeyEvent>
+#include <QtSql>
 #include <iostream>
 
 #include "graphscene.h"
@@ -49,11 +50,14 @@ private slots:
     void on_graph_combo_box_activated(const QString &arg1);
     void on_annotate_button_clicked();
     void on_filter_triggered();
-    void on_graph_combo_box_changed();
+    void on_combo_box_changed();
     void on_action_performed();
     void on_save_graph_button_clicked();
     void on_save_triggered();
     void on_undo_button_clicked();
+    void on_save_config(double max_dist, int min_labs, int min_seqs);
+    void on_gradind_options_action_triggered();
+    void on_grading_finished();
 
 private:
     Ui::MainWindow *ui;
@@ -61,6 +65,8 @@ private:
     std::vector<Record> undoEntries;
     std::vector<Record> undoFilteredEntries;
     GraphScene *graph;
+    std::vector<std::string> errors;
+
 
     void setupGraphScene(RecordModel *rec_m, ResultsModel *res_m);
     void enableMenuDataActions(bool enable);
@@ -69,5 +75,6 @@ private:
     void deleteRecordRows();
     QString createCompleter();
     void removeRows();
+    void showGradingErrors(std::vector<std::string> &errors);
 };
 #endif // MAINWINDOW_H

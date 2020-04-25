@@ -8,18 +8,7 @@ size_t Record::size() const { return this->fields.size(); }
 
 
 
-std::string Record::operator[](std::string name) const{
-    try{
-        auto index = indexes.get()->operator[](name);
-        return this->operator[](index);
-    }catch(std::out_of_range e){
-        return this->operator[](this->size());
-    }
-}
 
-std::string Record::operator[](size_t index) const{
-    return fields.at(index);
-}
 
 void Record::update(std::string field, std::string name){
     try{

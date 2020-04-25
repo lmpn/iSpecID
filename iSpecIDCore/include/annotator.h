@@ -38,12 +38,12 @@ namespace annotator{
     /*
      * Core Algorithm
     */
-    void annotationAlgo(std::unordered_map<std::string, Species>& data);
+    void annotationAlgo(std::unordered_map<std::string, Species>& data, int min_labs, double min_dist, int min_deposit,std::vector<std::string> &errors);
     /*
      * Core Algorithm Helpers
     */
-    BoldData parseBoldData(std::string bin);
-    std::string findBinsNeighbour(std::unordered_map<std::string, Species>& data, std::unordered_map<std::string,int> bins);
+    BoldData parseBoldData(std::string bin,std::vector<std::string> &errors);
+    std::string findBinsNeighbour(std::unordered_map<std::string, Species>& data, std::unordered_map<std::string,int> bins, double max_dist,std::vector<std::string> &errors);
     bool speciesPerBIN(std::unordered_map<std::string, Species>& data, std::string bin);
 
 };

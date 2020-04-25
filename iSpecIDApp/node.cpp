@@ -137,7 +137,7 @@ QRectF Node::boundingRect() const
     }
     QFontMetricsF fontMetrics(f);
     QRectF textRect = fontMetrics.boundingRect(text);
-    textRect.setWidth(textRect.width()*1.2);
+    textRect.setWidth(textRect.width()*1.5);
     return nodeRect.united(textRect);
 }
 
@@ -148,7 +148,7 @@ QPainterPath Node::shape() const
 {
     QPainterPath path;
     path.addEllipse(-10, -10, 20, 20);
-    QString text;
+    /*QString text;
     if(grade.isEmpty()){
          text = this->name;
     }else{
@@ -157,7 +157,7 @@ QPainterPath Node::shape() const
     QFontMetricsF fontMetrics(f);
     QRectF textRect = fontMetrics.boundingRect(text);
     textRect.setWidth(textRect.width()*1.2);
-    path.addRect(textRect);
+    path.addRect(textRect);*/
     return path;
 }
 
@@ -196,7 +196,7 @@ void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     painter->setBrush(Qt::white);
     QRectF textRect = fontMetrics.boundingRect(text).translated(12,12);
     painter->setPen(Qt::black);
-    textRect.setWidth(textRect.width()*1.2);
+    textRect.setWidth(textRect.width()*1.5);
     painter->drawText(textRect, text);
 }
 
