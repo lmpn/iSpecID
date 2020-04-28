@@ -3,5 +3,7 @@
         <file>icons/main_icon.ico</file>
         <file>icons/main_icon.png</file>
         <file>icons/main_icon.icns</file>
+        <file>icons/zoom-in.png</file>
+        <file>icons/zoom-out.png</file>
     </qresource>
 </RCC>

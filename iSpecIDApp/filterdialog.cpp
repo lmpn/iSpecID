@@ -1,15 +1,20 @@
 #include "filterdialog.h"
 
-FilterDialog::FilterDialog(QStringList header, QWidget *parent)
+FilterDialog::FilterDialog(QStringList header, QList<QStringList> completions, QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::FilterDialog)
 {
     ui->setupUi(this);
     this->header = header;
     fs = ui->fsarea;
+    fs->set_header(header);
+    fs->set_completions(completions);
     ui->horizontalLayout->setAlignment(Qt::AlignHCenter);
     connect(ui->addBtn, &QPushButton::clicked,
-            fs,[this](){fs->add_widget(this->header);});
+            fs,[this](){fs->addWidget();});
+    fs->addWidget();
+    connect(ui->buttonBox, SIGNAL(accepted()), this, SLOT(onButtonboxAccepted()));
+    connect(ui->buttonBox, SIGNAL(rejected()), this, SLOT(onButtonboxRejected()));
 }
 
 
@@ -19,12 +24,12 @@ FilterDialog::~FilterDialog()
 }
 
 
-void FilterDialog::on_buttonBox_rejected()
+void FilterDialog::onButtonboxRejected()
 {
     close();
 }
 
-void FilterDialog::on_buttonBox_accepted()
+void FilterDialog::onButtonboxAccepted()
 {
     ok = true;
     close();

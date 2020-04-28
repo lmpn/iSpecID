@@ -14,7 +14,7 @@ public:
     bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
     QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
 public slots:
-    void on_results_changed();
+    void onResultsChanged();
 private:
     IEngine *engine;
     std::vector<int> results;

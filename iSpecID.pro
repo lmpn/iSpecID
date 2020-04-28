@@ -1,4 +1,4 @@
-QT       += core gui
+QT       += core gui concurrent sql
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -18,6 +18,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         app.cpp \
         iSpecIDApp/edge.cpp \
+        iSpecIDApp/gradingoptionsdialog.cpp \
         iSpecIDApp/graphscene.cpp \
         iSpecIDApp/node.cpp \
         iSpecIDApp/resultsmodel.cpp \
@@ -32,6 +33,8 @@ SOURCES += \
 
 
 HEADERS += \
+        iSpecIDApp/filterItem.h \
+        iSpecIDApp/gradingoptionsdialog.h \
         iSpecIDCore/include/iengine.h \
         iSpecIDCore/include/annotator.h \
         iSpecIDCore/include/species.h \
@@ -47,45 +50,43 @@ HEADERS += \
         iSpecIDApp/recordmodel.h \
         iSpecIDApp/filterdialog.h \
         iSpecIDApp/filterOp.h \
+        iSpecIDApp/filterItem.h \
         iSpecIDApp/filterscrollarea.h
 
+
 FORMS += \
+    iSpecIDApp/gradingoptionsdialog.ui \
     iSpecIDApp/mainwindow.ui \
     iSpecIDApp/filterdialog.ui
+
+RESOURCES += icons.qrc
 
 win32:{
         CONFIG += c++17
         INCLUDEPATH += "iSpecIDCore/include"
         INCLUDEPATH += "C:\boost\include\boost-1_72"
-win32: LIBS += -L$$PWD/winbuild/curl-7.69.1-win64-mingw/lib/ -llibcurl.dll
-
-INCLUDEPATH += $$PWD/winbuild/curl-7.69.1-win64-mingw/include
+        LIBS += -L$$PWD/winbuild/curl-7.69.1-win64-mingw/lib/ -llibcurl.dll
+        INCLUDEPATH += $$PWD/winbuild/curl-7.69.1-win64-mingw/include
         DEPENDPATH += $$PWD/winbuild/curl-7.69.1-win64-mingw/include
-
         win32-g++: PRE_TARGETDEPS += $$PWD/winbuild/curl-7.69.1-win64-mingw/lib/libcurl.dll.a
         RC_ICONS = icons/main_icon.ico
 }
 macx:{
         CONFIG += c++17 app_bundle
-        LIBS += -L$$PWD/../../../../../../usr/local/lib/ -lcurl
-        INCLUDEPATH += $$PWD/../../../../../../usr/local/include
-        DEPENDPATH += $$PWD/../../../../../../usr/local/include
-        PRE_TARGETDEPS += $$PWD/../../../../../../usr/local/lib/libcurl.a
         INCLUDEPATH += "/usr/local/Cellar/boost/1.72.0/include/"
         INCLUDEPATH += "iSpecIDCore/include"
+        LIBS += -L$$PWD/../../../../../usr/lib/ -lcurl.4
+        INCLUDEPATH += $$PWD/../../../../../usr
+        DEPENDPATH += $$PWD/../../../../../usr
+        LIBS += -L$$PWD/../../../../../usr/local/Cellar/libxml2/2.9.10/lib/ -lxml2.2
+
+        INCLUDEPATH += $$PWD/../../../../../usr/local/Cellar/libxml2/2.9.10/include
+        DEPENDPATH += $$PWD/../../../../../usr/local/Cellar/libxml2/2.9.10/include
 #        INCLUDEPATH += "/usr/local/include"
 #        LIBS += "-lcurl"
 
         ICON = icons/main_icon.icns
-message($$PWD)
 }
-
-
-
-message($${TARGET})
-
-
-
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -94,8 +95,4 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 
 
-
-
-
-
-
+macx:

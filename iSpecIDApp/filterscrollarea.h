@@ -5,7 +5,9 @@
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QComboBox>
+#include <QCompleter>
 #include <QTextEdit>
+#include "filterItem.h"
 #include "filterOp.h"
 #include <qdebug.h>
 
@@ -25,50 +27,48 @@ public:
         setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     }
 
+    void set_header(QStringList header){
+        this->header = header;
+    }
+
+    void set_completions(QList<QStringList> completions){
+        this->completions = completions;
+    }
+
     template<class T>
     Func<T> getFilterFunc(){
         auto count = vlayout->rowCount();
         if(count == 1){
             return [](T item){ return true;};
         }
-
-        QComboBox *qbl = static_cast<QComboBox*>(vlayout->itemAtPosition(1,0)->widget());
-        QTextEdit *tel = static_cast<QTextEdit*>(vlayout->itemAtPosition(1,1)->widget());
-        auto col = convertToColumnName(qbl->currentText().toStdString());
-        auto val = tel->toPlainText().toStdString();
+        FilterItem *filter_item = static_cast<FilterItem*>(vlayout->itemAtPosition(1,0)->widget());
+        auto col = convertToColumnName(filter_item->current_group());
+        auto val = filter_item->current_val().toStdString();
         Func<T> fn = [col, val](T item){ return item[col] == val;};
 
-        for (int i = 3; i < count; i+=2) {
-            QComboBox *qbr = static_cast<QComboBox*>(vlayout->itemAtPosition(i,0)->widget());
-            QTextEdit *ter = static_cast<QTextEdit*>(vlayout->itemAtPosition(i,1)->widget());
-            auto col = convertToColumnName(qbr->currentText().toStdString());
-            auto val = ter->toPlainText().toStdString();
+        for (int i = 2; i < count; i+=2) {
+            FilterItem *filter_item = static_cast<FilterItem*>(vlayout->itemAtPosition(i+1,0)->widget());
+            auto col = convertToColumnName(filter_item->current_group());
+            auto val = filter_item->current_val().toStdString();
             Func<T> fn_i = [col, val](T item){ return item[col] == val;};
-            FilterOp * fo = static_cast<FilterOp*>(vlayout->itemAtPosition(i-1,1)->widget());
+            FilterOp * fo = static_cast<FilterOp*>(vlayout->itemAtPosition(i,0)->widget());
             fn = fo->operate(fn,fn_i);
         }
         return fn;
     }
 
 public slots:
-
-    void add_widget(QStringList header){
+    void addWidget(){
         auto count = vlayout->rowCount();
         if(count > 1){
-            vlayout->addWidget(new FilterOp(), count, 1);
+            vlayout->addWidget(new FilterOp(), count, 0);
             count++;
         }
-        auto filterComboBox = new QComboBox();
-        filterComboBox->addItems(header);
-        auto filterCondition = new QTextEdit();
-        filterCondition->setMaximumSize(QSize(16777215, 25));
-        filterCondition->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-
-        vlayout->addWidget(filterComboBox, count, 0);
-        vlayout->addWidget(filterCondition, count, 1);
+        auto filter_item = new FilterItem(header, completions);
+        vlayout->addWidget(filter_item, count, 0);
     }
 private:
-    std::string convertToColumnName(std::string name){
+    std::string convertToColumnName(QString name){
         if(name == "Species"){
             return "species_name";
         }
@@ -83,6 +83,8 @@ private:
         }
         return "";
     }
+    QList<QStringList> completions;
+    QList<QString> header;
 };
 
 #endif // FILTERSCROLLAREA_H

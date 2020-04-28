@@ -18,7 +18,7 @@ int ResultsModel::columnCount(const QModelIndex & /*parent*/) const
 }
 
 
-void ResultsModel::on_results_changed(){
+void ResultsModel::onResultsChanged(){
     results = engine->calculateGradeResults();
     perc = 1.f/engine->getEntries().size();
     auto top_left = index(0,1,QModelIndex());
@@ -66,7 +66,7 @@ QVariant ResultsModel::data(const QModelIndex &index, int role) const
         return results.at(row);
     }else if(col == 2 && role == Qt::DisplayRole){
         if(results.size() == 0) return 0;
-        return QString::number(results.at(row)*perc*100, 'G', 2);
+        return QString::number(results.at(row)*perc*100, 'f', 2);
     }
     return QVariant();
 }

@@ -1,6 +1,5 @@
 #include <fstream>      // std::ofstream
 #include "iengine.h"
-#include "utils.h"
 #include "csv.hpp"
 #include "annotator.h"
 
@@ -40,6 +39,9 @@ void IEngine::save(std::string filePath){
         auto writer = csv::make_tsv_writer(ofs);
         writer << header;
         for(auto& item : entries){
+            writer << item.getFields();
+        }
+        for(auto& item : filtered_entries){
             writer << item.getFields();
         }
         ofs.flush();
@@ -112,8 +114,8 @@ std::vector<int> IEngine::calculateGradeResults(){
 
 
 
-void IEngine::annotate(){
-    annotator::annotationAlgo(grouped_entries);
+void IEngine::annotate(std::vector<std::string> &errors){
+    annotator::annotationAlgo(grouped_entries, min_labs, min_dist, min_deposit, errors);
 }
 
 void IEngine::gradeRecords(){

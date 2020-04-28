@@ -61,11 +61,11 @@
       </property>
       <property name="styleSheet">
        <string notr="true">QFrame#viewer_frame{
-background: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(85, 87, 87, 255), stop:1 grey)
+background:qlineargradient(spread:pad, x1:0, y1:0.511364, x2:1, y2:0.511364, stop:0 rgba(50, 117, 116,255) , stop:1 rgba(69, 135, 133,255) )
 }</string>
       </property>
       <property name="frameShape">
-       <enum>QFrame::StyledPanel</enum>
+       <enum>QFrame::NoFrame</enum>
       </property>
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
@@ -89,20 +89,15 @@ background: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(85, 
        <item row="2" column="1">
         <widget class="QFrame" name="record_frame">
          <property name="styleSheet">
-          <string notr="true">QFrame#record_frame{
-border: 1px gray;
-border-top-right-radius: 25px;
-border-top-left-radius: 25px;
-background: grey
-}</string>
+          <string notr="true"/>
          </property>
          <property name="frameShape">
-          <enum>QFrame::StyledPanel</enum>
+          <enum>QFrame::NoFrame</enum>
          </property>
          <property name="frameShadow">
           <enum>QFrame::Raised</enum>
          </property>
-         <layout class="QVBoxLayout" name="verticalLayout" stretch="0,80,0">
+         <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,80,0">
           <property name="spacing">
            <number>0</number>
           </property>
@@ -121,9 +116,22 @@ background: grey
              <string>Specimens Characterization</string>
             </property>
             <property name="alignment">
-             <set>Qt::AlignCenter</set>
+             <set>Qt::AlignHCenter|Qt::AlignTop</set>
             </property>
            </widget>
+          </item>
+          <item>
+           <spacer name="verticalSpacer_4">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>10</height>
+             </size>
+            </property>
+           </spacer>
           </item>
           <item>
            <widget class="QTableView" name="record_table">
@@ -169,27 +177,22 @@ background: grey
        <item row="2" column="0">
         <widget class="QFrame" name="graph_frame">
          <property name="styleSheet">
-          <string notr="true">QFrame#graph_frame{
-border: 1px gray;
-border-top-right-radius: 25px;
-border-top-left-radius: 25px;
-background: grey
-}</string>
+          <string notr="true"/>
          </property>
          <property name="frameShape">
-          <enum>QFrame::StyledPanel</enum>
+          <enum>QFrame::NoFrame</enum>
          </property>
          <property name="frameShadow">
           <enum>QFrame::Raised</enum>
          </property>
-         <layout class="QVBoxLayout" name="verticalLayout_7" stretch="0,80,0">
+         <layout class="QVBoxLayout" name="verticalLayout_7" stretch="0,0,80,0,0">
           <property name="spacing">
            <number>0</number>
           </property>
           <property name="bottomMargin">
            <number>0</number>
           </property>
-          <item alignment="Qt::AlignHCenter">
+          <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
            <widget class="QLabel" name="graph_viewer_label">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -201,9 +204,22 @@ background: grey
              <string>Connected Taxa</string>
             </property>
             <property name="alignment">
-             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
             </property>
            </widget>
+          </item>
+          <item>
+           <spacer name="verticalSpacer_2">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>10</height>
+             </size>
+            </property>
+           </spacer>
           </item>
           <item>
            <widget class="QGraphicsView" name="graph_viewer">
@@ -232,6 +248,57 @@ background: grey
              <enum>QGraphicsView::MinimalViewportUpdate</enum>
             </property>
            </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout">
+            <item>
+             <spacer name="horizontalSpacer">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QPushButton" name="zoom_in_button">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="icon">
+               <iconset resource="../icons.qrc">
+                <normaloff>:/icons/zoom-in.png</normaloff>:/icons/zoom-in.png</iconset>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="zoom_out_button">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="icon">
+               <iconset resource="../icons.qrc">
+                <normaloff>:/icons/zoom-out.png</normaloff>:/icons/zoom-out.png</iconset>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </item>
           <item>
            <widget class="QComboBox" name="graph_combo_box">
@@ -270,7 +337,9 @@ background: grey
        </size>
       </property>
       <property name="styleSheet">
-       <string notr="true"/>
+       <string notr="true">QFrame#sidebar_frame{
+	background-color:rgb(30, 100, 98)
+}</string>
       </property>
       <property name="frameShape">
        <enum>QFrame::NoFrame</enum>
@@ -279,6 +348,9 @@ background: grey
        <enum>QFrame::Plain</enum>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_5">
+       <property name="spacing">
+        <number>17</number>
+       </property>
        <item>
         <widget class="QFrame" name="results_frame">
          <property name="sizePolicy">
@@ -311,6 +383,14 @@ background: grey
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="styleSheet">
+             <string notr="true">QFrame#initial_results_frame{
+color: white;
+border-top-right-radius: 15px;
+border-top-left-radius: 15px;
+background:rgb(25, 150, 141);
+}</string>
+            </property>
             <property name="frameShape">
              <enum>QFrame::StyledPanel</enum>
             </property>
@@ -338,11 +418,14 @@ background: grey
                  <verstretch>0</verstretch>
                 </sizepolicy>
                </property>
+               <property name="styleSheet">
+                <string notr="true">color:white</string>
+               </property>
                <property name="text">
                 <string>Grading Statistics</string>
                </property>
                <property name="alignment">
-                <set>Qt::AlignCenter</set>
+                <set>Qt::AlignBottom|Qt::AlignHCenter</set>
                </property>
               </widget>
              </item>
@@ -359,6 +442,12 @@ background: grey
                  <width>0</width>
                  <height>0</height>
                 </size>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">border: 1px gray;</string>
+               </property>
+               <property name="frameShape">
+                <enum>QFrame::NoFrame</enum>
                </property>
                <property name="verticalScrollBarPolicy">
                 <enum>Qt::ScrollBarAlwaysOff</enum>
@@ -381,6 +470,14 @@ background: grey
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">QFrame#current_results_frame{
+color: white;
+border-top-right-radius: 15px;
+border-top-left-radius: 15px;
+background: rgb(25, 150, 141);
+}</string>
             </property>
             <property name="frameShape">
              <enum>QFrame::StyledPanel</enum>
@@ -409,6 +506,9 @@ background: grey
                  <verstretch>0</verstretch>
                 </sizepolicy>
                </property>
+               <property name="styleSheet">
+                <string notr="true">color:white</string>
+               </property>
                <property name="text">
                 <string>Current Grading Statistics</string>
                </property>
@@ -424,6 +524,9 @@ background: grey
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
+               </property>
+               <property name="frameShape">
+                <enum>QFrame::NoFrame</enum>
                </property>
                <property name="verticalScrollBarPolicy">
                 <enum>Qt::ScrollBarAlwaysOff</enum>
@@ -478,6 +581,33 @@ background: grey
            <height>16777215</height>
           </size>
          </property>
+         <property name="styleSheet">
+          <string notr="true">QPushButton#annotate_button{
+color:white;
+background:rgb(25, 150, 141);
+border-color:rgb(25, 150, 141);
+border-radius: 5px;
+height: 25px
+}
+
+QPushButton#annotate_button:hover
+{
+color:(220, 223, 223);
+background:rgb(21, 156, 143);
+border-color:rgb(21, 156, 143);
+border-radius: 5px;
+height: 25px
+}
+
+QPushButton#annotate_button:pressed
+{
+color:rgb(211, 213, 213);
+background:rgb(16, 117, 107);
+border-color:rgb(16, 117, 107);
+border-radius: 5px;
+height: 25px
+}</string>
+         </property>
          <property name="text">
           <string>Grade</string>
          </property>
@@ -486,7 +616,30 @@ background: grey
        <item>
         <widget class="QPushButton" name="save_graph_button">
          <property name="styleSheet">
-          <string notr="true"/>
+          <string notr="true">QPushButton#save_graph_button{
+color:white;
+background:rgb(25, 150, 141);
+border-color:rgb(25, 150, 141);
+border-radius: 5px;
+height: 25px
+}
+QPushButton#save_graph_button:hover
+{
+color:(220, 223, 223);
+background:rgb(21, 156, 143);
+border-color:rgb(21, 156, 143);
+border-radius: 5px;
+height: 25px
+}
+
+QPushButton#save_graph_button:pressed
+{
+color:rgb(211, 213, 213);
+background:rgb(16, 117, 107);
+border-color:rgb(16, 117, 107);
+border-radius: 5px;
+height: 25px
+}</string>
          </property>
          <property name="text">
           <string>Save Image</string>
@@ -513,6 +666,32 @@ background: grey
            <height>16777215</height>
           </size>
          </property>
+         <property name="styleSheet">
+          <string notr="true">QPushButton#undo_button{
+color:white;
+background:rgb(25, 150, 141);
+border-color:rgb(25, 150, 141);
+border-radius: 5px;
+height: 25px
+}
+
+QPushButton#undo_button:hover
+{
+color:(220, 223, 223);
+background:rgb(21, 156, 143);
+border-color:rgb(21, 156, 143);
+border-radius: 5px;
+height: 25px
+}
+QPushButton#undo_button:pressed
+{
+color:rgb(211, 213, 213);
+background:rgb(16, 117, 107);
+border-color:rgb(16, 117, 107);
+border-radius: 5px;
+height: 25px
+}</string>
+         </property>
          <property name="text">
           <string>Undo</string>
          </property>
@@ -536,20 +715,21 @@ background: grey
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="load_file"/>
-    <addaction name="save"/>
+    <addaction name="load_file_action"/>
+    <addaction name="save_file_action"/>
    </widget>
    <widget class="QMenu" name="menu_data">
     <property name="title">
      <string>Data</string>
     </property>
-    <addaction name="filter"/>
+    <addaction name="filter_action"/>
+    <addaction name="gradind_options_action"/>
    </widget>
    <addaction name="menu_file"/>
    <addaction name="menu_data"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
-  <action name="load_file">
+  <action name="load_file_action">
    <property name="text">
     <string>Open file...</string>
    </property>
@@ -557,7 +737,7 @@ background: grey
     <string>Ctrl+O</string>
    </property>
   </action>
-  <action name="save">
+  <action name="save_file_action">
    <property name="text">
     <string>Save as...</string>
    </property>
@@ -565,7 +745,7 @@ background: grey
     <string>Ctrl+S</string>
    </property>
   </action>
-  <action name="filter">
+  <action name="filter_action">
    <property name="enabled">
     <bool>true</bool>
    </property>
@@ -573,7 +753,14 @@ background: grey
     <string>Filter</string>
    </property>
   </action>
+  <action name="gradind_options_action">
+   <property name="text">
+    <string>Grading Options</string>
+   </property>
+  </action>
  </widget>
- <resources/>
+ <resources>
+  <include location="../icons.qrc"/>
+ </resources>
  <connections/>
 </ui>

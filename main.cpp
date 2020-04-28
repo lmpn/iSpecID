@@ -1,8 +1,9 @@
 #include "utils.h"
 #include "iengine.h"
+#include "miner.h"
+#include "annotator.h"
 
-int main(int argc, char **argv)
-{
+void run(int argc, char **argv){
     std::string file_path = utils::argParse<std::string>(argc, argv,"--data=", "/Users/lmpn/Documents/canidae.tsv");
     IEngine engine;
     engine.load(file_path);
@@ -10,5 +11,11 @@ int main(int argc, char **argv)
     engine.group();
     engine.annotate();
     engine.gradeRecords();
-    //PRINTV(engine.calculateGradeResults());
+    engine.save("output.tsv");
+}
+
+int main(int argc, char **argv)
+{
+   run(argc,argv); 
+
 }
