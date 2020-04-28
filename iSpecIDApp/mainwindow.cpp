@@ -249,6 +249,7 @@ void MainWindow::annotateFinished(){
     if(errors.size()>0)
         showGradingErrors(this->errors);
     this->setCursor(Qt::ArrowCursor);
+    ui->centralwidget->setEnabled(true);
 }
 
 
@@ -394,12 +395,13 @@ void MainWindow::onAnnotateData()
     ui->statusbar->showMessage("Grading...");
     undoEntries = engine->getEntriesCopy();
     undoFilteredEntries = engine->getFilteredEntriesCopy();
+    ui->centralwidget->setDisabled(true);
     QtConcurrent::run([this]{
         QObject src;
         engine->annotate(this->errors);
         engine->gradeRecords();
         QObject::connect(&src, SIGNAL(destroyed(QObject*)),
-                         this, SLOT(on_grading_finished()));
+                         this, SLOT(annotateFinished()));
     });
 }
 
