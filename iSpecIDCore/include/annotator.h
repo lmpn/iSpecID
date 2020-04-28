@@ -38,7 +38,7 @@ namespace annotator{
     /*
      * Core Algorithm
     */
-    void annotationAlgo(std::unordered_map<std::string, Species>& data, int min_labs, double min_dist, int min_deposit,std::vector<std::string> &errors);
+    void annotationAlgo(std::unordered_map<std::string, Species>& data,std::vector<std::string> &errors, int min_labs = 2, double min_dist = 2.0, int min_deposit = 3);
     /*
      * Core Algorithm Helpers
     */

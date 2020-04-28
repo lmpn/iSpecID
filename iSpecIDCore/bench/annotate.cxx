@@ -14,10 +14,11 @@ static void V6_culicidae(benchmark::State& state) {
     for (auto _ : state)
     {
         IEngine an;
+        std::vector<std::string> er;
         an.load(s);
         an.filter([](Record item) {return item["species_name"].empty();});
         an.group();
-        an.annotate();
+        an.annotate(er);
         an.calculateGradeResults();
     };
 }
@@ -27,10 +28,11 @@ static void V6_aves(benchmark::State& state) {
     for (auto _ : state)
     {
         IEngine an;
+        std::vector<std::string> er;
         an.load(s);
         an.filter([](Record item) {return item["species_name"].empty();});
         an.group();
-        an.annotate();
+        an.annotate(er);
         an.calculateGradeResults();
     }
 }
@@ -40,10 +42,11 @@ static void V6_canidae(benchmark::State& state) {
     for (auto _ : state)
     {
         IEngine an;
+        std::vector<std::string> er;
         an.load(s);
         an.filter([](Record item) {return item["species_name"].empty();});
         an.group();
-        an.annotate();
+        an.annotate(er);
         an.calculateGradeResults();
     }
 }

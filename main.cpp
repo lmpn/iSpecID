@@ -6,10 +6,11 @@
 void run(int argc, char **argv){
     std::string file_path = utils::argParse<std::string>(argc, argv,"--data=", "/Users/lmpn/Documents/canidae.tsv");
     IEngine engine;
+    std::vector<std::string> er;
     engine.load(file_path);
     engine.filter([](Record item) {return item["species_name"].empty();});
     engine.group();
-    engine.annotate();
+    engine.annotate(er);
     engine.gradeRecords();
     engine.save("output.tsv");
 }

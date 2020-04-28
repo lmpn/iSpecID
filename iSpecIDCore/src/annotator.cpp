@@ -6,7 +6,7 @@
 
 namespace annotator {
 
-void annotationAlgo(std::unordered_map<std::string, Species>& data, int min_labs, double min_dist, int min_deposit,std::vector<std::string> &errors){
+void annotationAlgo(std::unordered_map<std::string, Species>& data,std::vector<std::string> &errors, int min_labs, double min_dist, int min_deposit){
     /*
     Para cada especie(ESP):
         Se o #sequencias > 3:
@@ -44,15 +44,15 @@ void annotationAlgo(std::unordered_map<std::string, Species>& data, int min_labs
     for(auto& pair : data){
         auto& species = pair.second;
         std::string grade = "D";
-        int size = species.specimens.size();
-        if(size > min_deposit){
+        int size = species.institution.size();
+        if(size >= min_labs){
 
             grade = "E1";
             if(species.bins.size() == 1){
                 auto bin = (*species.bins.begin()).first;
                 auto BINSpeciesConcordance = speciesPerBIN(data, bin);
                 if(BINSpeciesConcordance){
-                    grade = species.institution.size() == min_labs ? "B" : "A";
+                    grade = species.specimens.size() >= min_deposit ? "B" : "A";
                 }
             }else{
                 grade = findBinsNeighbour(data, species.bins, min_dist, errors);
@@ -159,8 +159,6 @@ BoldData parseBoldData(std::string bin,std::vector<std::string> &errors){
         bd.distance = d;
         bd.neighbour = nbin;
     }catch (const std::exception& e) {
-        errors.push_back("Error fetching bin " + bin +" data");
-    }catch(const std::runtime_error& r_e){
         errors.push_back("Error fetching bin " + bin +" data");
     }
     return bd;

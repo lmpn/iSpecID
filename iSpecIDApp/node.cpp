@@ -148,16 +148,6 @@ QPainterPath Node::shape() const
 {
     QPainterPath path;
     path.addEllipse(-10, -10, 20, 20);
-    /*QString text;
-    if(grade.isEmpty()){
-         text = this->name;
-    }else{
-         text = this->name + "(" + this->grade + ")";
-    }
-    QFontMetricsF fontMetrics(f);
-    QRectF textRect = fontMetrics.boundingRect(text);
-    textRect.setWidth(textRect.width()*1.2);
-    path.addRect(textRect);*/
     return path;
 }
 

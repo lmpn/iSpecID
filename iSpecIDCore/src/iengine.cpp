@@ -115,7 +115,7 @@ std::vector<int> IEngine::calculateGradeResults(){
 
 
 void IEngine::annotate(std::vector<std::string> &errors){
-    annotator::annotationAlgo(grouped_entries, min_labs, min_dist, min_deposit, errors);
+    annotator::annotationAlgo(grouped_entries, errors, min_labs, min_dist, min_deposit);
 }
 
 void IEngine::gradeRecords(){
