@@ -18,7 +18,7 @@ int ResultsModel::columnCount(const QModelIndex & /*parent*/) const
 }
 
 
-void ResultsModel::on_results_changed(){
+void ResultsModel::onResultsChanged(){
     results = engine->calculateGradeResults();
     perc = 1.f/engine->getEntries().size();
     auto top_left = index(0,1,QModelIndex());

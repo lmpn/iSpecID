@@ -22,11 +22,8 @@ void sort_column(std::vector<Record>& entries, std::string key, bool order){
 
 
 
-void RecordModel::sort_by_section(int col){
-    beginResetModel();
-    if(cur_count!=0){
-        removeRows(0, cur_count, QModelIndex());
-    }
+void RecordModel::sortBySection(int col){
+
     auto& entries = engine->getEntries();
     if(col== 0){
         if(last_col == col)
@@ -49,9 +46,9 @@ void RecordModel::sort_by_section(int col){
         sort_column(entries, "grade" , sort_order[col]);
     }
     last_col = col;
-    cur_count = entries.size();
-    insertRows(0, cur_count, QModelIndex());
-    endResetModel();
+    auto topLeft = this->index(0,0);
+    auto rightBottom = this->index(entries.size(),columnCount());
+    emit dataChanged(topLeft, rightBottom, {Qt::DisplayRole});
 }
 
 int RecordModel::rowCount(const QModelIndex & /*parent*/) const
@@ -85,7 +82,23 @@ QVariant RecordModel::headerData(int section, Qt::Orientation orientation, int r
             return QVariant();
 
         }
-    }else if(role == Qt::DisplayRole && orientation == Qt::Vertical){
+    }else if(role == Qt::DecorationRole && orientation == Qt::Horizontal)
+    {
+        switch (section) {
+        case 0:
+            return QString("Species");
+        case 1:
+            return QString("Bin");
+        case 2:
+            return QString("Source");
+        case 3:
+            return QString("Grade");
+        default:
+            return QVariant();
+
+        }
+    }
+    else if(role == Qt::DisplayRole && orientation == Qt::Vertical){
         return section;
     }
     return QVariant();
@@ -139,8 +152,23 @@ bool RecordModel::removeRows(int position, int rows, const QModelIndex &parent){
     return true;
 }
 
-void RecordModel::on_records_changed(){
-    sort_by_section();
+void RecordModel::onRecordsChanged(){
+    beginResetModel();
+    if(cur_count!=0){
+        removeRows(0, cur_count, QModelIndex());
+    }
+    auto& entries = engine->getEntries();
+    sort_column(entries,"species_name", true);
+    cur_count = entries.size();
+    insertRows(0, cur_count, QModelIndex());
+    endResetModel();
+
+
+    /*
+    auto topLeft = this->index(0,0);
+    auto rightBottom = this->index(this->engine->size(),columnCount());
+    emit dataChanged(topLeft, rightBottom, {Qt::DisplayRole});
+*/
 }
 
 bool RecordModel::setData(const QModelIndex &index, const QVariant &value, int role){
@@ -168,7 +196,7 @@ bool RecordModel::setData(const QModelIndex &index, const QVariant &value, int r
         auto& entry = entries[row];
         auto mod_value = entry["modification"];
         if(field_value != entry[field_name]){
-            emit action_performed();
+            emit actionPerformed();
             entry.update(field_value,field_name);
             if(mod_value.empty()){
                 mod_value += field_name;
@@ -178,8 +206,8 @@ bool RecordModel::setData(const QModelIndex &index, const QVariant &value, int r
             entry.update(mod_value, "modification");
             engine->group();
             emit dataChanged(index, index, {Qt::DisplayRole});
-            emit update_graph();
-            emit update_combobox();
+            emit updateGraph();
+            emit updateCombobox();
         }
         return true;
     }

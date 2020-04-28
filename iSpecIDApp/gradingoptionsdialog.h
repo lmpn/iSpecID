@@ -14,13 +14,13 @@ class GradingOptionsDialog : public QDialog
 public:
     explicit GradingOptionsDialog(QWidget *parent = nullptr);
     ~GradingOptionsDialog();
-    bool handle_click();
+    bool handleClick();
 
 signals:
-    void save_config(double, int, int);
+    void saveConfig(double, int, int);
 private slots:
-    void on_save_options_button_clicked();
-    void on_ok_button_clicked();
+    void onSaveOptionsButtonClicked();
+    void onOkButtonClicked();
 
 private:
     Ui::GradingOptionsDialog *ui;

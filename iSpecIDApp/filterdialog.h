@@ -33,8 +33,8 @@ public:
     bool accepted(){return ok;}
 
 private slots:
-    void on_buttonBox_rejected();
-    void on_buttonBox_accepted();
+    void onButtonboxRejected();
+    void onButtonboxAccepted();
 
 private:
     bool ok = false;

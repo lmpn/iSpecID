@@ -78,7 +78,7 @@ public:
     void remove();
 
 signals:
-    void remove_edge(Edge* edge);
+    void removeEdge(Edge* edge);
 
 protected:
     void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;

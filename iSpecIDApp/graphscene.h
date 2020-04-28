@@ -19,17 +19,16 @@ public:
     ~GraphScene();
 
 public slots:
-    void on_remove_edge(Edge *);
-    void set_component_visible(QString key = QString::fromStdString(""));
-    void on_graph_changed();
-    void on_graph_color_changed();
-    void on_save_graph(QString);
+    void onRemoveEdge(Edge *);
+    void setComponentVisible(QString key = QString::fromStdString(""));
+    void onGraphChanged();
+    void onGraphColorChanged();
 
 signals:
-    void update_records();
-    void update_results();
-    void update_combobox();
-    void action_performed();
+    void updateRecords();
+    void updateResults();
+    void updateCombobox();
+    void actionPerformed();
 
 private:
     void clean();

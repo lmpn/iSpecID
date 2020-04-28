@@ -16,19 +16,19 @@ public:
     Qt::ItemFlags flags(const QModelIndex &index) const override;
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
-    QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+    QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
     bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
     bool removeRow(int row, const QModelIndex &parent = QModelIndex());
     bool removeRows(int position, int row, const QModelIndex &parent = QModelIndex()) override;
 public slots:
-    void on_records_changed();
-    void sort_by_section(int col = 0);
+    void onRecordsChanged();
+    void sortBySection(int col = 0);
 signals:
-    void action_performed();
-    void update_graph();
-    void update_results();
-    void update_combobox();
+    void actionPerformed();
+    void updateGraph();
+    void updateResults();
+    void updateCombobox();
 
 private:
     //QVector<Record> records;

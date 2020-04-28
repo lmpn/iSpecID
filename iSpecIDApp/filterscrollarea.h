@@ -58,7 +58,7 @@ public:
     }
 
 public slots:
-    void add_widget(){
+    void addWidget(){
         auto count = vlayout->rowCount();
         if(count > 1){
             vlayout->addWidget(new FilterOp(), count, 0);

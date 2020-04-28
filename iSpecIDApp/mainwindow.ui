@@ -715,21 +715,21 @@ height: 25px
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="load_file"/>
-    <addaction name="save"/>
+    <addaction name="load_file_action"/>
+    <addaction name="save_file_action"/>
    </widget>
    <widget class="QMenu" name="menu_data">
     <property name="title">
      <string>Data</string>
     </property>
-    <addaction name="filter"/>
+    <addaction name="filter_action"/>
     <addaction name="gradind_options_action"/>
    </widget>
    <addaction name="menu_file"/>
    <addaction name="menu_data"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
-  <action name="load_file">
+  <action name="load_file_action">
    <property name="text">
     <string>Open file...</string>
    </property>
@@ -737,7 +737,7 @@ height: 25px
     <string>Ctrl+O</string>
    </property>
   </action>
-  <action name="save">
+  <action name="save_file_action">
    <property name="text">
     <string>Save as...</string>
    </property>
@@ -745,7 +745,7 @@ height: 25px
     <string>Ctrl+S</string>
    </property>
   </action>
-  <action name="filter">
+  <action name="filter_action">
    <property name="enabled">
     <bool>true</bool>
    </property>

@@ -11,8 +11,10 @@ FilterDialog::FilterDialog(QStringList header, QList<QStringList> completions, Q
     fs->set_completions(completions);
     ui->horizontalLayout->setAlignment(Qt::AlignHCenter);
     connect(ui->addBtn, &QPushButton::clicked,
-            fs,[this](){fs->add_widget();});
-    fs->add_widget();
+            fs,[this](){fs->addWidget();});
+    fs->addWidget();
+    connect(ui->buttonBox, SIGNAL(accepted()), this, SLOT(onButtonboxAccepted()));
+    connect(ui->buttonBox, SIGNAL(rejected()), this, SLOT(onButtonboxRejected()));
 }
 
 
@@ -22,12 +24,12 @@ FilterDialog::~FilterDialog()
 }
 
 
-void FilterDialog::on_buttonBox_rejected()
+void FilterDialog::onButtonboxRejected()
 {
     close();
 }
 
-void FilterDialog::on_buttonBox_accepted()
+void FilterDialog::onButtonboxAccepted()
 {
     ok = true;
     close();

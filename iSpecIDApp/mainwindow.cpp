@@ -12,6 +12,7 @@
 #include "gradingoptionsdialog.h"
 #include <iostream>
 #include <QtSql>
+#include "csv.hpp"
 
 
 void MainWindow::setupGraphScene(RecordModel *record_model, ResultsModel *results_model)
@@ -23,24 +24,22 @@ void MainWindow::setupGraphScene(RecordModel *record_model, ResultsModel *result
     ui->graph_viewer->setViewportUpdateMode(QGraphicsView::ViewportUpdateMode::BoundingRectViewportUpdate);
     ui->graph_viewer->setRenderHint(QPainter::Antialiasing);
     ui->graph_viewer->setTransformationAnchor(QGraphicsView::ViewportAnchor::AnchorViewCenter);
-    connect(this, SIGNAL(save_graph(QString)),
-            graph,SLOT(on_save_graph(QString)));
-    connect(this, SIGNAL(update_graph()),
-            graph,SLOT(on_graph_changed()));
-    connect(this, SIGNAL(update_color_graph()),
-            graph,SLOT(on_graph_color_changed()));
-    connect(this, SIGNAL(show_component(QString)),
-            graph,SLOT(set_component_visible(QString)));
-    connect(graph, SIGNAL(update_combobox()),
+    connect(this, SIGNAL(updateGraph()),
+            graph,SLOT(onGraphChanged()));
+    connect(this, SIGNAL(updateColorGraph()),
+            graph,SLOT(onGraphColorChanged()));
+    connect(this, SIGNAL(showComponent(QString)),
+            graph,SLOT(setComponentVisible(QString)));
+    connect(graph, SIGNAL(updateCombobox()),
             this,SLOT(on_combo_box_changed()));
-    connect(graph, SIGNAL(action_performed()),
-            this,SLOT(on_action_performed()));
-    connect(graph, SIGNAL(update_results()),
-            results_model,SLOT(on_results_changed()));
-    connect(graph, SIGNAL(update_records()),
-            record_model,SLOT(on_records_changed()));
-    connect(record_model, SIGNAL(update_graph()),
-            graph, SLOT(on_graph_changed()));
+    connect(graph, SIGNAL(actionPerformed()),
+            this,SLOT(onActionPerformed()));
+    connect(graph, SIGNAL(updateResults()),
+            results_model,SLOT(onResultsChanged()));
+    connect(graph, SIGNAL(updateRecords()),
+            record_model,SLOT(onRecordsChanged()));
+    connect(record_model, SIGNAL(updateGraph()),
+            graph, SLOT(onGraphChanged()));
 }
 
 void MainWindow::enableMenuDataActions(bool enable)
@@ -53,7 +52,7 @@ void MainWindow::enableMenuDataActions(bool enable)
 
 void MainWindow::on_combo_box_changed(){
     auto first = createCompleter();
-    emit show_component(first);
+    emit showComponent(first);
 }
 
 void MainWindow::gradingTableAdjust(QTableView *tableView)
@@ -88,37 +87,58 @@ MainWindow::MainWindow(QWidget *parent)
     engine = new IEngine();
 
 
+
+    //conect buttons
+    connect(ui->annotate_button, SIGNAL(clicked()),
+            this, SLOT(onAnnotateData()));
+    connect(ui->undo_button, SIGNAL(clicked()),
+            this, SLOT(undo()));
+    connect(ui->save_graph_button, SIGNAL(clicked()),
+            this, SLOT(saveGraph()));
     connect(ui->zoom_out_button, SIGNAL(clicked()),
             this, SLOT(zoomOut()));
     connect(ui->zoom_in_button, SIGNAL(clicked()),
             this, SLOT(zoomIn()));
+    connect(ui->load_file_action, SIGNAL(triggered()),
+            this, SLOT(loadFile()));
+    connect(ui->save_file_action, SIGNAL(triggered()),
+            this, SLOT(saveFile()));
+    //f
+    connect(ui->filter_action, SIGNAL(triggered()),
+            this, SLOT(showFilter()));
+    connect(ui->gradind_options_action, SIGNAL(triggered()),
+            this, SLOT(showGradingOptions()));
+    //gopts
+
+
+
+
     //Setup record table
     RecordModel *record_model = new RecordModel(ui->record_table,engine);
     ui->record_table->setModel(record_model);
     ui->record_table->setSelectionBehavior(QAbstractItemView::SelectionBehavior::SelectRows);
-    connect(this, SIGNAL(update_records()),
-            record_model,SLOT(on_records_changed()));
-    connect(record_model, SIGNAL(update_combobox()),
+    connect(this, SIGNAL(updateRecords()),
+            record_model,SLOT(onRecordsChanged()));
+    connect(record_model, SIGNAL(updateCombobox()),
             this, SLOT(on_combo_box_changed()));
-    connect(ui->record_table->horizontalHeader(),
-            SIGNAL(sectionClicked( int )),
-            record_model,
-            SLOT(sort_by_section(int)));
+    connect(ui->record_table->horizontalHeader(), SIGNAL(sectionClicked( int )),
+            record_model, SLOT(sortBySection(int)));
+
     //Setup results table
     ResultsModel *results_model = new ResultsModel(ui->initial_results_table,engine);
     ui->initial_results_table->setModel(results_model);
     gradingTableAdjust(ui->initial_results_table);
     ui->initial_results_frame->hide();
-    connect(this, SIGNAL(update_results()),
-            results_model,SLOT(on_results_changed()));
+    connect(this, SIGNAL(updateResults()),
+            results_model,SLOT(onResultsChanged()));
 
     //Setup current results table
     ResultsModel *current_results_model = new ResultsModel(ui->current_results_table,engine);
     ui->current_results_table->setModel(current_results_model);
     gradingTableAdjust(ui->current_results_table);
     ui->current_results_frame->hide();
-    connect(this, SIGNAL(update_current_results()),
-            current_results_model,SLOT(on_results_changed()));
+    connect(this, SIGNAL(updateCurrentResults()),
+            current_results_model,SLOT(onResultsChanged()));
 
     ui->results_frame->hide();
 
@@ -128,7 +148,6 @@ MainWindow::MainWindow(QWidget *parent)
     //Disable actions of menubar
     enableMenuDataActions(false);
     showMaximized();
-
 }
 
 MainWindow::~MainWindow()
@@ -138,7 +157,7 @@ MainWindow::~MainWindow()
 }
 
 
-void MainWindow::on_load_file_triggered()
+void MainWindow::loadFile()
 {
     //read file
     QString filePath = QFileDialog::getOpenFileName(this, tr("Input file"), "", tr("All Files (*)"));
@@ -197,7 +216,7 @@ QString MainWindow::createCompleter(){
 void MainWindow::on_graph_combo_box_activated(const QString &arg1)
 {
     //Change graph component
-    emit show_component(arg1);
+    emit showComponent(arg1);
 }
 
 
@@ -215,23 +234,157 @@ void MainWindow::showGradingErrors(std::vector<std::string> &errors){
     msgBox.exec();
 }
 
-void MainWindow::on_grading_finished(){
-    emit update_color_graph();
-    emit update_records();
+void MainWindow::annotateFinished(){
+    emit updateColorGraph();
+    emit updateRecords();
     if(!ui->results_frame->isVisible()){
         ui->results_frame->show();
         ui->initial_results_frame->show();
         ui->current_results_frame->show();
-        emit update_results();
+        emit updateResults();
     }
-    emit update_current_results();
+    emit updateCurrentResults();
     ui->annotate_button->setDisabled(false);
     ui->statusbar->showMessage("");
-    showGradingErrors(this->errors);
+    if(errors.size()>0)
+        showGradingErrors(this->errors);
     this->setCursor(Qt::ArrowCursor);
 }
 
-void MainWindow::on_annotate_button_clicked()
+
+void MainWindow::updateApp()
+{
+    engine->group();
+    emit updateGraph();
+    emit updateRecords();
+    emit updateCurrentResults();
+    auto first = createCompleter();
+    emit showComponent(first);
+}
+
+/*
+    USER INPUT HANDLE
+*/
+
+void MainWindow::deleteRecordRows()
+{
+    undoEntries = engine->getEntriesCopy();
+    undoFilteredEntries = engine->getFilteredEntriesCopy();
+    auto selection = ui->record_table->selectionModel()->selectedRows();
+    auto model = (RecordModel *)ui->record_table->model();
+    QList<int> rows;
+    model->remove = true;
+    for (QModelIndex index : selection) {
+        rows.append(index.row());
+    }
+    std::sort(rows.begin(), rows.end(),  std::greater<int>());
+    for (auto row : rows) {
+        model->removeRow(row);
+    }
+    model->remove = false;
+    engine->group();
+    auto first = createCompleter();
+    emit updateCurrentResults();
+    emit updateGraph();
+    emit showComponent(first);
+}
+
+void MainWindow::keyPressEvent(QKeyEvent *event)
+{
+    switch (event->key()) {
+    case Qt::Key_Backspace:
+        deleteRecordRows();
+        break;
+    case Qt::Key_Plus:
+        zoomIn();
+        break;
+    case Qt::Key_Minus:
+        zoomOut();
+        break;
+    default:
+        QMainWindow::keyPressEvent(event);
+    }
+}
+
+void MainWindow::scaleView(qreal scaleFactor)
+{
+    qreal factor = this->ui->graph_viewer->transform().scale(scaleFactor, scaleFactor).mapRect(QRectF(0, 0, 1, 1)).width();
+    if (factor < 0.07 || factor > 100)
+        return;
+
+    this->ui->graph_viewer->scale(scaleFactor, scaleFactor);
+}
+
+void MainWindow::zoomIn()
+{
+    scaleView(qreal(1.2));
+}
+
+void MainWindow::zoomOut()
+{
+    scaleView(1 / qreal(1.2));
+}
+
+void MainWindow::saveGraph()
+{
+    QString fileName = QFileDialog::getSaveFileName(this,
+                                                    tr("Save "), "",
+                                                    tr("(*.png);;All Files (*)"));
+    if (fileName.isEmpty())
+        return;
+    else {
+        const QPixmap pixmap = ui->graph_viewer->grab();
+        pixmap.save(fileName);
+    }
+}
+
+void MainWindow::saveFile()
+{
+    //QString path = QFileDialog::getExistingDirectory(this, tr("Output directory"), "");
+    QString fileName = QFileDialog::getSaveFileName(this,
+                                                    tr("Save "), "",
+                                                    tr("Tab separated file (*.tsv);;All Files (*)"));
+    if (fileName.isEmpty())
+        return;
+    else {
+        engine->save(fileName.toStdString());
+    }
+}
+
+void MainWindow::onActionPerformed()
+{
+    undoEntries = engine->getEntriesCopy();
+    undoFilteredEntries = engine->getFilteredEntriesCopy();
+}
+
+void MainWindow::undo()
+{
+    if(undoEntries.size() == 0) return;
+    engine->setEntries(undoEntries);
+    engine->setFilteredEntries(undoFilteredEntries);
+    undoEntries = {};
+    undoFilteredEntries = {};
+    updateApp();
+}
+
+void MainWindow::onSaveConfig(double max_dist, int min_labs, int min_seqs)
+{
+    engine->setDist(max_dist);
+    engine->setLabs(min_labs);
+    engine->setDeposit(min_seqs);
+}
+
+void MainWindow::showGradingOptions()
+{
+    GradingOptionsDialog * gopts = new GradingOptionsDialog();
+    connect(gopts, SIGNAL(saveConfig(double, int, int)),
+            this, SLOT(onSaveConfig(double, int, int)));
+    gopts->exec();
+    delete gopts;
+
+}
+
+void MainWindow::onAnnotateData()
 {
     if(engine->size() == 0){
         return;
@@ -245,19 +398,19 @@ void MainWindow::on_annotate_button_clicked()
         QObject src;
         engine->annotate(this->errors);
         engine->gradeRecords();
-      QObject::connect(&src, SIGNAL(destroyed(QObject*)),
-                       this, SLOT(on_grading_finished()));
+        QObject::connect(&src, SIGNAL(destroyed(QObject*)),
+                         this, SLOT(on_grading_finished()));
     });
 }
 
-void MainWindow::on_filter_triggered()
+void MainWindow::showFilter()
 {
     QStringList headers;
     auto model = ui->record_table->model();
     auto count = model->columnCount();
     for(int i = 0; i < count; i++)
     {
-        headers << model->headerData(i, Qt::Horizontal).toString();
+        headers << model->headerData(i, Qt::Horizontal, Qt::DecorationRole).toString();
     }
     QSet<QString> species, bins, inst, grade;
     grade << "A" << "B" << "C" << "D" <<"E";
@@ -287,7 +440,8 @@ void MainWindow::on_filter_triggered()
         msgBox.setDefaultButton(QMessageBox::Ok);
         msgBox.exec();
         int apply = msgBox.result();
-        if(apply == 1){
+        qDebug() << apply;
+        if(apply == 1024){
             undoEntries = currentEntries;
             undoFilteredEntries = currentFilteredEntries;
             updateApp();
@@ -300,146 +454,3 @@ void MainWindow::on_filter_triggered()
     }
 }
 
-
-
-/*
-    USER INPUT HANDLE
-*/
-
-void MainWindow::deleteRecordRows(){
-    undoEntries = engine->getEntriesCopy();
-    undoFilteredEntries = engine->getFilteredEntriesCopy();
-    auto selection = ui->record_table->selectionModel()->selectedRows();
-    auto model = (RecordModel *)ui->record_table->model();
-    QList<int> rows;
-    model->remove = true;
-    for (QModelIndex index : selection) {
-        rows.append(index.row());
-    }
-    std::sort(rows.begin(), rows.end(),  std::greater<int>());
-    for (auto row : rows) {
-        model->removeRow(row);
-    }
-    model->remove = false;
-    engine->group();
-    auto first = createCompleter();
-    emit update_current_results();
-    emit update_graph();
-    emit show_component(first);
-}
-
-
-
-void MainWindow::keyPressEvent(QKeyEvent *event)
-{
-    switch (event->key()) {
-    case Qt::Key_Backspace:
-        deleteRecordRows();
-        break;
-    case Qt::Key_Plus:
-        zoomIn();
-        break;
-    case Qt::Key_Minus:
-        zoomOut();
-        break;
-    default:
-        QMainWindow::keyPressEvent(event);
-    }
-}
-
-/*
-#if QT_CONFIG(wheelevent)
-void MainWindow::wheelEvent(QWheelEvent *event)
-{
-    scaleView(pow(2., -event->angleDelta().y() / 240.0));
-}
-#endif
-*/
-void MainWindow::scaleView(qreal scaleFactor)
-{
-    qreal factor = this->ui->graph_viewer->transform().scale(scaleFactor, scaleFactor).mapRect(QRectF(0, 0, 1, 1)).width();
-    if (factor < 0.07 || factor > 100)
-        return;
-
-    this->ui->graph_viewer->scale(scaleFactor, scaleFactor);
-}
-
-void MainWindow::zoomIn()
-{
-    scaleView(qreal(1.2));
-}
-
-void MainWindow::zoomOut()
-{
-    scaleView(1 / qreal(1.2));
-}
-
-void MainWindow::on_save_graph_button_clicked()
-{
-    QString fileName = QFileDialog::getSaveFileName(this,
-                                                    tr("Save "), "",
-                                                    tr("(*.png);;All Files (*)"));
-    if (fileName.isEmpty())
-        return;
-    else {
-        const QPixmap pixmap = ui->graph_viewer->grab();
-        pixmap.save(fileName);
-    }
-}
-
-void MainWindow::on_save_triggered()
-{
-    //QString path = QFileDialog::getExistingDirectory(this, tr("Output directory"), "");
-    QString fileName = QFileDialog::getSaveFileName(this,
-                                                    tr("Save "), "",
-                                                    tr("Tab separated file (*.tsv);;All Files (*)"));
-    if (fileName.isEmpty())
-        return;
-    else {
-        engine->save(fileName.toStdString());
-    }
-}
-
-void MainWindow::on_action_performed(){
-    undoEntries = engine->getEntriesCopy();
-    undoFilteredEntries = engine->getFilteredEntriesCopy();
-}
-
-
-void MainWindow::updateApp()
-{
-    engine->group();
-    emit update_graph();
-    emit update_records();
-    emit update_current_results();
-    auto first = createCompleter();
-    emit show_component(first);
-}
-
-void MainWindow::on_undo_button_clicked()
-{
-    if(undoEntries.size() == 0) return;
-    engine->setEntries(undoEntries);
-    engine->setFilteredEntries(undoFilteredEntries);
-    undoEntries = {};
-    undoFilteredEntries = {};
-    updateApp();
-}
-
-void MainWindow::on_save_config(double max_dist, int min_labs, int min_seqs)
-{
-    engine->setDist(max_dist);
-    engine->setLabs(min_labs);
-    engine->setDeposit(min_seqs);
-}
-
-
-void MainWindow::on_gradind_options_action_triggered()
-{
-    GradingOptionsDialog * gopts = new GradingOptionsDialog();
-    connect(gopts, SIGNAL(save_config(double, int, int)),
-            this, SLOT(on_save_config(double, int, int)));
-    gopts->exec();
-    delete gopts;
-
-}

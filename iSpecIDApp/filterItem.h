@@ -31,7 +31,7 @@ public:
         hlayout->addWidget(groups);
         hlayout->addWidget(items);
         connect(groups, SIGNAL(currentIndexChanged(int)),
-                this,SLOT(on_group_change(int)));
+                this,SLOT(onGroupChange(int)));
     }
 
     QString current_group(){
@@ -42,7 +42,7 @@ public:
     }
 
 public slots:
-    void on_group_change(int index){
+    void onGroupChange(int index){
         auto current_comp = items->completer();
         delete current_comp;
         QCompleter *comp = new QCompleter(this->all_items.at(index),items);
