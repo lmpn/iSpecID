@@ -1,8 +1,5 @@
 #include "annotator.h"
-//#include <libxml2/libxml/tree.h>
-//#include <libxml2/libxml/HTMLparser.h>
-////#include <cstring>
-
+#include <boost/regex.hpp>
 
 namespace annotator {
 
@@ -83,42 +80,6 @@ bool speciesPerBIN(std::unordered_map<std::string, Species>& data, std::string b
 
 
 
-/*
-int traverse_dom_trees(xmlNode * a_node, BoldData& bd)
-{
-    xmlNode *cur_node = NULL;
-    int found = 0;
-    if(NULL == a_node)
-    {
-        //printf("Invalid argument a_node %p\n", a_node);
-        return 0;
-    }
-    for (cur_node = a_node; cur_node && found == 0; cur_node = cur_node->next)
-    {
-        if(cur_node->type == XML_TEXT_NODE)
-        {
-            if(!strcmp( (char *)cur_node->content, "Distance to Nearest Neighbor:") ){
-                return 1;
-            }
-            if(!strcmp( (char *)cur_node->content, "Nearest BIN URI:") ){
-                return 2;
-            }
-        }
-        found = traverse_dom_trees(cur_node->children, bd);
-
-    }
-    if(found ==3){
-            return 3;
-        }
-        else if(found == 1){
-            bd.distance = atof((char*)cur_node->next->children->content);
-        }else if(found == 2 ){
-            bd.neighbour = std::string((char*)cur_node->next->children->content);
-            return 3;
-        }
-
-    return 0;
-}*/
 
 BoldData parseBoldData(std::string bin,std::vector<std::string> &errors){
     BoldData bd;
@@ -127,35 +88,28 @@ BoldData parseBoldData(std::string bin,std::vector<std::string> &errors){
     Miner mn;
     std::string url("http://v4.boldsystems.org/index.php/Public_BarcodeCluster?clusteruri=" + std::string(bin));
     try{
-        std::regex all = std::regex ("Distance to Nearest Neighbor:</th>\\s*<td>(\\d+\\.\\d+)%.*</td>|Nearest BIN URI:</th>\\s*<td>(.*)</td>");
         std::string page = mn.getPage(url.c_str());
-        /*if(page.empty()){
-            PRINT("Error curl");
-            return bd;
-        }
-        const xmlChar * content = ((const xmlChar*) page.data());
-        auto doc = htmlReadDoc(content,url.data(),"UTF-8", HTML_PARSE_NOBLANKS|HTML_PARSE_NOIMPLIED|HTML_PARSE_NOERROR);
-        if (doc == NULL)
-        {
-            return bd;
-        }
-
-        auto root_element = xmlDocGetRootElement(doc);
-
-        if (root_element == NULL)
-        {
-            xmlFreeDoc(doc);
-            return bd;
-        }
-        traverse_dom_trees(root_element, bd);
-        xmlFreeDoc(doc);       // free document
-        xmlCleanupParser();    // Free globals*/
+        /*
+        std::regex all = std::regex ("Distance to Nearest Neighbor:</th>\\s*<td>(\\d+\\.\\d+)%.*</td>|Nearest BIN URI:</th>\\s*<td>(.*)</td>");
         std::smatch matches;
         std::regex_search (page,matches,all);
         auto next = matches.suffix().str();
         double d = std::stod(matches[1]);
         std::regex_search (next,matches,all);
-        std::string nbin = matches[2];
+        std::string nbin = matches[2];*/
+        static const boost::regex dist  ("Distance to Nearest Neighbor:</th>\\s*<td>(\\d+.\\d+)%.*</td>");
+        static const boost::regex bin  ("Nearest BIN URI:</th>\\s*<td>(.*?)</td>");
+        boost::smatch char_matches;
+        double d;
+        std::string nbin;
+        if (boost::regex_search(page,char_matches, dist) )
+        {
+            d = std::stod(char_matches[1]);
+        } 
+        if (boost::regex_search(page,char_matches, bin) )
+        {
+            nbin = char_matches[2];
+        } 
         bd.distance = d;
         bd.neighbour = nbin;
     }catch (const std::exception& e) {

@@ -4,7 +4,7 @@
 #include "annotator.h"
 
 void run(int argc, char **argv){
-    std::string file_path = utils::argParse<std::string>(argc, argv,"--data=", "/Users/lmpn/Documents/canidae.tsv");
+    std::string file_path = utils::argParse<std::string>(argc, argv,"--data=", "/Users/lmpn/playground/datasets/canidae.tsv");
     IEngine engine;
     std::vector<std::string> er;
     engine.load(file_path);
