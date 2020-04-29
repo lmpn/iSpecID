@@ -30,7 +30,6 @@ endif()
 
 find_package(CURL REQUIRED)
 find_package(Boost REQUIRED)
-find_package(LibXml2 REQUIRED)
 if(CURL_FOUND)
     message(STATUS "Found CURL version: ${CURL_VERSION_STRING}")
     message(STATUS "Using CURL include dir(s): ${CURL_INCLUDE_DIRS}")
@@ -51,15 +50,11 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/iSpecIDCore/src
     ${Boost_INCLUDE_DIRS}
     ${CURL_INCLUDE_DIRS}
-    ${LIBXML2_INCLUDE_DIRS}
 )
 file(GLOB core
     "${PROJECT_SOURCE_DIR}/iSpecIDCore/src/*.cpp"
     "${PROJECT_SOURCE_DIR}/iSpecIDCore/include/*.h"
     )
-
-message(${LIBXML2_LIBRARIES})
-message(${LIBXML2_INCLUDE_DIRS})
 
 if(BIN)
     if(COMMAND cmake_policy)
@@ -68,7 +63,6 @@ if(BIN)
 
     add_executable( isid "${PROJECT_SOURCE_DIR}/main.cpp" ${core}  )
     target_link_libraries(isid ${CURL_LIBRARIES})
-    target_link_libraries(isid ${LIBXML2_LIBRARIES})
     target_link_libraries(isid -lpthread)
 endif()
 if(BENCH)
@@ -80,21 +74,13 @@ if(BENCH)
 
     add_executable(isid_bench "${PROJECT_SOURCE_DIR}/iSpecIDCore/bench/annotate.cxx" ${core}  )
     target_link_libraries(isid_bench  benchmark::benchmark)
-    target_link_libraries(isid_bench ${LIBXML2_LIBRARIES})
     target_link_libraries(isid_bench ${CURL_LIBRARIES})
     target_link_libraries(isid_bench  -lpthread)
 
     add_executable(isid_group "${PROJECT_SOURCE_DIR}/iSpecIDCore/bench/group.cxx" ${core}  )
     target_link_libraries(isid_group  benchmark::benchmark)
-    target_link_libraries(isid_group ${LIBXML2_LIBRARIES})
     target_link_libraries(isid_group  ${CURL_LIBRARIES})
     target_link_libraries(isid_group  -lpthread)
-
-    add_executable(isid_get_page "${PROJECT_SOURCE_DIR}/iSpecIDCore/bench/get_page.cxx" ${core}  )
-    target_link_libraries(isid_get_page  benchmark::benchmark)
-    target_link_libraries(isid_get_page ${LIBXML2_LIBRARIES})
-    target_link_libraries(isid_get_page  ${CURL_LIBRARIES})
-    target_link_libraries(isid_get_page  -lpthread)
 
     add_executable(isid_split "${PROJECT_SOURCE_DIR}/iSpecIDCore/bench/string_split.cxx")
     target_link_libraries(isid_split  benchmark::benchmark)
