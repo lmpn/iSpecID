@@ -10,7 +10,7 @@ double kbest(const std::vector<double>& vec){
 }
 
 static void V6_culicidae(benchmark::State& state) {
-    std::string s("/Users/lmpn/playground/dissertation/datasets/tsv/culicidae.tsv");
+    std::string s("/Users/lmpn/playground/datasets/culicidae.tsv");
     for (auto _ : state)
     {
         IEngine an;
@@ -19,12 +19,14 @@ static void V6_culicidae(benchmark::State& state) {
         an.filter([](Record item) {return item["species_name"].empty();});
         an.group();
         an.annotate(er);
-        an.calculateGradeResults();
+        an.gradeRecords();
+        auto r = an.calculateGradeResults();
+        PRINTV(r);
     };
 }
 
 static void V6_aves(benchmark::State& state) {
-    std::string s("/Users/lmpn/playground/dissertation/datasets/tsv/aves.tsv");
+    std::string s("/Users/lmpn/playground/datasets/aves.tsv");
     for (auto _ : state)
     {
         IEngine an;
@@ -33,12 +35,14 @@ static void V6_aves(benchmark::State& state) {
         an.filter([](Record item) {return item["species_name"].empty();});
         an.group();
         an.annotate(er);
-        an.calculateGradeResults();
+        an.gradeRecords();
+        auto r = an.calculateGradeResults();
+        PRINTV(r);
     }
 }
 
 static void V6_canidae(benchmark::State& state) {
-    std::string s("/Users/lmpn/playground/dissertation/datasets/tsv/canidae.tsv");
+    std::string s("/Users/lmpn/playground/datasets/canidae.tsv");
     for (auto _ : state)
     {
         IEngine an;
@@ -47,7 +51,9 @@ static void V6_canidae(benchmark::State& state) {
         an.filter([](Record item) {return item["species_name"].empty();});
         an.group();
         an.annotate(er);
-        an.calculateGradeResults();
+        an.gradeRecords();
+        auto r = an.calculateGradeResults();
+        PRINTV(r);
     }
 }
 

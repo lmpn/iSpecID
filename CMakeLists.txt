@@ -29,7 +29,12 @@ endif()
 
 
 find_package(CURL REQUIRED)
+<<<<<<< HEAD
 find_package(Boost REQUIRED)
+=======
+find_package(Boost REQUIRED COMPONENTS regex REQUIRED)
+find_package(LibXml2 REQUIRED)
+>>>>>>> b52ebe1941c0a27537a382cc981830f21ba05327
 if(CURL_FOUND)
     message(STATUS "Found CURL version: ${CURL_VERSION_STRING}")
     message(STATUS "Using CURL include dir(s): ${CURL_INCLUDE_DIRS}")
@@ -63,7 +68,12 @@ if(BIN)
 
     add_executable( isid "${PROJECT_SOURCE_DIR}/main.cpp" ${core}  )
     target_link_libraries(isid ${CURL_LIBRARIES})
+<<<<<<< HEAD
     target_link_libraries(isid -lpthread)
+=======
+    target_link_libraries(isid ${LIBXML2_LIBRARIES})
+    target_link_libraries(isid ${Boost_LIBRARIES})
+>>>>>>> b52ebe1941c0a27537a382cc981830f21ba05327
 endif()
 if(BENCH)
     if(COMMAND cmake_policy)
@@ -75,12 +85,16 @@ if(BENCH)
     add_executable(isid_bench "${PROJECT_SOURCE_DIR}/iSpecIDCore/bench/annotate.cxx" ${core}  )
     target_link_libraries(isid_bench  benchmark::benchmark)
     target_link_libraries(isid_bench ${CURL_LIBRARIES})
-    target_link_libraries(isid_bench  -lpthread)
+    target_link_libraries(isid_bench ${Boost_LIBRARIES})
 
     add_executable(isid_group "${PROJECT_SOURCE_DIR}/iSpecIDCore/bench/group.cxx" ${core}  )
     target_link_libraries(isid_group  benchmark::benchmark)
     target_link_libraries(isid_group  ${CURL_LIBRARIES})
+<<<<<<< HEAD
     target_link_libraries(isid_group  -lpthread)
+=======
+    target_link_libraries(isid_group ${Boost_LIBRARIES})
+>>>>>>> b52ebe1941c0a27537a382cc981830f21ba05327
 
     add_executable(isid_split "${PROJECT_SOURCE_DIR}/iSpecIDCore/bench/string_split.cxx")
     target_link_libraries(isid_split  benchmark::benchmark)

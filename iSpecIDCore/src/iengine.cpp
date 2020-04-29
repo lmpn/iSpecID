@@ -42,6 +42,8 @@ void IEngine::save(std::string filePath){
             writer << item.getFields();
         }
         for(auto& item : filtered_entries){
+            item.update("", "grade");
+            item.update("", "modification");
             writer << item.getFields();
         }
         ofs.flush();

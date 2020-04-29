@@ -73,17 +73,13 @@ win32:{
 }
 macx:{
         CONFIG += c++17 app_bundle
-        INCLUDEPATH += "/usr/local/Cellar/boost/1.72.0/include/"
+        INCLUDEPATH += "/usr/local/Cellar/boost/1.72.0_2/include/"
+        DEPENDPATH  += "/usr/local/Cellar/boost/1.72.0_2/include/"
         INCLUDEPATH += "iSpecIDCore/include"
-        LIBS += -L$$PWD/../../../../../usr/lib/ -lcurl.4
-        INCLUDEPATH += $$PWD/../../../../../usr
-        DEPENDPATH += $$PWD/../../../../../usr
-        LIBS += -L$$PWD/../../../../../usr/local/Cellar/libxml2/2.9.10/lib/ -lxml2.2
-
-        INCLUDEPATH += $$PWD/../../../../../usr/local/Cellar/libxml2/2.9.10/include
-        DEPENDPATH += $$PWD/../../../../../usr/local/Cellar/libxml2/2.9.10/include
-#        INCLUDEPATH += "/usr/local/include"
-#        LIBS += "-lcurl"
+        INCLUDEPATH += "/usr/include/"
+        DEPENDPATH  += "/usr/include/"
+        LIBS += -L/usr/lib/ -lcurl.4
+        LIBS += -L/usr/local/Cellar/boost/1.72.0_2/lib/ -lboost_regex
 
         ICON = icons/main_icon.icns
 }
@@ -94,5 +90,3 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 
-
-macx:

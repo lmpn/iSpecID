@@ -37,8 +37,7 @@ std::string Miner::getPage(const char* url)
         curl_easy_setopt(this->curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
         res = curl_easy_perform(curl_handle);
         if(res != CURLE_OK) {
-            fprintf(stderr, "curl_easy_perform() failed: %s\n",
-            curl_easy_strerror(res));
+            fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
             throw std::runtime_error("Error on curl");
         }
     }
