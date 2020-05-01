@@ -250,6 +250,7 @@ void MainWindow::annotateFinished(){
         showGradingErrors(this->errors);
     this->setCursor(Qt::ArrowCursor);
     ui->centralwidget->setEnabled(true);
+    ui->menubar->setEnabled(true);
 }
 
 
@@ -396,6 +397,7 @@ void MainWindow::onAnnotateData()
     undoEntries = engine->getEntriesCopy();
     undoFilteredEntries = engine->getFilteredEntriesCopy();
     ui->centralwidget->setDisabled(true);
+    ui->menubar->setDisabled(true);
     QtConcurrent::run([this]{
         QObject src;
         engine->annotate(this->errors);
@@ -426,7 +428,8 @@ void MainWindow::showFilter()
         species.values(),
         bins.values(),
         inst.values(),
-        grade.values()};
+        grade.values()
+    };
     auto ff = new FilterDialog(headers,completions);
     ff->exec();
     if(ff->accepted()){
@@ -442,7 +445,6 @@ void MainWindow::showFilter()
         msgBox.setDefaultButton(QMessageBox::Ok);
         msgBox.exec();
         int apply = msgBox.result();
-        qDebug() << apply;
         if(apply == 1024){
             undoEntries = currentEntries;
             undoFilteredEntries = currentFilteredEntries;

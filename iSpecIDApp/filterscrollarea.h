@@ -15,7 +15,7 @@
 class FilterScrollArea : public QScrollArea
 {
     QWidget *contentWidget;
-    QGridLayout *vlayout;
+    QVBoxLayout *vlayout;
     template<class T>
     using Func = std::function<bool(T)>;
 public:
@@ -23,7 +23,7 @@ public:
         setWidgetResizable(true);
         contentWidget = new QWidget(this);
         setWidget(contentWidget);
-        vlayout = new QGridLayout(contentWidget);
+        vlayout = new QVBoxLayout(contentWidget);
         setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     }
 
@@ -37,21 +37,21 @@ public:
 
     template<class T>
     Func<T> getFilterFunc(){
-        auto count = vlayout->rowCount();
+        auto count = vlayout->count();
         if(count == 1){
             return [](T item){ return true;};
         }
-        FilterItem *filter_item = static_cast<FilterItem*>(vlayout->itemAtPosition(1,0)->widget());
+        FilterItem *filter_item = static_cast<FilterItem*>(vlayout->itemAt(0)->widget());
         auto col = convertToColumnName(filter_item->current_group());
         auto val = filter_item->current_val().toStdString();
         Func<T> fn = [col, val](T item){ return item[col] == val;};
 
-        for (int i = 2; i < count; i+=2) {
-            FilterItem *filter_item = static_cast<FilterItem*>(vlayout->itemAtPosition(i+1,0)->widget());
+        for (int i = 1	; i < count; i+=2) {
+            FilterItem *filter_item = static_cast<FilterItem*>(vlayout->itemAt(i+1)->widget());
             auto col = convertToColumnName(filter_item->current_group());
             auto val = filter_item->current_val().toStdString();
             Func<T> fn_i = [col, val](T item){ return item[col] == val;};
-            FilterOp * fo = static_cast<FilterOp*>(vlayout->itemAtPosition(i,0)->widget());
+            FilterOp * fo = static_cast<FilterOp*>(vlayout->itemAt(i)->widget());
             fn = fo->operate(fn,fn_i);
         }
         return fn;
@@ -59,13 +59,13 @@ public:
 
 public slots:
     void addWidget(){
-        auto count = vlayout->rowCount();
-        if(count > 1){
-            vlayout->addWidget(new FilterOp(), count, 0);
+        auto count = vlayout->count();
+        if(count >= 1){
+            vlayout->addWidget(new FilterOp());
             count++;
         }
         auto filter_item = new FilterItem(header, completions);
-        vlayout->addWidget(filter_item, count, 0);
+        vlayout->addWidget(filter_item);
     }
 private:
     std::string convertToColumnName(QString name){

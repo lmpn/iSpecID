@@ -8,19 +8,16 @@ GradingOptionsDialog::GradingOptionsDialog(QWidget *parent) :
     ui(new Ui::GradingOptionsDialog)
 {
     ui->setupUi(this);
+    connect(ui->save_options_button, SIGNAL(clicked()),
+            this, SLOT(onSaveOptionsButtonClicked()));
+    connect(ui->ok_button, SIGNAL(clicked()),
+            this, SLOT(onOkButtonClicked()));
 }
 
 
 void showErrorMessage(QString error_name, QString error){
     QMessageBox::critical(nullptr, error_name, error, QMessageBox::Cancel);
-    /*
-    QMessageBox msgBox;
-    msgBox.setText(error_name);
-    msgBox.setInformativeText(error);
-    msgBox.setStandardButtons(QMessageBox::Ok);
-    msgBox.setDefaultButton(QMessageBox::Ok);
-    msgBox.exec();
-    */
+    qDebug() << "criticak";
 }
 
 bool GradingOptionsDialog::handleClick(){
@@ -30,17 +27,17 @@ bool GradingOptionsDialog::handleClick(){
     bool ok;
     dist = ui->max_dist_text->text().toDouble(&ok);
     if(!ok || dist > 2){
-        showErrorMessage("Maximun distance error","Can't parse value or value greater than 2");
+        showErrorMessage("Maximun distance error","Can't parse maximun distance or value greater than 2");
         return false;
     }
     labs= ui->min_lab_text->text().toInt(&ok);
     if(!ok || labs < 2){
-        showErrorMessage("Minimum of laboratories deposited sequences error","Can't parse value or value less than 2");
+        showErrorMessage("Minimum of laboratories deposited sequences error","Can't parse minimum number of laboratories deposited sequences or value less than 2");
         return false;
     }
     seqs= ui->min_sequences_text->text().toInt(&ok);
     if(!ok && seqs < 3){
-        showErrorMessage("Sequences deposited or published independently error", "Can't parse value or value lest than 3");
+        showErrorMessage("Sequences deposited or published independently error", "Can't parse minimun number of sequences deposited or published independently or value less than 3");
         return false;
     }
     emit saveConfig(dist,labs,seqs);

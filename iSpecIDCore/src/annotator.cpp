@@ -39,6 +39,7 @@ void annotationAlgo(std::unordered_map<std::string, Species>& data,std::vector<s
 
     */
     for(auto& pair : data){
+        // PRINT("Species: " << pair.first);
         auto& species = pair.second;
         std::string grade = "D";
         int size = species.institution.size();
@@ -48,14 +49,18 @@ void annotationAlgo(std::unordered_map<std::string, Species>& data,std::vector<s
             if(species.bins.size() == 1){
                 auto bin = (*species.bins.begin()).first;
                 auto BINSpeciesConcordance = speciesPerBIN(data, bin);
+                // PRINT("Species: " << pair.first << " concordance: " << BINSpeciesConcordance);
                 if(BINSpeciesConcordance){
-                    grade = species.specimens.size() >= min_deposit ? "B" : "A";
+                    int specimens_size = species.specimens.size();
+                    grade = specimens_size >= min_deposit ? "B" : "A";
                 }
             }else{
+                // PRINT("Species: " << pair.first << " Find neighbours");
                 grade = findBinsNeighbour(data, species.bins, min_dist, errors);
             }
         }
         species.grade = grade;
+        // PRINT("Species: " << pair.first << " grade: " << grade);
     }
 }
 
@@ -96,22 +101,20 @@ BoldData parseBoldData(std::string bin,std::vector<std::string> &errors){
         auto next = matches.suffix().str();
         double d = std::stod(matches[1]);
         std::regex_search (next,matches,all);
-        std::string nbin = matches[2];*/
+        std::string nbin = matches[2];
+        */
         static const boost::regex dist  ("Distance to Nearest Neighbor:</th>\\s*<td>(\\d+.\\d+)%.*</td>");
         static const boost::regex bin  ("Nearest BIN URI:</th>\\s*<td>(.*?)</td>");
         boost::smatch char_matches;
-        double d;
-        std::string nbin;
         if (boost::regex_search(page,char_matches, dist) )
         {
-            d = std::stod(char_matches[1]);
+            bd.distance = std::stod(char_matches[1]);
         } 
         if (boost::regex_search(page,char_matches, bin) )
         {
-            nbin = char_matches[2];
-        } 
-        bd.distance = d;
-        bd.neighbour = nbin;
+            bd.neighbour = char_matches[1];
+            // PRINT(bd.neighbour);
+        }
     }catch (const std::exception& e) {
         errors.push_back("Error fetching bin " + bin +" data");
     }
@@ -143,9 +146,12 @@ std::string findBinsNeighbour(std::unordered_map<std::string, Species>& data, st
     ugraph graph(count);
     for(size_t  i = 0; i < count; i++){
         auto bold = parseBoldData(bin_names[i],errors);
+        // PRINT("Bold data: " << bold.neighbour);
+        // PRINT("Bins: " );
+        // PRINTV(bin_names);
         auto item = std::find(bin_names.begin(), bin_names.end(), bold.neighbour);
-        size_t ind = std::distance(bin_names.begin(),item );
-        if( ind >=0 && bold.distance <= min_dist) {
+        if( item!=bin_names.end() && bold.distance <= min_dist) {
+            size_t ind = std::distance(bin_names.begin(),item );
             boost::add_edge(i, ind, bold.distance, graph);
         }
     }

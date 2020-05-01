@@ -254,7 +254,6 @@ BENCHMARK(BMsplitSVPtr)
     ->Repetitions(1)
     ->ReportAggregatesOnly(true)
     ->ComputeStatistics("kbest", kbest);
-/*
 BENCHMARK(BMsplitPtr)
     ->Unit(benchmark::kMillisecond)
     ->Iterations(1)
@@ -298,5 +297,4 @@ BENCHMARK(BMboost)
     ->Repetitions(16)
     ->ReportAggregatesOnly(true)
     ->ComputeStatistics("kbest", kbest);
-*/
 BENCHMARK_MAIN();
