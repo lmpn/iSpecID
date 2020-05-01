@@ -10,7 +10,7 @@ double kbest(const std::vector<double>& vec){
 }
 
 static void V6_culicidae(benchmark::State& state) {
-    std::string s("/Users/lmpn/playground/datasets/culicidae.tsv");
+    std::string s("/home/a77763t/dissertation/playground/datasets/culicidae.tsv");
     for (auto _ : state)
     {
         IEngine an;
@@ -26,7 +26,7 @@ static void V6_culicidae(benchmark::State& state) {
 }
 
 static void V6_aves(benchmark::State& state) {
-    std::string s("/Users/lmpn/playground/datasets/aves.tsv");
+    std::string s("/home/a77763t/dissertation/playground/datasets/aves.tsv");
     for (auto _ : state)
     {
         IEngine an;
@@ -42,7 +42,7 @@ static void V6_aves(benchmark::State& state) {
 }
 
 static void V6_canidae(benchmark::State& state) {
-    std::string s("/Users/lmpn/playground/datasets/canidae.tsv");
+    std::string s("/home/a77763t/dissertation/playground/datasets/canidae.tsv");
     for (auto _ : state)
     {
         IEngine an;
