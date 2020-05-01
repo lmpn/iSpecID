@@ -39,7 +39,6 @@ void annotationAlgo(std::unordered_map<std::string, Species>& data,std::vector<s
 
     */
     for(auto& pair : data){
-        // PRINT("Species: " << pair.first);
         auto& species = pair.second;
         std::string grade = "D";
         int size = species.institution.size();
@@ -49,18 +48,15 @@ void annotationAlgo(std::unordered_map<std::string, Species>& data,std::vector<s
             if(species.bins.size() == 1){
                 auto bin = (*species.bins.begin()).first;
                 auto BINSpeciesConcordance = speciesPerBIN(data, bin);
-                // PRINT("Species: " << pair.first << " concordance: " << BINSpeciesConcordance);
                 if(BINSpeciesConcordance){
                     int specimens_size = species.specimens.size();
                     grade = specimens_size >= min_deposit ? "B" : "A";
                 }
             }else{
-                // PRINT("Species: " << pair.first << " Find neighbours");
                 grade = findBinsNeighbour(data, species.bins, min_dist, errors);
             }
         }
         species.grade = grade;
-        // PRINT("Species: " << pair.first << " grade: " << grade);
     }
 }
 
@@ -70,7 +66,7 @@ void annotationAlgo(std::unordered_map<std::string, Species>& data,std::vector<s
      * Core Algorithm Helpers
     */
 
-bool speciesPerBIN(std::unordered_map<std::string, Species>& data, std::string bin){
+bool speciesPerBIN(std::unordered_map<std::string, Species>& data, std::string& bin){
     std::unordered_set<std::string_view> unique_set;
     size_t count = 0;
     for(auto & entry : data){
@@ -86,7 +82,7 @@ bool speciesPerBIN(std::unordered_map<std::string, Species>& data, std::string b
 
 
 
-BoldData parseBoldData(std::string bin,std::vector<std::string> &errors){
+BoldData parseBoldData(std::string& bin, std::vector<std::string>& errors){
     BoldData bd;
     bd.distance = std::numeric_limits<int>::max();
     bd.neighbour = "";
@@ -94,15 +90,6 @@ BoldData parseBoldData(std::string bin,std::vector<std::string> &errors){
     std::string url("http://v4.boldsystems.org/index.php/Public_BarcodeCluster?clusteruri=" + std::string(bin));
     try{
         std::string page = mn.getPage(url.c_str());
-        /*
-        std::regex all = std::regex ("Distance to Nearest Neighbor:</th>\\s*<td>(\\d+\\.\\d+)%.*</td>|Nearest BIN URI:</th>\\s*<td>(.*)</td>");
-        std::smatch matches;
-        std::regex_search (page,matches,all);
-        auto next = matches.suffix().str();
-        double d = std::stod(matches[1]);
-        std::regex_search (next,matches,all);
-        std::string nbin = matches[2];
-        */
         static const boost::regex dist  ("Distance to Nearest Neighbor:</th>\\s*<td>(\\d+.\\d+)%.*</td>");
         static const boost::regex bin  ("Nearest BIN URI:</th>\\s*<td>(.*?)</td>");
         boost::smatch char_matches;
@@ -113,7 +100,6 @@ BoldData parseBoldData(std::string bin,std::vector<std::string> &errors){
         if (boost::regex_search(page,char_matches, bin) )
         {
             bd.neighbour = char_matches[1];
-            // PRINT(bd.neighbour);
         }
     }catch (const std::exception& e) {
         errors.push_back("Error fetching bin " + bin +" data");
@@ -123,7 +109,7 @@ BoldData parseBoldData(std::string bin,std::vector<std::string> &errors){
 
 
 
-std::string findBinsNeighbour(std::unordered_map<std::string, Species>& data, std::unordered_map<std::string, int> bins, double min_dist,std::vector<std::string> &errors)
+std::string findBinsNeighbour(std::unordered_map<std::string, Species>& data, std::unordered_map<std::string, int>& bins, double min_dist,std::vector<std::string> &errors)
 {
     size_t ctr, count, num_components;
     auto grade = "E2";
@@ -139,21 +125,20 @@ std::string findBinsNeighbour(std::unordered_map<std::string, Species>& data, st
 
 
 
-    std::vector<std::string> bin_names;
-    for(auto& item : bins) bin_names.push_back(item.first);
-    count = bin_names.size();
-
+    count = bins.size();
+    auto bins_begin = bins.begin();
+    auto cur_elem = bins.begin();
+    auto bins_end = bins.end();
     ugraph graph(count);
     for(size_t  i = 0; i < count; i++){
-        auto bold = parseBoldData(bin_names[i],errors);
-        // PRINT("Bold data: " << bold.neighbour);
-        // PRINT("Bins: " );
-        // PRINTV(bin_names);
-        auto item = std::find(bin_names.begin(), bin_names.end(), bold.neighbour);
-        if( item!=bin_names.end() && bold.distance <= min_dist) {
-            size_t ind = std::distance(bin_names.begin(),item );
+        auto bin = (*cur_elem).first;
+        auto bold = parseBoldData(bin,errors);
+        auto item = bins.find(bold.neighbour);
+        if( item!=bins_end && bold.distance <= min_dist) {
+            size_t ind = std::distance(bins_begin, item );
             boost::add_edge(i, ind, bold.distance, graph);
         }
+        cur_elem++;
     }
     std::vector<int> component (count);
     num_components = boost::connected_components (graph, &component[0]);

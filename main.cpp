@@ -12,7 +12,6 @@ void run(int argc, char **argv){
     engine.group();
     engine.annotate(er);
     engine.gradeRecords();
-    engine.save("output.tsv");
 }
 
 int main(int argc, char **argv)
