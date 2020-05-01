@@ -4,7 +4,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_VERBOSE_MAKEFILE OFF)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-Wall -Wabi -g -fno-omit-frame-pointer -O2 -DNDEBUG -fno-inline-functions -fno-optimize-sibling-calls ")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-Wall -Wabi -g -fno-omit-frame-pointer -O2 -DNDEBUG -fno-inline-functions -fno-optimize-sibling-calls -pg")
 set(VERBOSE ON)
 
 
@@ -29,7 +29,12 @@ endif()
 
 
 find_package(CURL REQUIRED)
+<<<<<<< HEAD
+find_package(Boost REQUIRED)
+=======
 find_package(Boost REQUIRED COMPONENTS regex REQUIRED)
+find_package(LibXml2 REQUIRED)
+>>>>>>> b52ebe1941c0a27537a382cc981830f21ba05327
 if(CURL_FOUND)
     message(STATUS "Found CURL version: ${CURL_VERSION_STRING}")
     message(STATUS "Using CURL include dir(s): ${CURL_INCLUDE_DIRS}")
@@ -56,7 +61,6 @@ file(GLOB core
     "${PROJECT_SOURCE_DIR}/iSpecIDCore/include/*.h"
     )
 
-
 if(BIN)
     if(COMMAND cmake_policy)
         cmake_policy(SET CMP0003 NEW)
@@ -64,7 +68,12 @@ if(BIN)
 
     add_executable( isid "${PROJECT_SOURCE_DIR}/main.cpp" ${core}  )
     target_link_libraries(isid ${CURL_LIBRARIES})
+<<<<<<< HEAD
+    target_link_libraries(isid -lpthread)
+=======
+    target_link_libraries(isid ${LIBXML2_LIBRARIES})
     target_link_libraries(isid ${Boost_LIBRARIES})
+>>>>>>> b52ebe1941c0a27537a382cc981830f21ba05327
 endif()
 if(BENCH)
     if(COMMAND cmake_policy)
@@ -81,14 +90,14 @@ if(BENCH)
     add_executable(isid_group "${PROJECT_SOURCE_DIR}/iSpecIDCore/bench/group.cxx" ${core}  )
     target_link_libraries(isid_group  benchmark::benchmark)
     target_link_libraries(isid_group  ${CURL_LIBRARIES})
+<<<<<<< HEAD
+    target_link_libraries(isid_group  -lpthread)
+=======
     target_link_libraries(isid_group ${Boost_LIBRARIES})
+>>>>>>> b52ebe1941c0a27537a382cc981830f21ba05327
 
     add_executable(isid_split "${PROJECT_SOURCE_DIR}/iSpecIDCore/bench/string_split.cxx")
     target_link_libraries(isid_split  benchmark::benchmark)
-
-    add_executable(isid_regex "${PROJECT_SOURCE_DIR}/iSpecIDCore/bench/regex.cpp")
-    target_link_libraries(isid_regex ${Boost_LIBRARIES})
-    target_link_libraries(isid_regex  benchmark::benchmark)
 endif()
 UNSET(BENCH CACHE)
 unset(BIN CACHE)
