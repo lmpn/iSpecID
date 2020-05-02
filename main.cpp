@@ -8,10 +8,11 @@ void run(int argc, char **argv){
     IEngine engine;
     std::vector<std::string> er;
     engine.load(file_path);
-    engine.filter([](Record item) {return item["species_name"].empty();});
+    engine.filter([](Record item) {return item["species_name"].empty() || item["bin_uri"].empty() || item["institution_storing"].empty();});
     engine.group();
     engine.annotate(er);
     engine.gradeRecords();
+    PRINTV(engine.calculateGradeResults());
 }
 
 int main(int argc, char **argv)

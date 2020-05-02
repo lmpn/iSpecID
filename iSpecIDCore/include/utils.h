@@ -80,7 +80,7 @@ namespace utils{
 
 
     template<class Item, class Predicate>
-    Table<Item> filter(Table<Item> tbl, Predicate pred, Table<Item>& filtered = {}){
+    Table<Item> filter(Table<Item>& tbl, Predicate pred, Table<Item>& filtered = {}){
         Table<Item> accept;
         for(auto& item : tbl){
             if(!pred(item)){

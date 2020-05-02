@@ -60,7 +60,7 @@ namespace annotator{
         );
     bool speciesPerBIN(
             std::unordered_map<std::string, Species>& data, 
-            std::string& bin
+            const std::string& bin
         );
 
 };

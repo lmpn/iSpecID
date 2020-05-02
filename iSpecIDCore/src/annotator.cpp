@@ -38,15 +38,15 @@ void annotationAlgo(std::unordered_map<std::string, Species>& data,std::vector<s
 
 
     */
+    std::string grade = "D";
     for(auto& pair : data){
         auto& species = pair.second;
-        std::string grade = "D";
         int size = species.institution.size();
         if(size >= min_labs){
 
             grade = "E1";
             if(species.bins.size() == 1){
-                auto bin = (*species.bins.begin()).first;
+                const std::string& bin = (*species.bins.begin()).first;
                 auto BINSpeciesConcordance = speciesPerBIN(data, bin);
                 if(BINSpeciesConcordance){
                     int specimens_size = species.specimens.size();
@@ -57,7 +57,9 @@ void annotationAlgo(std::unordered_map<std::string, Species>& data,std::vector<s
             }
         }
         species.grade = grade;
+        grade = "D";
     }
+    
 }
 
 
@@ -66,7 +68,7 @@ void annotationAlgo(std::unordered_map<std::string, Species>& data,std::vector<s
      * Core Algorithm Helpers
     */
 
-bool speciesPerBIN(std::unordered_map<std::string, Species>& data, std::string& bin){
+bool speciesPerBIN(std::unordered_map<std::string, Species>& data, const std::string& bin){
     std::unordered_set<std::string_view> unique_set;
     size_t count = 0;
     for(auto & entry : data){
@@ -116,7 +118,7 @@ std::string findBinsNeighbour(std::unordered_map<std::string, Species>& data, st
 
     ctr = 0;
     for(auto& pair : data){
-        auto cur_bins = pair.second.bins;
+        auto& cur_bins = pair.second.bins;
         if(utils::hasIntersection(bins,cur_bins)){
             ctr+=1;
             if(ctr>1) return grade;
