@@ -47,7 +47,7 @@ namespace annotator{
         );
     /*
      * Core Algorithm Helpers
-    */
+    
     BoldData parseBoldData(
             std::string& bin,
             std::vector<std::string>& errors
@@ -62,6 +62,7 @@ namespace annotator{
             std::unordered_map<std::string, Species>& data, 
             const std::string& bin
         );
+        */
 
 };
 #endif

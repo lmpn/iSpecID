@@ -1,6 +1,9 @@
 #include <iengine.h>
 #include <benchmark/benchmark.h>
 
+std::string base = "/Users/lmpn/Desktop/dissertaçao/datasets/tsv/";
+int reps = 8;
+
 double kbest(const std::vector<double>& vec){
     int best = vec.size() * 0.625;
     std::vector<double> cvec(vec);
@@ -10,50 +13,47 @@ double kbest(const std::vector<double>& vec){
 }
 
 static void V6_culicidae(benchmark::State& state) {
-    std::string s("/home/a77763t/dissertation/playground/datasets/culicidae.tsv");
+    std::string s = base + "culicidae.tsv";
     for (auto _ : state)
     {
         IEngine an;
         std::vector<std::string> er;
         an.load(s);
-        an.filter([](Record item) {return item["species_name"].empty();});
+        an.filter([](Record item) {return item["species_name"].empty() || item["bin_uri"].empty() || item["institution_storing"].empty();});
         an.group();
         an.annotate(er);
         an.gradeRecords();
         auto r = an.calculateGradeResults();
-        PRINTV(r);
     };
 }
 
 static void V6_aves(benchmark::State& state) {
-    std::string s("/home/a77763t/dissertation/playground/datasets/aves.tsv");
+    std::string s = base + "aves.tsv";
     for (auto _ : state)
     {
         IEngine an;
         std::vector<std::string> er;
         an.load(s);
-        an.filter([](Record item) {return item["species_name"].empty();});
+        an.filter([](Record item) {return item["species_name"].empty() || item["bin_uri"].empty() || item["institution_storing"].empty();});
         an.group();
         an.annotate(er);
         an.gradeRecords();
         auto r = an.calculateGradeResults();
-        PRINTV(r);
     }
 }
 
 static void V6_canidae(benchmark::State& state) {
-    std::string s("/home/a77763t/dissertation/playground/datasets/canidae.tsv");
+    std::string s = base + "canidae.tsv";
     for (auto _ : state)
     {
         IEngine an;
         std::vector<std::string> er;
         an.load(s);
-        an.filter([](Record item) {return item["species_name"].empty();});
+        an.filter([](Record item) {return item["species_name"].empty() || item["bin_uri"].empty() || item["institution_storing"].empty();});
         an.group();
         an.annotate(er);
         an.gradeRecords();
         auto r = an.calculateGradeResults();
-        PRINTV(r);
     }
 }
 
@@ -61,19 +61,19 @@ static void V6_canidae(benchmark::State& state) {
 BENCHMARK(V6_canidae)
     ->Unit(benchmark::kMillisecond)
     ->Iterations(1)
-    ->Repetitions(1)
+    ->Repetitions(reps)
     ->ReportAggregatesOnly(true)
     ->ComputeStatistics("kbest", kbest);
 BENCHMARK(V6_aves)
     ->Unit(benchmark::kMillisecond)
     ->Iterations(1)
-    ->Repetitions(1)
+    ->Repetitions(reps)
     ->ReportAggregatesOnly(true)
     ->ComputeStatistics("kbest", kbest);
 BENCHMARK(V6_culicidae)
     ->Unit(benchmark::kMillisecond)
     ->Iterations(1)
-    ->Repetitions(1)
+    ->Repetitions(reps)
     ->ReportAggregatesOnly(true)
     ->ComputeStatistics("kbest", kbest);
 

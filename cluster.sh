@@ -6,12 +6,10 @@ export BOOST_ROOT=/home/a77763t/dissertation/playground/boost
 export BOOST_LIB=/home/a77763t/dissertation/playground/boost/lib
 export BOOST_IGNORE_SYSTEM_PATHS=1
 export BOOST_LIBRARYDIR=/home/a77763t/dissertation/playground/boost/lib
+
+export CMAKE_PREFIX_PATH="/home/a77763t/dissertation/playground/third_party/curl"
+export CMAKE_PREFIX_PATH="/home/a77763t/dissertation/playground/boost:$CMAKE_PREFIX_PATH"
 module load cmake/3.10.0
-
-
-
-
-
 export LD_LIBRARY_PATH="/usr/lib64:$LD_LIBRARY_PATH"
 export LD_LIBRARY_PATH="/home/a77763t/dissertation/playground/boost/lib:$LD_LIBRARY_PATH"
 module load gcc/5.3.0
