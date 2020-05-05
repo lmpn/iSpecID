@@ -117,6 +117,28 @@ std::string findBinsNeighbour(std::unordered_map<std::string, Species>& data, st
     return grade;
 }
 
+
+void annotateItem(Species& species, std::unordered_map<std::string, Species>& data,std::vector<std::string> &errors, int min_labs, double min_dist, int min_deposit){
+    std::string grade = "D";
+    int size = species.institution.size();
+    if(size >= min_labs){
+
+        grade = "E1";
+        if(species.bins.size() == 1){
+            const std::string& bin = (*species.bins.begin()).first;
+            auto BINSpeciesConcordance = speciesPerBIN(data, bin);
+            if(BINSpeciesConcordance){
+                int specimens_size = species.specimens.size();
+                grade = specimens_size >= min_deposit ? "B" : "A";
+            }
+        }else{
+            grade = findBinsNeighbour(data, species.bins, min_dist, errors);
+        }
+    }
+    species.grade = grade;
+}
+
+
 void annotationAlgo(std::unordered_map<std::string, Species>& data,std::vector<std::string> &errors, int min_labs, double min_dist, int min_deposit){
     /*
     Para cada especie(ESP):

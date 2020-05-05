@@ -4,6 +4,10 @@
 #include <string>
 #include <unordered_map>
 #include <memory>
+#include <functional>
+#include <boost/asio/thread_pool.hpp>
+#include <boost/asio/post.hpp>
+#include <boost/thread.hpp>
 #include "utils.h"
 #include "species.h"
 #include "record.h"
@@ -16,12 +20,12 @@ class IEngine
 public:
 
     IEngine();
+    ~IEngine(){
+        delete pool;
+    };
     void load(std::string filePath);
     void save(std::string filePath);
-    template<class Predicate>
-    void filter(Predicate pred){
-        entries = utils::filter(entries, pred, filtered_entries);
-    }
+    void filter(std::function<bool(const Record&)> pred);
     void group();
     void annotate(std::vector<std::string> &errors);
 
@@ -50,7 +54,7 @@ private:
     int min_labs = 2;
     double min_dist = 2;
     int min_deposit = 3;
-
+    boost::asio::thread_pool* pool;
 };
 
 #endif // IENGINE_H

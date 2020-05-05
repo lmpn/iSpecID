@@ -101,8 +101,10 @@ MainWindow::MainWindow(QWidget *parent)
             this, SLOT(zoomIn()));
     connect(ui->load_file_action, SIGNAL(triggered()),
             this, SLOT(loadFile()));
-    connect(ui->save_file_action, SIGNAL(triggered()),
+    connect(ui->save_as_file_action, SIGNAL(triggered()),
             this, SLOT(saveFile()));
+    connect(ui->save_file_action, SIGNAL(triggered()),
+            this, SLOT(saveFile(save_path)));
     //f
     connect(ui->filter_action, SIGNAL(triggered()),
             this, SLOT(showFilter()));
@@ -340,16 +342,20 @@ void MainWindow::saveGraph()
     }
 }
 
-void MainWindow::saveFile()
+void MainWindow::saveFile(QString save_path)
 {
-    //QString path = QFileDialog::getExistingDirectory(this, tr("Output directory"), "");
-    QString fileName = QFileDialog::getSaveFileName(this,
-                                                    tr("Save "), "",
-                                                    tr("Tab separated file (*.tsv);;All Files (*)"));
-    if (fileName.isEmpty())
-        return;
+    if(save_path.isEmpty()){
+        save_path = QFileDialog::getSaveFileName(
+                    this,
+                    tr("Save "),
+                    "",
+                    tr("Tab separated file (*.tsv);;All Files (*)"));
+        if (save_path.isEmpty()){
+            return;
+        }
+    }
     else {
-        engine->save(fileName.toStdString());
+        engine->save(save_path.toStdString());
     }
 }
 

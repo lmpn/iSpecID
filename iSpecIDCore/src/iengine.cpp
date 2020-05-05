@@ -5,7 +5,12 @@
 
 IEngine::IEngine()
 {
+    int cores = boost::thread::hardware_concurrency();
+    pool = new boost::asio::thread_pool(cores);
+}
 
+void IEngine::filter(std::function<bool(const Record&)> pred){
+    entries = utils::filter(entries, pred, filtered_entries);
 }
 
 void IEngine::load(std::string filePath){
@@ -117,7 +122,16 @@ std::vector<int> IEngine::calculateGradeResults(){
 
 
 void IEngine::annotate(std::vector<std::string> &errors){
-    annotator::annotationAlgo(grouped_entries, errors, min_labs, min_dist, min_deposit);
+    for(auto& pair : grouped_entries){
+        auto& species = pair.second;
+        // annotator::annotateItem(species, grouped_entries, errors, min_labs, min_dist, min_deposit);
+        boost::asio::post(*pool, [&](){
+            annotator::annotateItem(species, grouped_entries, errors, min_labs, min_dist, min_deposit);
+        }
+        );
+    }
+    pool->join();
+    // annotator::annotationAlgo(grouped_entries, errors, min_labs, min_dist, min_deposit);
 }
 
 void IEngine::gradeRecords(){

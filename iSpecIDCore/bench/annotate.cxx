@@ -2,7 +2,7 @@
 #include <benchmark/benchmark.h>
 
 std::string base = "/Users/lmpn/Desktop/dissertaçao/datasets/tsv/";
-int reps = 8;
+int reps = 1;
 
 double kbest(const std::vector<double>& vec){
     int best = vec.size() * 0.625;

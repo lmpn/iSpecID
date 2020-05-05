@@ -45,6 +45,13 @@ namespace annotator{
             double min_dist = 2.0, 
             int min_deposit = 3
         );
+    void annotateItem(
+            Species& species, 
+            std::unordered_map<std::string, Species>& data,std::vector<std::string> &errors, 
+            int min_labs = 2, 
+            double min_dist = 2.0, 
+            int min_deposit = 3
+        );
     /*
      * Core Algorithm Helpers
     

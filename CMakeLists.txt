@@ -28,8 +28,9 @@ elseif (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.1)
 endif()
 
 
+set(CURL_LIBRARY "-lcurl") 
 find_package(CURL REQUIRED)
-find_package(Boost REQUIRED COMPONENTS regex REQUIRED)
+find_package(Boost REQUIRED COMPONENTS thread regex REQUIRED)
 if(CURL_FOUND)
     message(STATUS "Found CURL version: ${CURL_VERSION_STRING}")
     message(STATUS "Using CURL include dir(s): ${CURL_INCLUDE_DIRS}")

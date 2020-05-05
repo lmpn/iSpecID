@@ -112,6 +112,10 @@ background:qlineargradient(spread:pad, x1:0, y1:0.511364, x2:1, y2:0.511364, sto
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="styleSheet">
+             <string notr="true">color : white
+</string>
+            </property>
             <property name="text">
              <string>Specimens Characterization</string>
             </property>
@@ -199,6 +203,10 @@ background:qlineargradient(spread:pad, x1:0, y1:0.511364, x2:1, y2:0.511364, sto
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color : white
+</string>
             </property>
             <property name="text">
              <string>Connected Taxa</string>
@@ -422,7 +430,7 @@ background:rgb(25, 150, 141);
                 <string notr="true">color:white</string>
                </property>
                <property name="text">
-                <string>Grading Statistics</string>
+                <string>Original Grading Statistics</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignBottom|Qt::AlignHCenter</set>
@@ -716,6 +724,7 @@ height: 25px
      <string>File</string>
     </property>
     <addaction name="load_file_action"/>
+    <addaction name="save_as_file_action"/>
     <addaction name="save_file_action"/>
    </widget>
    <widget class="QMenu" name="menu_data">
@@ -737,12 +746,12 @@ height: 25px
     <string>Ctrl+O</string>
    </property>
   </action>
-  <action name="save_file_action">
+  <action name="save_as_file_action">
    <property name="text">
     <string>Save as...</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+S</string>
+    <string>Ctrl+Shift+S</string>
    </property>
   </action>
   <action name="filter_action">
@@ -756,6 +765,14 @@ height: 25px
   <action name="gradind_options_action">
    <property name="text">
     <string>Grading Options</string>
+   </property>
+  </action>
+  <action name="save_file_action">
+   <property name="text">
+    <string>Save</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
    </property>
   </action>
  </widget>

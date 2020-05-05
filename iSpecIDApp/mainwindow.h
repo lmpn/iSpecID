@@ -4,7 +4,6 @@
 #include <QMainWindow>
 #include <QFileDialog>
 #include <QKeyEvent>
-#include <QtSql>
 #include <iostream>
 
 #include "graphscene.h"
@@ -53,13 +52,14 @@ private slots:
     void showFilter();
     void onActionPerformed();
     void saveGraph();
-    void saveFile();
+    void saveFile(QString path = "");
     void undo();
     void onSaveConfig(double max_dist, int min_labs, int min_seqs);
     void showGradingOptions();
     void annotateFinished();
 
 private:
+    QString save_path;
     Ui::MainWindow *ui;
     IEngine *engine;
     std::vector<Record> undoEntries;
