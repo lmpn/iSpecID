@@ -129,7 +129,7 @@ void annotateItem(Species& species, std::unordered_map<std::string, Species>& da
             const std::string& bin = (*species.bins.begin()).first;
             auto BINSpeciesConcordance = speciesPerBIN(data, bin);
             if(BINSpeciesConcordance){
-                int specimens_size = species.specimens.size();
+                int specimens_size = species.specimens_size;
                 grade = specimens_size >= min_deposit ? "B" : "A";
             }
         }else{
@@ -185,7 +185,7 @@ void annotationAlgo(std::unordered_map<std::string, Species>& data,std::vector<s
                 const std::string& bin = (*species.bins.begin()).first;
                 auto BINSpeciesConcordance = speciesPerBIN(data, bin);
                 if(BINSpeciesConcordance){
-                    int specimens_size = species.specimens.size();
+                    int specimens_size = species.specimens_size;
                     grade = specimens_size >= min_deposit ? "B" : "A";
                 }
             }else{

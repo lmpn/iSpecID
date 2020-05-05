@@ -93,7 +93,7 @@ namespace utils{
     }
 
     template<class Item, class Key, class Value>
-    Aggregation<Key, Value> group(Table<Item>& tbl, Key get_key(Item), void join_op(Value&, Item)){
+    Aggregation<Key, Value> group(Table<Item>& tbl, Key get_key(Item&), void join_op(Value&, Item&)){
         Aggregation<Key, Value> result;
         for (auto& item : tbl)
         {

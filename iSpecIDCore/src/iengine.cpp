@@ -63,11 +63,11 @@ void IEngine::save(std::string filePath){
 
 
 
-std::string getKey(Record record){
+std::string getKey(Record& record){
     return record["species_name"];
 };
 
-void join(Species& species, Record record){
+void join(Species& species, Record& record){
     species.push_back(record);
 };
 
@@ -130,7 +130,8 @@ void IEngine::annotate(std::vector<std::string> &errors){
         );
     }
     pool->join();
-    annotator::annotationAlgo(grouped_entries, errors, min_labs, min_dist, min_deposit);
+
+    // annotator::annotationAlgo(grouped_entries, errors, min_labs, min_dist, min_deposit);
 }
 
 void IEngine::gradeRecords(){

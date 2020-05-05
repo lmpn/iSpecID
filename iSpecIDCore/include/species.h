@@ -9,22 +9,22 @@
 class Species{
     public:
     std::string species_name;
-    std::vector<Record> specimens;
+    int specimens_size;
     std::unordered_map<std::string, int> bins;
     std::unordered_set<std::string> institution;
     std::string grade;
 
-    Species():grade("U"){}
+    Species():specimens_size(0),grade("U"){}
 
     Species(
         std::string species_name,
         std::unordered_map<std::string, int> _bins,
         std::unordered_set<std::string> _institution,
         std::string _grade = "U") :
-        species_name(species_name), bins(_bins), institution(_institution), grade(_grade){};
+        species_name(species_name), specimens_size(0), bins(_bins), institution(_institution), grade(_grade){};
 
-    void push_back(Record specimen){
-        specimens.push_back(specimen);
+    void push_back(Record& specimen){
+        specimens_size++;
         bins[specimen["bin_uri"]] += 1;
         institution.insert( specimen["institution_storing"]);
         species_name = specimen["species_name"];
