@@ -124,14 +124,13 @@ std::vector<int> IEngine::calculateGradeResults(){
 void IEngine::annotate(std::vector<std::string> &errors){
     for(auto& pair : grouped_entries){
         auto& species = pair.second;
-        // annotator::annotateItem(species, grouped_entries, errors, min_labs, min_dist, min_deposit);
         boost::asio::post(*pool, [&](){
             annotator::annotateItem(species, grouped_entries, errors, min_labs, min_dist, min_deposit);
         }
         );
     }
     pool->join();
-    // annotator::annotationAlgo(grouped_entries, errors, min_labs, min_dist, min_deposit);
+    annotator::annotationAlgo(grouped_entries, errors, min_labs, min_dist, min_deposit);
 }
 
 void IEngine::gradeRecords(){

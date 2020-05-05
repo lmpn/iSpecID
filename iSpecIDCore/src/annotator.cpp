@@ -180,7 +180,6 @@ void annotationAlgo(std::unordered_map<std::string, Species>& data,std::vector<s
         auto& species = pair.second;
         int size = species.institution.size();
         if(size >= min_labs){
-
             grade = "E1";
             if(species.bins.size() == 1){
                 const std::string& bin = (*species.bins.begin()).first;
