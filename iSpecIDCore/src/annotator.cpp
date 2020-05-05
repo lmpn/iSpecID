@@ -43,8 +43,9 @@ BoldData parseBoldData(std::string& bin, std::vector<std::string>& errors){
     std::string url("http://v4.boldsystems.org/index.php/Public_BarcodeCluster?clusteruri=" + std::string(bin));
     try{
       
+    std::string page = mn.getPage(url.c_str());
         
-        std::string page = mn.getPage(url.c_str());
+    /*
         std::regex all = std::regex ("Distance to Nearest Neighbor:</th>\\s*<td>(\\d+\\.\\d+)%.*</td>|Nearest BIN URI:</th>\\s*<td>(.*)</td>");
          std::string s = mn.getPage(url.c_str());
          std::smatch matches;
@@ -55,7 +56,7 @@ BoldData parseBoldData(std::string& bin, std::vector<std::string>& errors){
          std::string nbin = matches[2];
          bd.distance = d;
          bd.neighbour = nbin;
-                 /*
+         */
         static const boost::regex dist  ("Distance to Nearest Neighbor:</th>\\s*<td>(\\d+.\\d+)%.*</td>");
         static const boost::regex bin  ("Nearest BIN URI:</th>\\s*<td>(.*?)</td>");
         boost::smatch char_matches;
@@ -70,7 +71,7 @@ BoldData parseBoldData(std::string& bin, std::vector<std::string>& errors){
             bd.neighbour = char_matches[1];
         }else{
             throw std::exception();
-        } */
+        } 
     }catch (const std::exception& e) {
         errors.push_back("Error fetching bin " + bin +" data");
     }
