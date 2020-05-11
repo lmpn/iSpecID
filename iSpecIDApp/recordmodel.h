@@ -8,7 +8,7 @@ class RecordModel : public QAbstractTableModel
 {
     Q_OBJECT
 public:
-    RecordModel(QObject *parent, IEngine *engine);
+    RecordModel(IEngine *engine, QObject *parent = nullptr);
     bool remove;
     std::vector<Record> getRecords() {
         return engine->getEntries();

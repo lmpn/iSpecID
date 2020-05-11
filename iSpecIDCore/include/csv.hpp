@@ -2942,9 +2942,9 @@ namespace csv {
 
     /** Determines how to handle rows that are shorter or longer than the majority */
     enum class VariableColumnPolicy {
-        THROW = -1,
-        IGNORE = 0,
-        KEEP   = 1
+        CSV_THROW = -1,
+        CSV_IGNORE = 0,
+        CSV_KEEP   = 1
     };
 
     /** Stores the inferred format of a CSV file. */
@@ -3000,7 +3000,7 @@ namespace csv {
         CSVFormat& header_row(int row);
 
         /** Tells the parser how to handle columns of a different length than the others */
-        CONSTEXPR CSVFormat& variable_columns(VariableColumnPolicy policy = VariableColumnPolicy::IGNORE) {
+        CONSTEXPR CSVFormat& variable_columns(VariableColumnPolicy policy = VariableColumnPolicy::CSV_IGNORE) {
             this->variable_column_policy = policy;
             return *this;
         }
@@ -3070,7 +3070,7 @@ namespace csv {
         std::vector<std::string> col_names = {};
 
         /**< Allow variable length columns? */
-        VariableColumnPolicy variable_column_policy = VariableColumnPolicy::IGNORE;
+        VariableColumnPolicy variable_column_policy = VariableColumnPolicy::CSV_IGNORE;
 
         /**< Detect and strip out Unicode byte order marks */
         bool unicode_detect = true;
@@ -4963,8 +4963,8 @@ namespace csv {
 
         while (!this->records.empty()) {
             if (this->records.front().size() != this->n_cols &&
-                this->format.variable_column_policy != VariableColumnPolicy::KEEP) {
-                if (this->format.variable_column_policy == VariableColumnPolicy::THROW) {
+                this->format.variable_column_policy != VariableColumnPolicy::CSV_KEEP) {
+                if (this->format.variable_column_policy == VariableColumnPolicy::CSV_THROW) {
                     if (this->records.front().size() < this->n_cols) {
                         throw std::runtime_error("Line too short " + internals::format_row(this->records.front()));
                     }
@@ -5741,7 +5741,7 @@ namespace csv {
                     this->min_max(x_n, i);
                 }
             }
-            else if (this->format.get_variable_column_policy() == VariableColumnPolicy::THROW) {
+            else if (this->format.get_variable_column_policy() == VariableColumnPolicy::CSV_THROW) {
                 throw std::runtime_error("Line has different length than the others " + internals::format_row(*current_record));
             }
 

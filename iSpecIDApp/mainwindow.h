@@ -52,21 +52,25 @@ private slots:
     void showFilter();
     void onActionPerformed();
     void saveGraph();
-    void saveFile(QString path = "");
+    void saveFile();
+    void saveAsFile();
     void undo();
     void onSaveConfig(double max_dist, int min_labs, int min_seqs);
     void showGradingOptions();
     void annotateFinished();
 
 private:
-    QString save_path;
+    QString current_save_path;
     Ui::MainWindow *ui;
     IEngine *engine;
     std::vector<Record> undoEntries;
     std::vector<Record> undoFilteredEntries;
     GraphScene *graph;
     std::vector<std::string> errors;
-    void setupGraphScene(RecordModel *rec_m, ResultsModel *res_m);
+    void setupGraphScene();
+    void setupCurrentResultsTable();
+    void setupOriginalResultsTable();
+    void setupRecordsTable();
     void enableMenuDataActions(bool enable);
     void updateApp();
     void gradingTableAdjust(QTableView *tableView);

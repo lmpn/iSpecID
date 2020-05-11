@@ -189,7 +189,7 @@ background:qlineargradient(spread:pad, x1:0, y1:0.511364, x2:1, y2:0.511364, sto
          <property name="frameShadow">
           <enum>QFrame::Raised</enum>
          </property>
-         <layout class="QVBoxLayout" name="verticalLayout_7" stretch="0,0,80,0,0">
+         <layout class="QVBoxLayout" name="verticalLayout_7" stretch="0,0,0,80,0">
           <property name="spacing">
            <number>0</number>
           </property>
@@ -228,6 +228,22 @@ background:qlineargradient(spread:pad, x1:0, y1:0.511364, x2:1, y2:0.511364, sto
              </size>
             </property>
            </spacer>
+          </item>
+          <item>
+           <widget class="QComboBox" name="graph_combo_box">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="editable">
+             <bool>true</bool>
+            </property>
+            <property name="currentText">
+             <string>Search species or cluster...</string>
+            </property>
+           </widget>
           </item>
           <item>
            <widget class="QGraphicsView" name="graph_viewer">
@@ -307,22 +323,6 @@ background:qlineargradient(spread:pad, x1:0, y1:0.511364, x2:1, y2:0.511364, sto
              </widget>
             </item>
            </layout>
-          </item>
-          <item>
-           <widget class="QComboBox" name="graph_combo_box">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="editable">
-             <bool>true</bool>
-            </property>
-            <property name="currentText">
-             <string>Search species or cluster...</string>
-            </property>
-           </widget>
           </item>
          </layout>
         </widget>

@@ -40,6 +40,7 @@ namespace annotator{
     */
     void annotationAlgo(
             std::unordered_map<std::string, Species>& data,
+            std::unordered_map<std::string, std::pair<std::string, double>>& dist_matrix,
             std::vector<std::string> &errors, 
             int min_labs = 2, 
             double min_dist = 2.0, 
@@ -47,7 +48,9 @@ namespace annotator{
         );
     void annotateItem(
             Species& species, 
-            std::unordered_map<std::string, Species>& data,std::vector<std::string> &errors, 
+            std::unordered_map<std::string, Species>& data,
+            std::unordered_map<std::string, std::pair<std::string, double>>& dist_matrix,
+            std::vector<std::string> &errors, 
             int min_labs = 2, 
             double min_dist = 2.0, 
             int min_deposit = 3

@@ -1,4 +1,7 @@
 #include <fstream>      // std::ofstream
+#include <atomic>
+#include <mutex>
+#include <condition_variable>
 #include "iengine.h"
 #include "csv.hpp"
 #include "annotator.h"
@@ -11,6 +14,18 @@ IEngine::IEngine()
 
 void IEngine::filter(std::function<bool(const Record&)> pred){
     entries = utils::filter(entries, pred, filtered_entries);
+}
+
+void IEngine::load_distance_matrix(std::string filePath){
+    dist_matrix.clear();
+    csv::CSVFormat format;
+    format.delimiter(';');
+    csv::CSVReader reader(filePath, format);
+    for (auto& row: reader) {
+        auto key = row[0].get();
+        auto value = std::make_pair(row[1].get(), row[2].get<double>());
+        dist_matrix.insert({key, value });
+    }
 }
 
 void IEngine::load(std::string filePath){
@@ -122,16 +137,31 @@ std::vector<int> IEngine::calculateGradeResults(){
 
 
 void IEngine::annotate(std::vector<std::string> &errors){
+    /*
+    int tasks = grouped_entries.size();
+    std::condition_variable cv;
+    std::mutex lock;
+    int completed = 0;
     for(auto& pair : grouped_entries){
         auto& species = pair.second;
         boost::asio::post(*pool, [&](){
-            annotator::annotateItem(species, grouped_entries, errors, min_labs, min_dist, min_deposit);
+            annotator::annotateItem(species, grouped_entries, dist_matrix, errors, min_labs, min_dist, min_deposit);
+            {
+                auto ul = std::unique_lock<std::mutex>(lock);
+                completed++;
+                if(completed == tasks){
+                    cv.notify_one();
+                }
+            }
         }
         );
     }
-    pool->join();
+    {
+        auto ul = std::unique_lock<std::mutex>(lock);
+        cv.wait(ul, [&](){return tasks == completed;});
+    }*/
 
-    // annotator::annotationAlgo(grouped_entries, errors, min_labs, min_dist, min_deposit);
+    annotator::annotationAlgo(grouped_entries, dist_matrix, errors, min_labs, min_dist, min_deposit);
 }
 
 void IEngine::gradeRecords(){

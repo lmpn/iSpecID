@@ -80,7 +80,7 @@ BoldData parseBoldData(std::string& bin, std::vector<std::string>& errors){
 
 
 
-std::string findBinsNeighbour(std::unordered_map<std::string, Species>& data, std::unordered_map<std::string, int>& bins, double min_dist,std::vector<std::string> &errors)
+std::string findBinsNeighbour(std::unordered_map<std::string, Species>& data, std::unordered_map<std::string, std::pair<std::string, double>>& dist_matrix, std::unordered_map<std::string, int>& bins, double min_dist,std::vector<std::string> &errors)
 {
     size_t ctr, count, num_components;
     auto grade = "E2";
@@ -99,14 +99,18 @@ std::string findBinsNeighbour(std::unordered_map<std::string, Species>& data, st
     auto bins_begin = bins.begin();
     auto cur_elem = bins.begin();
     auto bins_end = bins.end();
+    auto dist_matrix_end = dist_matrix.end();
     ugraph graph(count);
     for(size_t  i = 0; i < count; i++){
         auto bin = (*cur_elem).first;
-        auto bold = parseBoldData(bin,errors);
-        auto item = bins.find(bold.neighbour);
-        if( item!=bins_end && bold.distance <= min_dist) {
-            size_t ind = std::distance(bins_begin, item );
-            boost::add_edge(i, ind, bold.distance, graph);
+        auto bold = dist_matrix.find(bin);
+        if(bold != dist_matrix_end){
+            auto bold_content = (*bold).second;
+            auto item = bins.find(bold_content.first);
+            if( item!=bins_end && bold_content.second <= min_dist) {
+                size_t ind = std::distance(bins_begin, item );
+                boost::add_edge(i, ind, bold_content.second, graph);
+            }
         }
         cur_elem++;
     }
@@ -119,7 +123,11 @@ std::string findBinsNeighbour(std::unordered_map<std::string, Species>& data, st
 }
 
 
-void annotateItem(Species& species, std::unordered_map<std::string, Species>& data,std::vector<std::string> &errors, int min_labs, double min_dist, int min_deposit){
+inline void annotateItem(
+    Species& species, 
+    std::unordered_map<std::string, Species>& data,
+    std::unordered_map<std::string, std::pair<std::string, double>>& dist_matrix,
+    std::vector<std::string> &errors, int min_labs, double min_dist, int min_deposit){
     std::string grade = "D";
     int size = species.institution.size();
     if(size >= min_labs){
@@ -133,14 +141,14 @@ void annotateItem(Species& species, std::unordered_map<std::string, Species>& da
                 grade = specimens_size >= min_deposit ? "B" : "A";
             }
         }else{
-            grade = findBinsNeighbour(data, species.bins, min_dist, errors);
+            grade = findBinsNeighbour(data, dist_matrix, species.bins, min_dist, errors);
         }
     }
     species.grade = grade;
 }
 
 
-void annotationAlgo(std::unordered_map<std::string, Species>& data,std::vector<std::string> &errors, int min_labs, double min_dist, int min_deposit){
+void annotationAlgo(std::unordered_map<std::string, Species>& data, std::unordered_map<std::string, std::pair<std::string, double>>& dist_matrix, std::vector<std::string> &errors, int min_labs, double min_dist, int min_deposit){
     /*
     Para cada especie(ESP):
         Se o #sequencias > 3:
@@ -178,6 +186,9 @@ void annotationAlgo(std::unordered_map<std::string, Species>& data,std::vector<s
     std::string grade = "D";
     for(auto& pair : data){
         auto& species = pair.second;
+        annotateItem(species, data, dist_matrix, errors, min_labs, min_dist, min_deposit);
+        /*
+        auto& species = pair.second;
         int size = species.institution.size();
         if(size >= min_labs){
             grade = "E1";
@@ -194,6 +205,7 @@ void annotationAlgo(std::unordered_map<std::string, Species>& data,std::vector<s
         }
         species.grade = grade;
         grade = "D";
+        */
     }
     
 }

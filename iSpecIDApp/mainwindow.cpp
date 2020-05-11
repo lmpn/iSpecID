@@ -11,36 +11,49 @@
 #include "filterdialog.h"
 #include "gradingoptionsdialog.h"
 #include <iostream>
-#include <QtSql>
 #include "csv.hpp"
 
-
-void MainWindow::setupGraphScene(RecordModel *record_model, ResultsModel *results_model)
+MainWindow::MainWindow(QWidget *parent)
+    : QMainWindow(parent)
+    , ui(new Ui::MainWindow)
 {
-    graph = new GraphScene(this, engine);
-    graph->setObjectName("graph_scene");
-    ui->graph_viewer->setScene(graph);
-    ui->graph_viewer->setCacheMode(QGraphicsView::CacheBackground);
-    ui->graph_viewer->setViewportUpdateMode(QGraphicsView::ViewportUpdateMode::BoundingRectViewportUpdate);
-    ui->graph_viewer->setRenderHint(QPainter::Antialiasing);
-    ui->graph_viewer->setTransformationAnchor(QGraphicsView::ViewportAnchor::AnchorViewCenter);
-    connect(this, SIGNAL(updateGraph()),
-            graph,SLOT(onGraphChanged()));
-    connect(this, SIGNAL(updateColorGraph()),
-            graph,SLOT(onGraphColorChanged()));
-    connect(this, SIGNAL(showComponent(QString)),
-            graph,SLOT(setComponentVisible(QString)));
-    connect(graph, SIGNAL(updateCombobox()),
-            this,SLOT(on_combo_box_changed()));
-    connect(graph, SIGNAL(actionPerformed()),
-            this,SLOT(onActionPerformed()));
-    connect(graph, SIGNAL(updateResults()),
-            results_model,SLOT(onResultsChanged()));
-    connect(graph, SIGNAL(updateRecords()),
-            record_model,SLOT(onRecordsChanged()));
-    connect(record_model, SIGNAL(updateGraph()),
-            graph, SLOT(onGraphChanged()));
+    ui->setupUi(this);
+    engine = new IEngine();
+
+    graph = nullptr;
+
+    //conect buttons
+    connect(ui->annotate_button, SIGNAL(clicked()),
+            this, SLOT(onAnnotateData()));
+    connect(ui->undo_button, SIGNAL(clicked()),
+            this, SLOT(undo()));
+    connect(ui->save_graph_button, SIGNAL(clicked()),
+            this, SLOT(saveGraph()));
+    connect(ui->zoom_out_button, SIGNAL(clicked()),
+            this, SLOT(zoomOut()));
+    connect(ui->zoom_in_button, SIGNAL(clicked()),
+            this, SLOT(zoomIn()));
+    connect(ui->load_file_action, SIGNAL(triggered()),
+            this, SLOT(loadFile()));
+    connect(ui->save_as_file_action, SIGNAL(triggered()),
+            this, SLOT(saveAsFile()));
+    connect(ui->save_file_action, SIGNAL(triggered()),
+            this, SLOT(saveFile()));
+    connect(ui->filter_action, SIGNAL(triggered()),
+            this, SLOT(showFilter()));
+    connect(ui->gradind_options_action, SIGNAL(triggered()),
+            this, SLOT(showGradingOptions()));
+    ui->results_frame->hide();
+    enableMenuDataActions(false);
+    showMaximized();
 }
+
+MainWindow::~MainWindow()
+{
+    delete ui;
+    delete engine;
+}
+
 
 void MainWindow::enableMenuDataActions(bool enable)
 {
@@ -79,44 +92,73 @@ void MainWindow::gradingTableAdjust(QTableView *tableView)
 }
 
 
-MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
-    , ui(new Ui::MainWindow)
+
+void MainWindow::setupGraphScene()
 {
-    ui->setupUi(this);
-    engine = new IEngine();
+    if(graph != nullptr){
+        delete graph;
+    }
 
+    auto record_model = ui->record_table->model();
+    auto current_results_model = ui->current_results_table->model();
+    graph = new GraphScene(this, engine);
+    qDebug() << "After get models";
+//    graph->setObjectName("graph_scene");
+    ui->graph_viewer->setScene(graph);
+    ui->graph_viewer->setCacheMode(QGraphicsView::CacheBackground);
+    ui->graph_viewer->setViewportUpdateMode(QGraphicsView::ViewportUpdateMode::BoundingRectViewportUpdate);
+    ui->graph_viewer->setRenderHint(QPainter::Antialiasing);
+    ui->graph_viewer->setTransformationAnchor(QGraphicsView::ViewportAnchor::AnchorViewCenter);
+    connect(this, SIGNAL(updateGraph()),
+            graph,SLOT(onGraphChanged()));
+    connect(this, SIGNAL(updateColorGraph()),
+            graph,SLOT(onGraphColorChanged()));
+    connect(this, SIGNAL(showComponent(QString)),
+            graph,SLOT(setComponentVisible(QString)));
+    connect(graph, SIGNAL(updateCombobox()),
+            this,SLOT(on_combo_box_changed()));
+    connect(graph, SIGNAL(actionPerformed()),
+            this,SLOT(onActionPerformed()));
+    connect(graph, SIGNAL(updateResults()),
+            current_results_model,SLOT(onResultsChanged()));
+    connect(graph, SIGNAL(updateRecords()),
+            record_model,SLOT(onRecordsChanged()));
+    connect(record_model, SIGNAL(updateGraph()),
+            graph, SLOT(onGraphChanged()));
+}
 
+void MainWindow::setupOriginalResultsTable(){
+    auto model = ui->initial_results_table->model();
+    if(model != nullptr){
+        delete model;
+    }
+    ResultsModel *results_model = new ResultsModel(engine);
+    ui->initial_results_table->setModel(results_model);
+    gradingTableAdjust(ui->initial_results_table);
+    ui->initial_results_frame->hide();
+    connect(this, SIGNAL(updateResults()),
+            results_model,SLOT(onResultsChanged()));
+}
 
-    //conect buttons
-    connect(ui->annotate_button, SIGNAL(clicked()),
-            this, SLOT(onAnnotateData()));
-    connect(ui->undo_button, SIGNAL(clicked()),
-            this, SLOT(undo()));
-    connect(ui->save_graph_button, SIGNAL(clicked()),
-            this, SLOT(saveGraph()));
-    connect(ui->zoom_out_button, SIGNAL(clicked()),
-            this, SLOT(zoomOut()));
-    connect(ui->zoom_in_button, SIGNAL(clicked()),
-            this, SLOT(zoomIn()));
-    connect(ui->load_file_action, SIGNAL(triggered()),
-            this, SLOT(loadFile()));
-    connect(ui->save_as_file_action, SIGNAL(triggered()),
-            this, SLOT(saveFile()));
-    connect(ui->save_file_action, SIGNAL(triggered()),
-            this, SLOT(saveFile(save_path)));
-    //f
-    connect(ui->filter_action, SIGNAL(triggered()),
-            this, SLOT(showFilter()));
-    connect(ui->gradind_options_action, SIGNAL(triggered()),
-            this, SLOT(showGradingOptions()));
-    //gopts
+void MainWindow::setupCurrentResultsTable(){
+    ResultsModel *current_results_model = new ResultsModel(engine);
+    auto model = ui->current_results_table->model();
+    if(model != nullptr){
+        delete model;
+    }
+    ui->current_results_table->setModel(current_results_model);
+    gradingTableAdjust(ui->current_results_table);
+    ui->current_results_frame->hide();
+    connect(this, SIGNAL(updateCurrentResults()),
+            current_results_model,SLOT(onResultsChanged()));
+}
 
-
-
-
-    //Setup record table
-    RecordModel *record_model = new RecordModel(ui->record_table,engine);
+void MainWindow::setupRecordsTable(){
+    RecordModel *record_model = new RecordModel(engine);
+    auto model = ui->record_table->model();
+    if(model != nullptr){
+        delete model;
+    }
     ui->record_table->setModel(record_model);
     ui->record_table->setSelectionBehavior(QAbstractItemView::SelectionBehavior::SelectRows);
     connect(this, SIGNAL(updateRecords()),
@@ -125,37 +167,6 @@ MainWindow::MainWindow(QWidget *parent)
             this, SLOT(on_combo_box_changed()));
     connect(ui->record_table->horizontalHeader(), SIGNAL(sectionClicked( int )),
             record_model, SLOT(sortBySection(int)));
-
-    //Setup results table
-    ResultsModel *results_model = new ResultsModel(ui->initial_results_table,engine);
-    ui->initial_results_table->setModel(results_model);
-    gradingTableAdjust(ui->initial_results_table);
-    ui->initial_results_frame->hide();
-    connect(this, SIGNAL(updateResults()),
-            results_model,SLOT(onResultsChanged()));
-
-    //Setup current results table
-    ResultsModel *current_results_model = new ResultsModel(ui->current_results_table,engine);
-    ui->current_results_table->setModel(current_results_model);
-    gradingTableAdjust(ui->current_results_table);
-    ui->current_results_frame->hide();
-    connect(this, SIGNAL(updateCurrentResults()),
-            current_results_model,SLOT(onResultsChanged()));
-
-    ui->results_frame->hide();
-
-    //Setup graph
-    setupGraphScene(record_model, current_results_model);
-
-    //Disable actions of menubar
-    enableMenuDataActions(false);
-    showMaximized();
-}
-
-MainWindow::~MainWindow()
-{
-    delete ui;
-    delete engine;
 }
 
 
@@ -166,6 +177,20 @@ void MainWindow::loadFile()
     if (filePath.isEmpty())
         return;
     else {
+
+        engine->clear();
+        //Setup record table
+        setupRecordsTable();
+
+        //Setup results table
+        setupOriginalResultsTable();
+
+        //Setup current results table
+        setupCurrentResultsTable();
+
+        //Setup graph
+        setupGraphScene();
+
         undoEntries = {};
         undoFilteredEntries = {};
         engine->load(filePath.toStdString());
@@ -178,6 +203,7 @@ void MainWindow::loadFile()
         updateApp();
         enableMenuDataActions(true);
         ui->record_table->resizeColumnsToContents();
+        ui->results_frame->hide();
         msgBox.exec();
     }
 }
@@ -222,40 +248,6 @@ void MainWindow::on_graph_combo_box_activated(const QString &arg1)
 }
 
 
-void MainWindow::showGradingErrors(std::vector<std::string> &errors){
-    QMessageBox msgBox;
-    msgBox.setText("Grading error report.");
-    QString error_str;
-    for(auto& error : errors){
-        error_str += QString::fromStdString(error);
-        error_str += QString::fromStdString("\n");
-    }
-    msgBox.setDetailedText(error_str);
-    msgBox.setStandardButtons(QMessageBox::Ok);
-    msgBox.setDefaultButton(QMessageBox::Ok);
-    msgBox.exec();
-}
-
-void MainWindow::annotateFinished(){
-    emit updateColorGraph();
-    emit updateRecords();
-    if(!ui->results_frame->isVisible()){
-        ui->results_frame->show();
-        ui->initial_results_frame->show();
-        ui->current_results_frame->show();
-        emit updateResults();
-    }
-    emit updateCurrentResults();
-    ui->annotate_button->setDisabled(false);
-    ui->statusbar->showMessage("");
-    if(errors.size()>0)
-        showGradingErrors(this->errors);
-    this->setCursor(Qt::ArrowCursor);
-    ui->centralwidget->setEnabled(true);
-    ui->menubar->setEnabled(true);
-}
-
-
 void MainWindow::updateApp()
 {
     engine->group();
@@ -267,7 +259,9 @@ void MainWindow::updateApp()
 }
 
 /*
-    USER INPUT HANDLE
+
+    User Section
+
 */
 
 void MainWindow::deleteRecordRows()
@@ -329,6 +323,84 @@ void MainWindow::zoomOut()
     scaleView(1 / qreal(1.2));
 }
 
+/*
+    End User Section
+*/
+
+
+
+
+/*
+
+  Annotate Section
+
+*/
+void MainWindow::onAnnotateData()
+{
+    if(engine->size() == 0){
+        return;
+    }
+    qDebug() << engine->size();
+    this->setCursor(Qt::WaitCursor);
+    ui->statusbar->showMessage("Grading...");
+    undoEntries = engine->getEntriesCopy();
+    undoFilteredEntries = engine->getFilteredEntriesCopy();
+    ui->centralwidget->setDisabled(true);
+    ui->menubar->setDisabled(true);
+    QtConcurrent::run([this]{
+        QObject src;
+        QObject::connect(&src, SIGNAL(destroyed(QObject*)),
+                         this, SLOT(annotateFinished()));
+        engine->annotate(this->errors);
+        engine->gradeRecords();
+    });
+}
+
+void MainWindow::showGradingErrors(std::vector<std::string> &errors){
+    QMessageBox msgBox;
+    msgBox.setText("Grading error report.");
+    QString error_str;
+    for(auto& error : errors){
+        error_str += QString::fromStdString(error);
+        error_str += QString::fromStdString("\n");
+    }
+    msgBox.setDetailedText(error_str);
+    msgBox.setStandardButtons(QMessageBox::Ok);
+    msgBox.setDefaultButton(QMessageBox::Ok);
+    msgBox.exec();
+}
+
+void MainWindow::annotateFinished(){
+    emit updateColorGraph();
+    emit updateRecords();
+    if(!ui->results_frame->isVisible()){
+        ui->results_frame->show();
+        ui->initial_results_frame->show();
+        ui->current_results_frame->show();
+        emit updateResults();
+    }
+    emit updateCurrentResults();
+    ui->statusbar->showMessage("");
+    if(errors.size()>0)
+        showGradingErrors(this->errors);
+    this->setCursor(Qt::ArrowCursor);
+    ui->centralwidget->setEnabled(true);
+    ui->menubar->setEnabled(true);
+    this->errors = {};
+}
+
+/*
+
+  End Annotate Section
+
+*/
+
+/*
+
+  Save Section
+
+*/
+
 void MainWindow::saveGraph()
 {
     QString fileName = QFileDialog::getSaveFileName(this,
@@ -342,28 +414,46 @@ void MainWindow::saveGraph()
     }
 }
 
-void MainWindow::saveFile(QString save_path)
+void MainWindow::saveAsFile()
 {
-    if(save_path.isEmpty()){
-        save_path = QFileDialog::getSaveFileName(
+    current_save_path = QFileDialog::getSaveFileName(
+                this,
+                tr("Save "),
+                "",
+                tr("Tab separated file (*.tsv);;All Files (*)"));
+    if (current_save_path.isEmpty()){
+        return;
+    }
+    engine->save(current_save_path.toStdString());
+}
+
+void MainWindow::saveFile()
+{
+    if(current_save_path.isEmpty()){
+        current_save_path = QFileDialog::getSaveFileName(
                     this,
                     tr("Save "),
                     "",
                     tr("Tab separated file (*.tsv);;All Files (*)"));
-        if (save_path.isEmpty()){
+        if (current_save_path.isEmpty()){
             return;
         }
     }
-    else {
-        engine->save(save_path.toStdString());
-    }
+    engine->save(current_save_path.toStdString());
 }
+/*
 
-void MainWindow::onActionPerformed()
-{
-    undoEntries = engine->getEntriesCopy();
-    undoFilteredEntries = engine->getFilteredEntriesCopy();
-}
+  End Save Section
+
+*/
+
+
+
+/*
+
+  Undo Section
+
+*/
 
 void MainWindow::undo()
 {
@@ -375,43 +465,22 @@ void MainWindow::undo()
     updateApp();
 }
 
-void MainWindow::onSaveConfig(double max_dist, int min_labs, int min_seqs)
+void MainWindow::onActionPerformed()
 {
-    engine->setDist(max_dist);
-    engine->setLabs(min_labs);
-    engine->setDeposit(min_seqs);
-}
-
-void MainWindow::showGradingOptions()
-{
-    GradingOptionsDialog * gopts = new GradingOptionsDialog();
-    connect(gopts, SIGNAL(saveConfig(double, int, int)),
-            this, SLOT(onSaveConfig(double, int, int)));
-    gopts->exec();
-    delete gopts;
-
-}
-
-void MainWindow::onAnnotateData()
-{
-    if(engine->size() == 0){
-        return;
-    }
-    this->setCursor(Qt::WaitCursor);
-    ui->annotate_button->setDisabled(true);
-    ui->statusbar->showMessage("Grading...");
     undoEntries = engine->getEntriesCopy();
     undoFilteredEntries = engine->getFilteredEntriesCopy();
-    ui->centralwidget->setDisabled(true);
-    ui->menubar->setDisabled(true);
-    QtConcurrent::run([this]{
-        QObject src;
-        engine->annotate(this->errors);
-        engine->gradeRecords();
-        QObject::connect(&src, SIGNAL(destroyed(QObject*)),
-                         this, SLOT(annotateFinished()));
-    });
 }
+
+
+/*
+
+  End Undo Section
+
+*/
+
+
+
+
 
 void MainWindow::showFilter()
 {
@@ -464,3 +533,19 @@ void MainWindow::showFilter()
     }
 }
 
+void MainWindow::showGradingOptions()
+{
+    GradingOptionsDialog * gopts = new GradingOptionsDialog();
+    connect(gopts, SIGNAL(saveConfig(double, int, int)),
+            this, SLOT(onSaveConfig(double, int, int)));
+    gopts->exec();
+    delete gopts;
+
+}
+
+void MainWindow::onSaveConfig(double max_dist, int min_labs, int min_seqs)
+{
+    engine->setDist(max_dist);
+    engine->setLabs(min_labs);
+    engine->setDeposit(min_seqs);
+}

@@ -1,4 +1,4 @@
-QT       += core gui concurrent sql
+QT       += core gui concurrent
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -50,7 +50,6 @@ HEADERS += \
         iSpecIDApp/recordmodel.h \
         iSpecIDApp/filterdialog.h \
         iSpecIDApp/filterOp.h \
-        iSpecIDApp/filterItem.h \
         iSpecIDApp/filterscrollarea.h
 
 
@@ -65,22 +64,27 @@ win32:{
         CONFIG += c++17
         INCLUDEPATH += "iSpecIDCore/include"
         INCLUDEPATH += "C:\boost\include\boost-1_72"
-        LIBS += -L$$PWD/winbuild/curl-7.69.1-win64-mingw/lib/ -llibcurl.dll
-        INCLUDEPATH += $$PWD/winbuild/curl-7.69.1-win64-mingw/include
-        DEPENDPATH += $$PWD/winbuild/curl-7.69.1-win64-mingw/include
-        win32-g++: PRE_TARGETDEPS += $$PWD/winbuild/curl-7.69.1-win64-mingw/lib/libcurl.dll.a
+        INCLUDEPATH += $$PWD/../../../../../boost/include
+        DEPENDPATH += $$PWD/../../../../../boost/include
+        LIBS += -L$$PWD/../../../../../boost/lib/ -llibboost_regex-mgw81-mt-x64-1_72.dll
+        LIBS += -L$$PWD/../../../../../boost/lib/ -llibboost_thread-mgw81-mt-x64-1_72.dll
+        LIBS += -L$$PWD/winbuild/curl-7.70.0-win64-mingw/lib/ -llibcurl.dll
+        INCLUDEPATH += $$PWD/winbuild/curl-7.70.0-win64-mingw/include
+        DEPENDPATH += $$PWD/winbuild/curl-7.70.0-win64-mingw/include
+        win32-g++: PRE_TARGETDEPS += $$PWD/winbuild/curl-7.70.0-win64-mingw/lib/libcurl.dll.a
         RC_ICONS = icons/main_icon.ico
 }
 macx:{
         CONFIG += c++17 app_bundle
-        INCLUDEPATH += "/usr/local/Cellar/boost/1.72.0_2/include/"
-        DEPENDPATH  += "/usr/local/Cellar/boost/1.72.0_2/include/"
         INCLUDEPATH += "iSpecIDCore/include"
-        INCLUDEPATH += "/usr/include/"
-        DEPENDPATH  += "/usr/include/"
-        LIBS += -L/usr/lib/ -lcurl.4
-        LIBS += -L/usr/local/Cellar/boost/1.72.0_2/lib/ -lboost_regex
-
+        #Boost
+        INCLUDEPATH += "/usr/local/Cellar/boost/1.72.0_2/include/"
+        LIBS += -L/usr/local/Cellar/boost/1.72.0_2/lib/ -lboost_regex -lboost_thread-mt
+        #Curl
+        LIBS += -L/usr/local/opt/curl/lib/ -lcurl.4
+        INCLUDEPATH += "/usr/local/opt/curl/include"
+        DEPENDPATH += "/usr/local/opt/curl/include"
+        #ICON
         ICON = icons/main_icon.icns
 }
 
@@ -88,5 +92,12 @@ macx:{
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+
+
+
+
+
+
 
 

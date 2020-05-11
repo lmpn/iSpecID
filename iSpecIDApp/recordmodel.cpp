@@ -4,7 +4,7 @@
 #include "recordmodel.h"
 #include <qdebug.h>
 
-RecordModel::RecordModel(QObject *parent,IEngine *engine)
+RecordModel::RecordModel(IEngine *engine, QObject *parent)
     : QAbstractTableModel(parent), cur_count(0), engine(engine)
 {
     remove = false;
@@ -142,8 +142,11 @@ bool RecordModel::removeRows(int position, int rows, const QModelIndex &parent){
     Q_UNUSED(parent);
     beginRemoveRows(QModelIndex(), position, position+rows-1);
     auto& entries = engine->getEntries();
+    auto& filtered = engine->getFilteredEntries();
     for (int row=0; row < rows; ++row) {
         if(remove){
+            auto item = entries.at(position);
+            filtered.push_back(item);
             entries.erase(entries.begin()+position);
             cur_count--;
         }

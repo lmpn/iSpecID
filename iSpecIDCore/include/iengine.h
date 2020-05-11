@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <memory>
 #include <functional>
+#include "miner.h"
 #include <boost/asio/thread_pool.hpp>
 #include <boost/asio/post.hpp>
 #include <boost/thread.hpp>
@@ -21,9 +22,11 @@ public:
 
     IEngine();
     ~IEngine(){
+        pool->join();
         delete pool;
     };
     void load(std::string filePath);
+    void load_distance_matrix(std::string filePath);
     void save(std::string filePath);
     void filter(std::function<bool(const Record&)> pred);
     void group();
@@ -44,13 +47,19 @@ public:
     inline void setLabs(int labs){min_labs = labs >= 2 ? labs : min_labs;};
     inline void setDist(double dist){min_dist = dist <= 2 ? dist : min_dist;};
     inline void setDeposit(int deposit){min_deposit = deposit >= 3 ? deposit : min_deposit;}
-
+    inline void clear(){
+        header.clear();
+        entries.clear();
+        filtered_entries.clear();
+        grouped_entries.clear();
+    }
 
 private:
     std::vector<std::string> header;
     std::vector<Record> entries;
     std::vector<Record> filtered_entries;
     std::unordered_map<std::string, Species> grouped_entries;
+    std::unordered_map<std::string, std::pair<std::string, double>> dist_matrix;
     int min_labs = 2;
     double min_dist = 2;
     int min_deposit = 3;

@@ -55,7 +55,6 @@
 //#include <QtMath>
 #include <QFontDatabase>
 
-
 Edge::Edge(Node *sourceNode, Node *destNode, int count)
     : source(sourceNode), dest(destNode)
 {

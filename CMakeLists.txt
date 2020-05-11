@@ -7,7 +7,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-Wall -Wabi -g -fno-omit-frame-pointer -O2 -DNDEBUG -fno-inline-functions -fno-optimize-sibling-calls")
 set(VERBOSE ON)
 
-
 if(CURL_DIR)
 	list(APPEND CMAKE_PREFIX_PATH ${CURL_DIR})
 endif()

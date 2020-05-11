@@ -2,7 +2,7 @@
 #include <iostream>
 #include <qdebug.h>
 
-ResultsModel::ResultsModel(QObject *parent, IEngine *engine)
+ResultsModel::ResultsModel(IEngine *engine, QObject *parent)
     :QAbstractTableModel(parent), engine(engine)
 {
 }
