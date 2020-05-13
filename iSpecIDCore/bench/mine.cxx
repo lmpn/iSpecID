@@ -1,7 +1,7 @@
 #include <iengine.h>
 #include <benchmark/benchmark.h>
 
-std::string base = "/Users/lmpn/Desktop/diss/datasets/tsv/";
+std::string base = "/home/a77763t/dissertation/playground/datasets/";
 int reps = 1;
 
 double kbest(const std::vector<double>& vec){

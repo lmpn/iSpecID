@@ -44,19 +44,6 @@ BoldData parseBoldData(std::string bin, std::vector<std::string>& errors){
     try{
 
         std::string page = mn.getPage(url.c_str());
-        
-        /*
-        std::regex all = std::regex ("Distance to Nearest Neighbor:</th>\\s*<td>(\\d+\\.\\d+)%.*</td>|Nearest BIN URI:</th>\\s*<td>(.*)</td>");
-         std::string s = mn.getPage(url.c_str());
-         std::smatch matches;
-         std::regex_search (s,matches,all);
-         auto next = matches.suffix().str();
-         float d = std::stof(matches[1]);
-         std::regex_search (next,matches,all);
-         std::string nbin = matches[2];
-         bd.distance = d;
-         bd.neighbour = nbin;
-         */
         static const boost::regex dist  ("Distance to Nearest Neighbor:</th>\\s*<td>(\\d+.\\d+)%.*</td>");
         static const boost::regex bin  ("Nearest BIN URI:</th>\\s*<td>(.*?)</td>");
         boost::smatch char_matches;
@@ -135,7 +122,7 @@ std::string findBinsNeighbour(std::unordered_map<std::string, Species>& data, st
 }
 
 
-inline void annotateItem(
+void annotateItem(
         Species& species,
         std::unordered_map<std::string, Species>& data,
         std::unordered_map<std::string, std::pair<std::string, double>>& dist_matrix,
