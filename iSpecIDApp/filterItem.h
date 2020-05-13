@@ -6,6 +6,7 @@
 #include <QComboBox>
 #include <QCompleter>
 #include <functional>
+#include <qdebug.h>
 class FilterItem : public QWidget
 {
     Q_OBJECT

@@ -55,13 +55,14 @@ namespace annotator{
             double min_dist = 2.0, 
             int min_deposit = 3
         );
+        
+    BoldData parseBoldData(
+            std::string bin,
+            std::vector<std::string>& errors
+        );
     /*
      * Core Algorithm Helpers
     
-    BoldData parseBoldData(
-            std::string& bin,
-            std::vector<std::string>& errors
-        );
     std::string findBinsNeighbour(
             std::unordered_map<std::string, Species>& data, 
             std::unordered_map<std::string,int>& bins, 

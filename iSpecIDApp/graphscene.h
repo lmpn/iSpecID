@@ -38,7 +38,7 @@ private:
     IEngine * engine;
     QMap<QString, QGraphicsItem*> nodes;
     QVector<QGraphicsItem*> edges;
-    QGraphicsItem* cur_root;
+    QString cur_node_key;
 };
 
 #endif // GRAPHVIEWER_H

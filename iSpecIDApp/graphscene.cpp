@@ -9,16 +9,13 @@
 
 
 GraphScene::GraphScene(QWidget *parent, IEngine * engine)
-    : engine(engine), cur_root(nullptr)
+    : engine(engine)
 {
-    this->setParent(parent);
-    this->setItemIndexMethod(QGraphicsScene::NoIndex);
-    this->setSceneRect(QRectF(0, 0, 0, 0));
+    setParent(parent);
+    setItemIndexMethod(QGraphicsScene::NoIndex);
+    setSceneRect(QRectF(0, 0, 0, 0));
+    cur_node_key = "";
 }
-
-
-
-
 
 
 void GraphScene::generateItems(){
@@ -55,7 +52,7 @@ void GraphScene::onGraphChanged(){
     clearScene();
     clean();
     generateItems();
-    this->setSceneRect(this->itemsBoundingRect());                          // Re-shrink the scene to it's bounding contents
+    setSceneRect(itemsBoundingRect());                          // Re-shrink the scene to it's bounding contents
 }
 void GraphScene::onGraphColorChanged(){
     auto group_records = engine->getGroupedEntries();
@@ -75,18 +72,24 @@ void GraphScene::onRemoveEdge(Edge *edge){
     emit actionPerformed();
     auto src = edge->sourceNode();
     auto dest = edge->destNode();
-    auto species = src->getName().toStdString();
-    auto bin = dest->getName().toStdString();
+    auto species = src->getName();
+    auto species_str = src->getName().toStdString();
+    auto bin = dest->getName();
+    auto bin_str = dest->getName().toStdString();
     setComponentVisibleDFS(edge->destNode(), false);
     setComponentVisibleDFS(edge->sourceNode(), false);
-    setComponentVisible();
-    update();
-
+    if(src->edges().count() == 0){
+        delete nodes[species];
+    }
+    if(dest->edges().count() == 0){
+        delete nodes[bin];
+    }
     delete edge;
-    engine->filter([species, bin](Record item) {
-        return item["species_name"] == species && item["bin_uri"]==bin;
+    engine->filter([species_str, bin_str](Record item) {
+        return item["species_name"] == species_str && item["bin_uri"]==bin_str;
     });
     engine->group();
+    cur_node_key = "";
     emit updateCombobox();
     emit updateRecords();
     emit updateResults();
@@ -134,33 +137,33 @@ void GraphScene::setComponentVisibleDFS( Node *root, bool visible){
 }
 
 void GraphScene::setComponentVisible(QString key){
-    Node *root;
-    if(cur_root != nullptr){
-        root = qgraphicsitem_cast<Node *>(cur_root);
-        if(root->getName() != key){
-            setComponentVisibleDFS(root, false);
+    if(!key.isEmpty()) {
+        if(!cur_node_key.isEmpty()){
+            auto hide_root = qgraphicsitem_cast<Node *>(nodes[cur_node_key]);
+            if(hide_root->getName() != key){
+                setComponentVisibleDFS(hide_root, false);
+            }
         }
+        cur_node_key = key;
+        auto show_root = qgraphicsitem_cast<Node *>(nodes[cur_node_key]);
+        setComponentVisibleDFS(show_root, true);
     }
-    if(!key.isEmpty()){
-        cur_root = nodes[key];
-        root = qgraphicsitem_cast<Node *>(cur_root);
-    }
-    if(root != nullptr)
-        setComponentVisibleDFS(root, true);
 }
 
 void GraphScene::clearScene(){
     const QList<QGraphicsItem *> items = this->items();
     for (QGraphicsItem *item : items) {
-        this->removeItem(item);
-        delete item;
+        if(item != nullptr){
+            this->removeItem(item);
+            delete item;
+        }
     }
 }
 
 void GraphScene::clean(){
     this->nodes.clear();
     this->edges.clear();
-    cur_root = nullptr;
+    cur_node_key = "";
 }
 
 

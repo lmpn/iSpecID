@@ -17,7 +17,6 @@ GradingOptionsDialog::GradingOptionsDialog(QWidget *parent) :
 
 void showErrorMessage(QString error_name, QString error){
     QMessageBox::critical(nullptr, error_name, error, QMessageBox::Cancel);
-    qDebug() << "criticak";
 }
 
 bool GradingOptionsDialog::handleClick(){

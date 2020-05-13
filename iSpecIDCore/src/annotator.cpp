@@ -35,17 +35,17 @@ bool speciesPerBIN(std::unordered_map<std::string, Species>& data, const std::st
 
 
 
-BoldData parseBoldData(std::string& bin, std::vector<std::string>& errors){
+BoldData parseBoldData(std::string bin, std::vector<std::string>& errors){
     BoldData bd;
     bd.distance = std::numeric_limits<int>::max();
     bd.neighbour = "";
     Miner mn;
     std::string url("http://v4.boldsystems.org/index.php/Public_BarcodeCluster?clusteruri=" + std::string(bin));
     try{
-      
-    std::string page = mn.getPage(url.c_str());
+
+        std::string page = mn.getPage(url.c_str());
         
-    /*
+        /*
         std::regex all = std::regex ("Distance to Nearest Neighbor:</th>\\s*<td>(\\d+\\.\\d+)%.*</td>|Nearest BIN URI:</th>\\s*<td>(.*)</td>");
          std::string s = mn.getPage(url.c_str());
          std::smatch matches;
@@ -71,9 +71,9 @@ BoldData parseBoldData(std::string& bin, std::vector<std::string>& errors){
             bd.neighbour = char_matches[1];
         }else{
             throw std::exception();
-        } 
+        }
     }catch (const std::exception& e) {
-        errors.push_back("Error fetching bin " + bin +" data");
+        errors.push_back("Error fetching bin " + url +" data");
     }
     return bd;
 }
@@ -99,8 +99,19 @@ std::string findBinsNeighbour(std::unordered_map<std::string, Species>& data, st
     auto bins_begin = bins.begin();
     auto cur_elem = bins.begin();
     auto bins_end = bins.end();
-    auto dist_matrix_end = dist_matrix.end();
+    //auto dist_matrix_end = dist_matrix.end();
     ugraph graph(count);
+    for(size_t  i = 0; i < count; i++){
+        auto bin = (*cur_elem).first;
+        auto bold = parseBoldData(bin,errors);
+        auto item = bins.find(bold.neighbour);
+        if( item!=bins_end && bold.distance <= min_dist) {
+            size_t ind = std::distance(bins_begin, item );
+            boost::add_edge(i, ind, bold.distance, graph);
+        }
+        cur_elem++;
+    }
+    /*
     for(size_t  i = 0; i < count; i++){
         auto bin = (*cur_elem).first;
         auto bold = dist_matrix.find(bin);
@@ -114,6 +125,7 @@ std::string findBinsNeighbour(std::unordered_map<std::string, Species>& data, st
         }
         cur_elem++;
     }
+    */
     std::vector<int> component (count);
     num_components = boost::connected_components (graph, &component[0]);
     if( num_components == 1){
@@ -124,10 +136,10 @@ std::string findBinsNeighbour(std::unordered_map<std::string, Species>& data, st
 
 
 inline void annotateItem(
-    Species& species, 
-    std::unordered_map<std::string, Species>& data,
-    std::unordered_map<std::string, std::pair<std::string, double>>& dist_matrix,
-    std::vector<std::string> &errors, int min_labs, double min_dist, int min_deposit){
+        Species& species,
+        std::unordered_map<std::string, Species>& data,
+        std::unordered_map<std::string, std::pair<std::string, double>>& dist_matrix,
+        std::vector<std::string> &errors, int min_labs, double min_dist, int min_deposit){
     std::string grade = "D";
     int size = species.institution.size();
     if(size >= min_labs){

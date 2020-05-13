@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QFileDialog>
 #include <QKeyEvent>
+#include <QFutureWatcher>
 #include <iostream>
 
 #include "graphscene.h"
@@ -46,8 +47,9 @@ private slots:
     void zoomIn();
     void zoomOut();
     void loadFile();
-    void on_graph_combo_box_activated(const QString &arg1);
-    void on_combo_box_changed();
+//    void onGraphComboBoxActivated(const QString &arg1);
+    void onComboBoxChanged();
+    void loadFileFinish();
     void onAnnotateData();
     void showFilter();
     void onActionPerformed();
@@ -78,5 +80,6 @@ private:
     QString createCompleter();
     void removeRows();
     void showGradingErrors(std::vector<std::string> &errors);
+    QFutureWatcher<void> *watcher;
 };
 #endif // MAINWINDOW_H

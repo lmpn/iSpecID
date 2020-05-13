@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-Wall -Wabi -g -fno-omit-frame-pointer -O2 -DNDEBUG -fno-inline-functions -fno-optimize-sibling-calls")
 set(VERBOSE ON)
-
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 if(CURL_DIR)
 	list(APPEND CMAKE_PREFIX_PATH ${CURL_DIR})
 endif()
@@ -15,6 +15,7 @@ if(BOOST_DIR)
 	list(APPEND CMAKE_PREFIX_PATH ${BOOST_DIR})
 endif()
 
+list(APPEND CMAKE_PREFIX_PATH "/usr/local/opt/curl/")
 
 option(BIN "Create binary" ON)
 option(BENCH "Create benchmark binary" ON)
@@ -26,17 +27,17 @@ elseif (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.1)
   set(CMAKE_CXX17_EXTENSION_COMPILE_OPTION "-std=gnu++1z")
 endif()
 
+set(CURL_PATH "/usr/local/opt/curl/")
 
-set(CURL_LIBRARY "-lcurl") 
-find_package(CURL REQUIRED)
+find_library(
+        CURL_LIBRARIES
+        NAMES
+            curl
+        PATHS 
+            ${CURL_PATH}/lib)
+
 find_package(Boost REQUIRED COMPONENTS thread regex REQUIRED)
-if(CURL_FOUND)
-    message(STATUS "Found CURL version: ${CURL_VERSION_STRING}")
-    message(STATUS "Using CURL include dir(s): ${CURL_INCLUDE_DIRS}")
-    message(STATUS "Using CURL lib(s): ${CURL_LIBRARIES}")
-else()
-    message(FATAL_ERROR "Could not find CURL")
-endif()
+
 if(Boost_FOUND)
     message(STATUS "Found Boost version: ${Boost_VERSION}")
     message(STATUS "Using Boost include dir(s): ${Boost_INCLUDE_DIRS}")
@@ -83,6 +84,11 @@ if(BENCH)
     target_link_libraries(isid_group  ${CURL_LIBRARIES})
     target_link_libraries(isid_group ${Boost_LIBRARIES})
 
+    add_executable(isid_mine "${PROJECT_SOURCE_DIR}/iSpecIDCore/bench/mine.cxx" ${core}  )
+    target_link_libraries(isid_mine  benchmark::benchmark)
+    target_link_libraries(isid_mine  ${CURL_LIBRARIES})
+    target_link_libraries(isid_mine ${Boost_LIBRARIES})
+    
     add_executable(isid_split "${PROJECT_SOURCE_DIR}/iSpecIDCore/bench/string_split.cxx")
     target_link_libraries(isid_split  benchmark::benchmark)
 endif()

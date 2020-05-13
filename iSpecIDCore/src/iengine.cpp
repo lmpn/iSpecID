@@ -12,28 +12,11 @@ IEngine::IEngine()
     pool = new boost::asio::thread_pool(cores);
 }
 
-void IEngine::filter(std::function<bool(const Record&)> pred){
-    entries = utils::filter(entries, pred, filtered_entries);
-}
 
-void IEngine::load_distance_matrix(std::string filePath){
-    dist_matrix.clear();
-    csv::CSVFormat format;
-    format.delimiter(';');
-    csv::CSVReader reader(filePath, format);
-    for (auto& row: reader) {
-        auto key = row[0].get();
-        auto value = std::make_pair(row[1].get(), row[2].get<double>());
-        dist_matrix.insert({key, value });
-    }
-}
+
 
 void IEngine::load(std::string filePath){
-    entries.clear();
-    filtered_entries.clear();
-    grouped_entries.clear();
-
-
+    clear();
     csv::CSVFormat format;
     format.delimiter('\t').header_row(0);
     csv::CSVReader reader(filePath, format);
@@ -51,6 +34,17 @@ void IEngine::load(std::string filePath){
     }
 }
 
+void IEngine::load_distance_matrix(std::string filePath){
+    dist_matrix.clear();
+    csv::CSVFormat format;
+    format.delimiter(';');
+    csv::CSVReader reader(filePath, format);
+    for (auto& row: reader) {
+        auto key = row[0].get();
+        auto value = std::make_pair(row[1].get(), row[2].get<double>());
+        dist_matrix.insert({key, value });
+    }
+}
 
 void IEngine::save(std::string filePath){
     std::ofstream ofs (filePath, std::ofstream::out|std::ofstream::binary);
@@ -74,9 +68,31 @@ void IEngine::save(std::string filePath){
     }
 }
 
+void IEngine::saveDistanceMatrix(std::string filePath){
+    std::ofstream ofs (filePath, std::ofstream::out|std::ofstream::binary);
+    if ( ofs ) {
+        // ifs is good
+        auto writer = csv::make_csv_writer(ofs);
+        for(auto& item : dist_matrix){
+            auto bin_a = item.first;
+            auto bin_b = item.second.first;
+            auto dist = item.second.second;
+            std::vector<std::string> row({bin_a, bin_b, std::to_string(dist)});
+            writer << row;
+        }
+        ofs.flush();
+        ofs.close();
+    }
+    else {
+        // ifs is bad - deal with it
+    }
+}
 
 
 
+void IEngine::filter(std::function<bool(const Record&)> pred){
+    entries = utils::filter(entries, pred, filtered_entries);
+}
 
 std::string getKey(Record& record){
     return record["species_name"];
@@ -135,9 +151,44 @@ std::vector<int> IEngine::calculateGradeResults(){
 }
 
 
+/*
+    TODO: Receive function to get data
+*/
+void IEngine::populateDistanceMatrix(){
+    std::vector<std::string> errors;
+    std::unordered_set<std::string> unique_bins;
+    if(grouped_entries.size() > 0){
+        for(auto& entry : grouped_entries){
+            auto& bins = entry.second.bins;
+            for(auto& bin_entry: bins){
+                unique_bins.insert(bin_entry.first);
+            }
+        }
+    }else if(entries.size() > 0){
+        for(auto& entry: entries){
+            auto bin_name = entry.operator[]("bin_uri");
+            unique_bins.insert(bin_name);
+        }
+    }    
+    
+    for(auto bin : unique_bins){
+        boost::asio::post(*pool, [&,bin](){
+            try{
+                auto bold_data = annotator::parseBoldData(bin, errors);
+                dist_matrix.insert({bin, std::make_pair<>(bold_data.neighbour, bold_data.distance)});
+            }catch(std::exception &e){
+                std::cout << e.what() << std::endl;
+            }
+        });
+    }
+}
 
+
+/*
+    TODO: Receive function annotate species
+*/
 void IEngine::annotate(std::vector<std::string> &errors){
-    /*
+
     int tasks = grouped_entries.size();
     std::condition_variable cv;
     std::mutex lock;
@@ -159,9 +210,9 @@ void IEngine::annotate(std::vector<std::string> &errors){
     {
         auto ul = std::unique_lock<std::mutex>(lock);
         cv.wait(ul, [&](){return tasks == completed;});
-    }*/
+    }
 
-    annotator::annotationAlgo(grouped_entries, dist_matrix, errors, min_labs, min_dist, min_deposit);
+    //annotator::annotationAlgo(grouped_entries, dist_matrix, errors, min_labs, min_dist, min_deposit);
 }
 
 void IEngine::gradeRecords(){

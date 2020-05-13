@@ -20,6 +20,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     engine = new IEngine();
 
+    watcher = new QFutureWatcher<void>();
+
     graph = nullptr;
 
     //conect buttons
@@ -52,6 +54,7 @@ MainWindow::~MainWindow()
 {
     delete ui;
     delete engine;
+    delete watcher;
 }
 
 
@@ -63,7 +66,7 @@ void MainWindow::enableMenuDataActions(bool enable)
     }
 }
 
-void MainWindow::on_combo_box_changed(){
+void MainWindow::onComboBoxChanged(){
     auto first = createCompleter();
     emit showComponent(first);
 }
@@ -84,11 +87,11 @@ void MainWindow::gradingTableAdjust(QTableView *tableView)
     count=tableView->horizontalHeader()->count();
     int columnTotalWidth=0;
     for (int i = 0; i < count; ++i) {
-        tableView->setColumnWidth(i, tableView->horizontalHeader()->sectionSize(i)+2);
+        tableView->setColumnWidth(i, tableView->horizontalHeader()->sectionSize(i)+4);
         columnTotalWidth+=tableView->horizontalHeader()->sectionSize(i);
     }
-    tableView->setMinimumWidth(columnTotalWidth+2);
-    tableView->setMaximumWidth(columnTotalWidth+2);
+    tableView->setMinimumWidth(columnTotalWidth);
+    tableView->setMaximumWidth(columnTotalWidth);
 }
 
 
@@ -102,8 +105,6 @@ void MainWindow::setupGraphScene()
     auto record_model = ui->record_table->model();
     auto current_results_model = ui->current_results_table->model();
     graph = new GraphScene(this, engine);
-    qDebug() << "After get models";
-//    graph->setObjectName("graph_scene");
     ui->graph_viewer->setScene(graph);
     ui->graph_viewer->setCacheMode(QGraphicsView::CacheBackground);
     ui->graph_viewer->setViewportUpdateMode(QGraphicsView::ViewportUpdateMode::BoundingRectViewportUpdate);
@@ -113,10 +114,10 @@ void MainWindow::setupGraphScene()
             graph,SLOT(onGraphChanged()));
     connect(this, SIGNAL(updateColorGraph()),
             graph,SLOT(onGraphColorChanged()));
-    connect(this, SIGNAL(showComponent(QString)),
+    connect(ui->graph_combo_box, SIGNAL(currentIndexChanged(const QString&)),
             graph,SLOT(setComponentVisible(QString)));
     connect(graph, SIGNAL(updateCombobox()),
-            this,SLOT(on_combo_box_changed()));
+            this,SLOT(onComboBoxChanged()));
     connect(graph, SIGNAL(actionPerformed()),
             this,SLOT(onActionPerformed()));
     connect(graph, SIGNAL(updateResults()),
@@ -164,20 +165,58 @@ void MainWindow::setupRecordsTable(){
     connect(this, SIGNAL(updateRecords()),
             record_model,SLOT(onRecordsChanged()));
     connect(record_model, SIGNAL(updateCombobox()),
-            this, SLOT(on_combo_box_changed()));
+            this, SLOT(onComboBoxChanged()));
     connect(ui->record_table->horizontalHeader(), SIGNAL(sectionClicked( int )),
             record_model, SLOT(sortBySection(int)));
 }
 
 
+void MainWindow::loadFileFinish(){
+
+    disconnect(watcher, SIGNAL(finished()), this, SLOT(loadFileFinish()));
+    auto r = engine->countFilterBadEntries();
+    updateApp();
+    ui->record_table->resizeColumnsToContents();
+    ui->results_frame->hide();
+    QMessageBox *msgBox = new QMessageBox(this);
+    msgBox->setText("Loading report.");
+    msgBox->setInformativeText(
+                QString("Number of removed entries due to empty species name: %1\n\nNumber of removed entries due to empty bin: %2\n\nNumber of removed entries due to empty institution: %3")
+                .arg(r["species"])
+            .arg(r["bin"])
+            .arg(r["institution"])
+            );
+    msgBox->setStandardButtons(QMessageBox::Ok);
+    msgBox->setDefaultButton(QMessageBox::Ok);
+
+    this->setCursor(Qt::ArrowCursor);
+    ui->centralwidget->setEnabled(true);
+    enableMenuDataActions(true);
+    ui->statusbar->showMessage("");
+    ui->menubar->setEnabled(true);
+    msgBox->exec();
+    msgBox->deleteLater();
+}
+
 void MainWindow::loadFile()
 {
     //read file
-    QString filePath = QFileDialog::getOpenFileName(this, tr("Input file"), "", tr("All Files (*)"));
+    QFileDialog* qfd = new QFileDialog(this, tr("Input file"), QDir::homePath(), tr("All Files (*)"));
+    qfd->setFileMode(QFileDialog::ExistingFile);
+    int result = qfd->exec();
+    QString filePath;
+    if(result == QDialog::Accepted){
+        auto files = qfd->selectedFiles();
+        if(files.count() == 1){
+            filePath = files[0];
+        }
+    }
+
+//    QString filePath = QFileDialog::getOpenFileName(this, tr("Input file"), "", tr("All Files (*)"));
     if (filePath.isEmpty())
         return;
     else {
-
+        current_save_path = "";
         engine->clear();
         //Setup record table
         setupRecordsTable();
@@ -193,18 +232,17 @@ void MainWindow::loadFile()
 
         undoEntries = {};
         undoFilteredEntries = {};
-        engine->load(filePath.toStdString());
-        auto r = engine->countFilterBadEntries();
-        QMessageBox msgBox;
-        msgBox.setText("Loading report.");
-        msgBox.setInformativeText(QString("Number of removed entries due to empty species name: %1\n\nNumber of removed entries due to empty bin: %2\n\nNumber of removed entries due to empty institution: %3").arg(r["species"]).arg(r["bin"]).arg(r["institution"]));
-        msgBox.setStandardButtons(QMessageBox::Ok);
-        msgBox.setDefaultButton(QMessageBox::Ok);
-        updateApp();
-        enableMenuDataActions(true);
-        ui->record_table->resizeColumnsToContents();
-        ui->results_frame->hide();
-        msgBox.exec();
+        this->setCursor(Qt::WaitCursor);
+        ui->statusbar->showMessage("Loading file...");
+        ui->centralwidget->setDisabled(true);
+        ui->menubar->setDisabled(true);
+
+        connect(watcher, SIGNAL(finished()), this, SLOT(loadFileFinish()));
+
+        auto end = QtConcurrent::run([filePath, this]{
+            engine->load(filePath.toStdString());
+        });
+        watcher->setFuture(end);
     }
 }
 
@@ -241,11 +279,13 @@ QString MainWindow::createCompleter(){
     return QString();
 }
 
-void MainWindow::on_graph_combo_box_activated(const QString &arg1)
+/*
+void MainWindow::showGraphComponent(const QString &arg1)
 {
     //Change graph component
     emit showComponent(arg1);
 }
+*/
 
 
 void MainWindow::updateApp()
@@ -281,9 +321,9 @@ void MainWindow::deleteRecordRows()
     }
     model->remove = false;
     engine->group();
-    auto first = createCompleter();
     emit updateCurrentResults();
     emit updateGraph();
+    auto first = createCompleter();
     emit showComponent(first);
 }
 
@@ -340,37 +380,40 @@ void MainWindow::onAnnotateData()
     if(engine->size() == 0){
         return;
     }
-    qDebug() << engine->size();
     this->setCursor(Qt::WaitCursor);
     ui->statusbar->showMessage("Grading...");
     undoEntries = engine->getEntriesCopy();
     undoFilteredEntries = engine->getFilteredEntriesCopy();
     ui->centralwidget->setDisabled(true);
     ui->menubar->setDisabled(true);
-    QtConcurrent::run([this]{
+    connect(watcher, SIGNAL(finished()), this, SLOT(annotateFinished()));
+    auto end = QtConcurrent::run([this]{
         QObject src;
         QObject::connect(&src, SIGNAL(destroyed(QObject*)),
                          this, SLOT(annotateFinished()));
         engine->annotate(this->errors);
         engine->gradeRecords();
     });
+    watcher->setFuture(end);
 }
 
 void MainWindow::showGradingErrors(std::vector<std::string> &errors){
-    QMessageBox msgBox;
-    msgBox.setText("Grading error report.");
+    QMessageBox *msgBox = new QMessageBox(this);
+    msgBox->setText("Grading error report.");
     QString error_str;
     for(auto& error : errors){
         error_str += QString::fromStdString(error);
         error_str += QString::fromStdString("\n");
     }
-    msgBox.setDetailedText(error_str);
-    msgBox.setStandardButtons(QMessageBox::Ok);
-    msgBox.setDefaultButton(QMessageBox::Ok);
-    msgBox.exec();
+    msgBox->setDetailedText(error_str);
+    msgBox->setStandardButtons(QMessageBox::Ok);
+    msgBox->setDefaultButton(QMessageBox::Ok);
+    msgBox->exec();
+    msgBox->deleteLater();
 }
 
 void MainWindow::annotateFinished(){
+    disconnect(watcher, SIGNAL(finished()), this, SLOT(annotateFinished()));
     emit updateColorGraph();
     emit updateRecords();
     if(!ui->results_frame->isVisible()){
@@ -513,13 +556,13 @@ void MainWindow::showFilter()
         auto pred = ff->getFilterFunc<Record>();
         engine->filter(pred);
         int removedCount = engine->getFilteredEntriesCopy().size() - currentFilteredEntries.size();
-        QMessageBox msgBox;
-        msgBox.setText("Filter report.");
-        msgBox.setInformativeText(QString("Number of removed: %1").arg(removedCount));
-        msgBox.setStandardButtons(QMessageBox::No|QMessageBox::Ok);
-        msgBox.setDefaultButton(QMessageBox::Ok);
-        msgBox.exec();
-        int apply = msgBox.result();
+        QMessageBox* msgBox = new QMessageBox(this);
+        msgBox->setText("Filter report.");
+        msgBox->setInformativeText(QString("Number of removed: %1").arg(removedCount));
+        msgBox->setStandardButtons(QMessageBox::No|QMessageBox::Ok);
+        msgBox->setDefaultButton(QMessageBox::Ok);
+        msgBox->exec();
+        int apply = msgBox->result();
         if(apply == 1024){
             undoEntries = currentEntries;
             undoFilteredEntries = currentFilteredEntries;
@@ -529,8 +572,9 @@ void MainWindow::showFilter()
             engine->setEntries(currentEntries);
             engine->setFilteredEntries(currentFilteredEntries);
         }
-
+        msgBox->deleteLater();
     }
+    ff->deleteLater();
 }
 
 void MainWindow::showGradingOptions()
