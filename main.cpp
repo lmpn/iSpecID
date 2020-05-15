@@ -1,4 +1,5 @@
 #include "utils.h"
+#include "parser.h"
 #include "iengine.h"
 #include "miner.h"
 #include "annotator.h"
@@ -19,6 +20,16 @@ void run(int argc, char **argv){
 
 int main(int argc, char **argv)
 {
-    run(argc, argv);
+    parse::Parser p(parse::Format::TSV);
+    parse::InMapper<std::string> mapper = [](std::vector<std::string> h, csv::CSVRow& row){
+        return row[0];
+    };
+    parse::OutMapper<std::string> out = [](std::string row){
+        std::vector<std::string> r = {row};
+        return r;
+    };
+    auto rows = p.loadFile("/Users/lmpn/Desktop/playground/datasets/canidae.tsv");
+    auto h = p.getHeader();
+    p.saveFile("c.csv",h,rows,parse::Format::TSV);
 }
 //0 4 33 179 717 933 

@@ -61,6 +61,8 @@ BoldData parseBoldData(std::string bin, std::vector<std::string>& errors){
         }
     }catch (const std::exception& e) {
         errors.push_back("Error fetching bin " + url +" data");
+        bd.distance = std::numeric_limits<int>::max();
+        bd.neighbour = "";
     }
     return bd;
 }

@@ -11,6 +11,8 @@
 #include "filterdialog.h"
 #include "gradingoptionsdialog.h"
 #include <iostream>
+#include <QMovie>
+#include <QTimer>
 #include "csv.hpp"
 
 MainWindow::MainWindow(QWidget *parent)
@@ -24,6 +26,16 @@ MainWindow::MainWindow(QWidget *parent)
 
     graph = nullptr;
 
+    movie = new QMovie(":/icons/dna_cursor.gif");
+    timer = new QTimer(this);
+    timer->setInterval(200); //Time in milliseconds
+    //timer->setSingleShot(false); //Setting this to true makes the timer run only once
+    connect(timer, &QTimer::timeout, this, [=](){
+        QPixmap pix = movie->currentPixmap();
+        movie->jumpToNextFrame();
+        QCursor cs = QCursor(pix);
+        this->setCursor(cs);
+    });
     //conect buttons
     connect(ui->annotate_button, SIGNAL(clicked()),
             this, SLOT(onAnnotateData()));
@@ -55,6 +67,8 @@ MainWindow::~MainWindow()
     delete ui;
     delete engine;
     delete watcher;
+    delete movie;
+    delete timer;
 }
 
 
@@ -188,7 +202,7 @@ void MainWindow::loadFileFinish(){
             );
     msgBox->setStandardButtons(QMessageBox::Ok);
     msgBox->setDefaultButton(QMessageBox::Ok);
-
+    timer->stop();
     this->setCursor(Qt::ArrowCursor);
     ui->centralwidget->setEnabled(true);
     enableMenuDataActions(true);
@@ -232,13 +246,13 @@ void MainWindow::loadFile()
 
         undoEntries = {};
         undoFilteredEntries = {};
-        this->setCursor(Qt::WaitCursor);
+//        this->setCursor(Qt::WaitCursor);
         ui->statusbar->showMessage("Loading file...");
         ui->centralwidget->setDisabled(true);
         ui->menubar->setDisabled(true);
 
         connect(watcher, SIGNAL(finished()), this, SLOT(loadFileFinish()));
-
+        timer->start();
         auto end = QtConcurrent::run([filePath, this]{
             engine->load(filePath.toStdString());
         });
@@ -380,7 +394,8 @@ void MainWindow::onAnnotateData()
     if(engine->size() == 0){
         return;
     }
-    this->setCursor(Qt::WaitCursor);
+//    this->setCursor(Qt::WaitCursor);
+    timer->start();
     ui->statusbar->showMessage("Grading...");
     undoEntries = engine->getEntriesCopy();
     undoFilteredEntries = engine->getFilteredEntriesCopy();
@@ -423,6 +438,7 @@ void MainWindow::annotateFinished(){
         emit updateResults();
     }
     emit updateCurrentResults();
+    timer->stop();
     ui->statusbar->showMessage("");
     if(errors.size()>0)
         showGradingErrors(this->errors);

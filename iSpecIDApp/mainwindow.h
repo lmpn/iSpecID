@@ -81,5 +81,7 @@ private:
     void removeRows();
     void showGradingErrors(std::vector<std::string> &errors);
     QFutureWatcher<void> *watcher;
+    QMovie* movie;
+    QTimer* timer;
 };
 #endif // MAINWINDOW_H

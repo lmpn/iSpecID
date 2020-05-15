@@ -8,6 +8,7 @@
 
 class Record{
     private:
+
     std::vector<std::string> fields;
     std::shared_ptr<std::unordered_map<std::string, size_t>> indexes;
 
