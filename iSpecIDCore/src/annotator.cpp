@@ -1,7 +1,6 @@
 #include "annotator.h"
-#include <boost/regex.hpp>
 
-namespace annotator {
+namespace ispecid{namespace annotator {
 
 
 
@@ -19,12 +18,12 @@ namespace annotator {
      * Core Algorithm Helpers
     */
 
-bool speciesPerBIN(std::unordered_map<std::string, Species>& data, const std::string& bin){
+bool speciesPerBIN(datatypes::Dataset& data, const std::string& bin){
     std::unordered_set<std::string_view> unique_set;
     size_t count = 0;
     for(auto & entry : data){
-        auto lst = entry.second.bins.end();
-        auto result = entry.second.bins.find(bin);
+        auto lst = entry.second.getClusters().end();
+        auto result = entry.second.getClusters().find(bin);
         if(lst != result && (++count) == 2){
             return false;
         }
@@ -35,86 +34,75 @@ bool speciesPerBIN(std::unordered_map<std::string, Species>& data, const std::st
 
 
 
-BoldData parseBoldData(std::string bin, std::vector<std::string>& errors){
-    BoldData bd;
-    bd.distance = std::numeric_limits<int>::max();
-    bd.neighbour = "";
-    Miner mn;
-    std::string url("http://v4.boldsystems.org/index.php/Public_BarcodeCluster?clusteruri=" + std::string(bin));
-    try{
+datatypes::Neighbour parseBoldData(std::string cluster){
+    datatypes::Neighbour neighbour;
+    neighbour.distance = std::numeric_limits<int>::max();
+    neighbour.clusterA = cluster; 
+    neighbour.clusterB = "";
+    std::string url("http://v4.boldsystems.org/index.php/Public_BarcodeCluster?clusteruri=" + std::string(cluster));
 
-        std::string page = mn.getPage(url.c_str());
-        static const boost::regex dist  ("Distance to Nearest Neighbor:</th>\\s*<td>(\\d+.\\d+)%.*</td>");
-        static const boost::regex bin  ("Nearest BIN URI:</th>\\s*<td>(.*?)</td>");
-        boost::smatch char_matches;
-        if (boost::regex_search(page,char_matches, dist) )
-        {
-            bd.distance = std::stod(char_matches[1]);
-        }else{
-            throw std::exception();
-        }
-        if (boost::regex_search(page,char_matches, bin) )
-        {
-            bd.neighbour = char_matches[1];
-        }else{
-            throw std::exception();
-        }
-    }catch (const std::exception& e) {
-        errors.push_back("Error fetching bin " + url +" data");
-        bd.distance = std::numeric_limits<int>::max();
-        bd.neighbour = "";
+    std::string page = network::getPage(url.c_str());
+    static const boost::regex distance_regex  ("Distance to Nearest Neighbor:</th>\\s*<td>(\\d+.\\d+)%.*</td>");
+    static const boost::regex cluster_regex  ("Nearest BIN URI:</th>\\s*<td>(.*?)</td>");
+    boost::smatch char_matches;
+    if (boost::regex_search(page,char_matches, distance_regex) )
+    {
+        neighbour.distance = std::stod(char_matches[1]);
+    }else{
+        throw std::runtime_error("Distance not found when retrieving " + cluster);
     }
-    return bd;
+    if (boost::regex_search(page,char_matches, cluster_regex) )
+    {
+        neighbour.clusterB = char_matches[1];
+    }else{
+        throw std::runtime_error("Neighbour not found when retrieving " + cluster);
+    }
+    return neighbour;
 }
 
 
 
-std::string findBinsNeighbour(std::unordered_map<std::string, Species>& data, std::unordered_map<std::string, std::pair<std::string, double>>& dist_matrix, std::unordered_map<std::string, int>& bins, double min_dist,std::vector<std::string> &errors)
+std::string findBinsNeighbour(datatypes::Dataset& data, datatypes::DistanceMatrix& distances, const std::unordered_set<std::string>& clusters, double max_distance, std::string &error)
 {
     size_t ctr, count, num_components;
-    auto grade = "E2";
+    auto grade = "E";
 
     ctr = 0;
     for(auto& pair : data){
-        auto& cur_bins = pair.second.bins;
-        if(utils::hasIntersection(bins,cur_bins)){
+        auto& current_clusters = pair.second.getClusters();
+        if(utils::hasIntersection(clusters,current_clusters)){
             ctr+=1;
             if(ctr>1) return grade;
         }
     }
-
-
-    count = bins.size();
-    auto bins_begin = bins.begin();
-    auto cur_elem = bins.begin();
-    auto bins_end = bins.end();
-    //auto dist_matrix_end = dist_matrix.end();
-    ugraph graph(count);
+    count = clusters.size();
+    auto bins_begin = clusters.begin();
+    auto cur_elem = clusters.begin();
+    auto bins_end = clusters.end();
+    auto distances_end = distances.end();
+    datatypes::ugraph graph(count);
     for(size_t  i = 0; i < count; i++){
-        auto bin = (*cur_elem).first;
-        auto bold = parseBoldData(bin,errors);
-        auto item = bins.find(bold.neighbour);
-        if( item!=bins_end && bold.distance <= min_dist) {
-            size_t ind = std::distance(bins_begin, item );
-            boost::add_edge(i, ind, bold.distance, graph);
-        }
-        cur_elem++;
-    }
-    /*
-    for(size_t  i = 0; i < count; i++){
-        auto bin = (*cur_elem).first;
-        auto bold = dist_matrix.find(bin);
-        if(bold != dist_matrix_end){
-            auto bold_content = (*bold).second;
-            auto item = bins.find(bold_content.first);
-            if( item!=bins_end && bold_content.second <= min_dist) {
-                size_t ind = std::distance(bins_begin, item );
-                boost::add_edge(i, ind, bold_content.second, graph);
+        auto bin = *cur_elem;
+        auto neighbour_it = distances.find(bin);
+        datatypes::Neighbour neighbour;
+        if(neighbour_it != distances_end){
+            neighbour = (*neighbour_it).second;
+        }else{
+            try{
+                neighbour = parseBoldData(bin);
+                distances.insert({bin, neighbour});
+            }catch(std::exception& e){
+                std::string exception_message(e.what());
+                error = exception_message;
             }
         }
+        auto item = clusters.find(neighbour.clusterB);
+        if( item!=bins_end && neighbour.distance <= max_distance) {
+            size_t ind = std::distance(bins_begin, item);
+            boost::add_edge(i, ind, neighbour.distance, graph);
+        }
         cur_elem++;
     }
-    */
     std::vector<int> component (count);
     num_components = boost::connected_components (graph, &component[0]);
     if( num_components == 1){
@@ -124,75 +112,48 @@ std::string findBinsNeighbour(std::unordered_map<std::string, Species>& data, st
 }
 
 
-void annotateItem(
-        Species& species,
-        std::unordered_map<std::string, Species>& data,
-        std::unordered_map<std::string, std::pair<std::string, double>>& dist_matrix,
-        std::vector<std::string> &errors, int min_labs, double min_dist, int min_deposit){
+std::string annotateItem( datatypes::Species& species, datatypes::Dataset& data, datatypes::DistanceMatrix& distances, datatypes::GradingParameters& params){
+    std::string error;
+    int min_sources = params.min_sources;
+    int min_size = params.min_size;
+    double max_distance = params.max_distance;
+    
     std::string grade = "D";
-    int size = species.institution.size();
-    if(size >= min_labs){
+    int size = species.sourcesCount();
+    if(size >= min_sources){
 
-        grade = "E1";
-        if(species.bins.size() == 1){
-            const std::string& bin = (*species.bins.begin()).first;
+        grade = "E";
+        if(species.clustersCount() == 1){
+            const std::string& bin = species.getFirstCluster();
             auto BINSpeciesConcordance = speciesPerBIN(data, bin);
             if(BINSpeciesConcordance){
-                int specimens_size = species.specimens_size;
-                grade = specimens_size >= min_deposit ? "B" : "A";
+                int specimens_size = species.recordCount();
+                grade = specimens_size >= min_size ? "B" : "A";
             }
         }else{
-            grade = findBinsNeighbour(data, dist_matrix, species.bins, min_dist, errors);
+            grade = findBinsNeighbour(data, distances, species.getClusters(), max_distance, error);
         }
     }
-    species.grade = grade;
+    species.setGrade(grade);
+    return error;
 }
 
-
-void annotationAlgo(std::unordered_map<std::string, Species>& data, std::unordered_map<std::string, std::pair<std::string, double>>& dist_matrix, std::vector<std::string> &errors, int min_labs, double min_dist, int min_deposit){
-    /*
-    Para cada especie(ESP):
-        Se o #sequencias > 3:
-         |   Se o #bins = 1:
-         |    |   Se houver concordancia:
-         |    |    |  Se o #laboratorios = 1:
-         |    |    |   |   Marcar ESP com B
-         |    |    |  Senão:
-         |    |    |      Marcar ESP com A
-         |    |   Senão:
-         |    |       Marcar ESP com E1
-         |   Senão:
-         |       Marcar ESP com a nota dos "All the nearest neighbors"
-        Senão
-            Marcar ESP com D
-
-
-    Para cada especie(ESP):
-        Se o #laboratorios >= 2:
-         |   Se o #bins = 1:
-         |    |   Se houver concordancia:
-         |    |    |  Se o #sequencias >= 3:
-         |    |    |   |   Marcar ESP com A
-         |    |    |  Senão:
-         |    |    |      Marcar ESP com B
-         |    |   Senão:
-         |    |       Marcar ESP com E1
-         |   Senão:
-         |       Marcar ESP com a nota dos "All the nearest neighbors"
-        Senão
-            Marcar ESP com D
-
-
-    */
-    std::string grade = "D";
+ std::vector<std::string> annotationAlgo(
+            datatypes::Dataset& data,
+            datatypes::DistanceMatrix& distances,
+             datatypes::GradingParameters& params
+        ){
+    std::vector<std::string> errors;
     for(auto& pair : data){
         auto& species = pair.second;
-        annotateItem(species, data, dist_matrix, errors, min_labs, min_dist, min_deposit);
+        auto error = annotateItem(species, data, distances, params);
+        errors.push_back(error);
+
         /*
         auto& species = pair.second;
         int size = species.institution.size();
         if(size >= min_labs){
-            grade = "E1";
+            grade = "E";
             if(species.bins.size() == 1){
                 const std::string& bin = (*species.bins.begin()).first;
                 auto BINSpeciesConcordance = speciesPerBIN(data, bin);
@@ -208,10 +169,6 @@ void annotationAlgo(std::unordered_map<std::string, Species>& data, std::unorder
         grade = "D";
         */
     }
-    
+    return errors;
 }
-
-
-
-}
-
+}}

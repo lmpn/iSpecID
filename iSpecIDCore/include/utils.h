@@ -64,6 +64,24 @@ namespace utils{
         return false;
     }
 
+    template<class K>
+    bool hasIntersection(const std::unordered_set<K>& o1, const std::unordered_set<K>& o2){
+        size_t o1s = o1.size();
+        size_t o2s = o2.size();
+        if(o1s <= o2s){
+            auto o2e = o2.end();
+            for (auto item : o1){ //= o1.begin(); i != o1.end(); i++) {
+                if(o2.find(item) != o2e) return true;
+            }
+        }else{
+            auto o1e = o1.end();
+            for (auto item : o2){ //= o1.begin(); i != o1.end(); i++) {
+                if(o1.find(item) != o1e) return true;
+            }
+        }
+        return false;
+    }
+
 
     std::shared_ptr<std::unordered_map<std::string, size_t>>  createIndexedHeader(std::vector<std::string> header);
 
@@ -80,7 +98,21 @@ namespace utils{
 
 
     template<class Item, class Predicate>
-    Table<Item> filter(Table<Item>& tbl, Predicate pred, Table<Item>& filtered = {}){
+    Table<Item> filter(Table<Item>& tbl, Predicate pred){
+        Table<Item> accept;
+        Table<Item> filtered;
+        for(auto& item : tbl){
+            if(!pred(item)){
+                accept.push_back(std::move(item));
+            }else{
+                filtered.push_back(std::move(item));
+            }
+        }
+        return accept;
+    }
+
+    template<class Item, class Predicate>
+    Table<Item> filter(Table<Item>& tbl, Predicate pred, Table<Item>& filtered){
         Table<Item> accept;
         for(auto& item : tbl){
             if(!pred(item)){
@@ -93,13 +125,19 @@ namespace utils{
     }
 
     template<class Item, class Key, class Value>
-    Aggregation<Key, Value> group(Table<Item>& tbl, Key get_key(Item&), void join_op(Value&, Item&)){
+    Aggregation<Key, Value> group(Table<Item>& tbl, Key get_key(Item&), void join_op(Value&, Item&), Value from_item(Item&)){
         Aggregation<Key, Value> result;
         for (auto& item : tbl)
         {
             Key item_key = get_key(item);
-            Value& current_value = result[item_key];
-            join_op(current_value, item);
+            auto value = result.find(item_key);
+            if(value != result.end()){
+                Value& current_value = (*value).second;
+                join_op(current_value, item);
+            }else{
+                Value value = from_item(item);
+                result.insert({item_key, value});
+            }
         }
         return result;
     }

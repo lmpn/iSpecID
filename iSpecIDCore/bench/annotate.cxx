@@ -1,8 +1,12 @@
-#include <iengine.h>
+#include "utils.h"
+#include "ispecid.h"
+#include <map>
 #include <benchmark/benchmark.h>
 
-std::string base = "/Users/lmpn/Desktop/dissertaçao/datasets/tsv/";
+std::string base = "/Users/lmpn/Desktop/diss/datasets/tsv/";
 int reps = 1;
+using namespace ispecid::datatypes;
+using namespace ispecid::fileio;
 
 double kbest(const std::vector<double>& vec){
     int best = vec.size() * 0.625;
@@ -13,53 +17,62 @@ double kbest(const std::vector<double>& vec){
 }
 
 static void V6_culicidae(benchmark::State& state) {
-    std::string s = base + "culicidae.tsv";
+    std::string file_path = base + "culicidae.tsv";
     std::string d = base + "dist_culicidae.csv";
     for (auto _ : state)
     {
-        IEngine an;
-        std::vector<std::string> er;
-        an.load(s);
-        an.load_distance_matrix(d);
-        an.filter([](Record item) {return item["species_name"].empty() || item["bin_uri"].empty() || item["institution_storing"].empty();});
-        an.group();
-        an.annotate(er);
-        an.gradeRecords();
-        auto r = an.calculateGradeResults();
+        auto records = loadFile<Record>(file_path, toRecord, Format::TSV);
+        records = utils::filter(records, Record::goodRecord);
+        Dataset data = utils::group(records,Record::getSpeciesName,Species::addRecord,Species::fromRecord);
+        DistanceMatrix distances;
+        ispecid::IEngine engine;
+        GradingParameters params;
+        engine.annotate(data,distances,params);
+        std::map<std::string,int> res;
+        for (auto &r : data){
+            auto idx = r.second.getGrade();
+            res[idx] += r.second.recordCount();
+        }
     };
 }
 
 static void V6_aves(benchmark::State& state) {
-    std::string s = base + "aves.tsv";
+    std::string file_path = base + "aves.tsv";
     std::string d = base + "dist_aves.csv";
     for (auto _ : state)
     {
-        IEngine an;
-        std::vector<std::string> er;
-        an.load(s);
-        an.load_distance_matrix(d);
-        an.filter([](Record item) {return item["species_name"].empty() || item["bin_uri"].empty() || item["institution_storing"].empty();});
-        an.group();
-        an.annotate(er);
-        an.gradeRecords();
-        auto r = an.calculateGradeResults();
+        auto records = loadFile<Record>(file_path, toRecord, Format::TSV);
+        records = utils::filter(records, Record::goodRecord);
+        Dataset data = utils::group(records,Record::getSpeciesName,Species::addRecord,Species::fromRecord);
+        DistanceMatrix distances;
+        ispecid::IEngine engine;
+        GradingParameters params;
+        engine.annotate(data,distances,params);
+        std::map<std::string,int> res;
+        for (auto &r : data){
+            auto idx = r.second.getGrade();
+            res[idx] += r.second.recordCount();
+        };
     }
 }
 
 static void V6_canidae(benchmark::State& state) {
-    std::string s = base + "canidae.tsv";
+    std::string file_path = base + "canidae.tsv";
     std::string d = base + "dist_canidae.csv";
     for (auto _ : state)
     {
-        IEngine an;
-        std::vector<std::string> er;
-        an.load(s);
-        an.load_distance_matrix(d);
-        an.filter([](Record item) {return item["species_name"].empty() || item["bin_uri"].empty() || item["institution_storing"].empty();});
-        an.group();
-        an.annotate(er);
-        an.gradeRecords();
-        auto r = an.calculateGradeResults();
+        auto records = loadFile<Record>(file_path, toRecord, Format::TSV);
+        records = utils::filter(records, Record::goodRecord);
+        Dataset data = utils::group(records,Record::getSpeciesName,Species::addRecord,Species::fromRecord);
+        DistanceMatrix distances;
+        ispecid::IEngine engine;
+        GradingParameters params;
+        engine.annotate(data,distances,params);
+        std::map<std::string,int> res;
+        for (auto &r : data){
+            auto idx = r.second.getGrade();
+            res[idx] += r.second.recordCount();
+        }
     }
 }
 
