@@ -20,24 +20,35 @@ void showErrorMessage(QString error_name, QString error){
 }
 
 bool GradingOptionsDialog::handleClick(){
-    double dist;
-    int labs;
-    int seqs;
+    double dist = 2;
+    int labs = 2;
+    int seqs = 3;
     bool ok;
-    dist = ui->max_dist_text->text().toDouble(&ok);
-    if(!ok || dist > 2){
-        showErrorMessage("Maximun distance error","Can't parse maximun distance or value greater than 2");
-        return false;
+    if(!ui->max_dist_text->text().isEmpty())
+    {
+        dist = ui->max_dist_text->text().toDouble(&ok);
+        if(!ok ||(dist > 100 && dist < 0) ){
+            showErrorMessage("Maximun distance error","Value should be between 0 and 100");
+            dist = 2;
+        }
     }
-    labs= ui->min_lab_text->text().toInt(&ok);
-    if(!ok || labs < 2){
-        showErrorMessage("Minimum of laboratories deposited sequences error","Can't parse minimum number of laboratories deposited sequences or value less than 2");
-        return false;
+    if(!ui->min_lab_text->text().isEmpty())
+    {
+        labs= ui->min_lab_text->text().toInt(&ok);
+        if(!ok || labs < 1){
+            showErrorMessage("Minimum of laboratories deposited sequences error","Value should be a positive integer value");
+            labs = 2;
+        }if(ok && labs == 1){
+            QMessageBox::warning(nullptr,"Minimum of laboratories deposited sequences error","Warning: not advisable except to validate local repositories.",QMessageBox::Ok,QMessageBox::Ok);
+        }
     }
-    seqs= ui->min_sequences_text->text().toInt(&ok);
-    if(!ok && seqs < 3){
-        showErrorMessage("Sequences deposited or published independently error", "Can't parse minimun number of sequences deposited or published independently or value less than 3");
-        return false;
+    if(!ui->min_sequences_text->text().isEmpty())
+    {
+        seqs= ui->min_sequences_text->text().toInt(&ok);
+        if(!ok || seqs < 3){
+            showErrorMessage("Sequences deposited or published independently error", "Value should be an integer value greater or equal 3");
+            seqs = 3;
+        }
     }
     emit saveConfig(dist,labs,seqs);
     return true;

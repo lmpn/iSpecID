@@ -723,9 +723,10 @@ height: 25px
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="load_file_action"/>
-    <addaction name="save_as_file_action"/>
-    <addaction name="save_file_action"/>
+    <addaction name="new_project_action"/>
+    <addaction name="load_project_action"/>
+    <addaction name="save_project_action"/>
+    <addaction name="export_to_TSV_action"/>
    </widget>
    <widget class="QMenu" name="menu_data">
     <property name="title">
@@ -733,25 +734,26 @@ height: 25px
     </property>
     <addaction name="filter_action"/>
     <addaction name="gradind_options_action"/>
+    <addaction name="load_distance_matrix_action"/>
    </widget>
    <addaction name="menu_file"/>
    <addaction name="menu_data"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
-  <action name="load_file_action">
+  <action name="new_project_action">
    <property name="text">
-    <string>Open file...</string>
+    <string>New project...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
+   </property>
+  </action>
+  <action name="load_project_action">
+   <property name="text">
+    <string>Load project...</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+O</string>
-   </property>
-  </action>
-  <action name="save_as_file_action">
-   <property name="text">
-    <string>Save as...</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+Shift+S</string>
    </property>
   </action>
   <action name="filter_action">
@@ -764,15 +766,25 @@ height: 25px
   </action>
   <action name="gradind_options_action">
    <property name="text">
-    <string>Grading Options</string>
+    <string>Grading options</string>
    </property>
   </action>
-  <action name="save_file_action">
+  <action name="save_project_action">
    <property name="text">
-    <string>Save</string>
+    <string>Save project...</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="export_to_TSV_action">
+   <property name="text">
+    <string>Export to TSV</string>
+   </property>
+  </action>
+  <action name="load_distance_matrix_action">
+   <property name="text">
+    <string>Load distance matrix</string>
    </property>
   </action>
  </widget>

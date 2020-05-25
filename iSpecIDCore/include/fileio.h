@@ -16,7 +16,7 @@ namespace ispecid{ namespace fileio{
     template<class T>
     using InMapper = std::function<T(std::vector<std::string>, csv::CSVRow&)>;
 
-    InMapper<Record> toRecord = 
+    inline InMapper<Record> toRecord =
         [](std::vector<std::string> header, csv::CSVRow& row){
             auto species_name = row["species_name"].get();
             auto source = row["institution_storing"].get();

@@ -1,18 +1,13 @@
 #ifndef RECORDMODEL_H
 #define RECORDMODEL_H
 #include <QAbstractTableModel>
-#include "iengine.h"
-
+#include "qrecord.h"
 
 class RecordModel : public QAbstractTableModel
 {
     Q_OBJECT
 public:
-    RecordModel(IEngine *engine, QObject *parent = nullptr);
-    bool remove;
-    std::vector<Record> getRecords() {
-        return engine->getEntries();
-    }
+    RecordModel(std::vector<QRecord> *records, QObject *parent = nullptr);
     Qt::ItemFlags flags(const QModelIndex &index) const override;
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
@@ -21,6 +16,8 @@ public:
     bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
     bool removeRow(int row, const QModelIndex &parent = QModelIndex());
     bool removeRows(int position, int row, const QModelIndex &parent = QModelIndex()) override;
+    bool remove;
+
 public slots:
     void onRecordsChanged();
     void sortBySection(int col = 0);
@@ -33,7 +30,7 @@ signals:
 private:
     //QVector<Record> records;
     size_t cur_count;
-    IEngine *engine;
+    std::vector<QRecord> *records;
     QVector<bool> sort_order;
     int last_col;
 };

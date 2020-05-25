@@ -57,7 +57,6 @@
 #include <QPen>
 #include <QGraphicsSceneHoverEvent>
 #include <QFont>
-#include "edge.h"
 #include "node.h"
 
 class Node;
@@ -69,13 +68,14 @@ class Edge : public QObject, public QGraphicsItem
 public:
     Edge(Node *sourceNode, Node *destNode, int count);
 
-    Node *sourceNode() const;
-    Node *destNode() const;
+    Node *sourceNode() ;
+    Node *destNode() ;
     void adjust();
     enum { Type = UserType + 2 };
     int type() const override { return Type; }
     void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
     void remove();
+    void addCount(int count);
 
 signals:
     void removeEdge(Edge* edge);

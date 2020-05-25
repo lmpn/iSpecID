@@ -2,19 +2,15 @@
 #define GRAPHVIEWER_H
 #include <QGraphicsView>
 #include <QGraphicsItem>
-#include "iengine.h"
+#include "qrecord.h"
 #include "edge.h"
 #include "node.h"
-
-class Node;
-class Edge;
-class Record;
 
 class GraphScene : public QGraphicsScene
 {
     Q_OBJECT
 public:
-    GraphScene(QWidget *parent, IEngine *engine);
+    GraphScene(QWidget *parent, std::vector<QRecord>* records);
     void drawBackground(QPainter *painter, const QRectF &rect) override;
     ~GraphScene();
 
@@ -35,7 +31,7 @@ private:
     void clearScene();
     void setComponentVisibleDFS( Node *root, bool visible = true);
     void generateItems();
-    IEngine * engine;
+    std::vector<QRecord> * records;
     QMap<QString, QGraphicsItem*> nodes;
     QVector<QGraphicsItem*> edges;
     QString cur_node_key;

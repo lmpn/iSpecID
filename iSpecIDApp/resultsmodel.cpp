@@ -2,8 +2,8 @@
 #include <iostream>
 #include <qdebug.h>
 
-ResultsModel::ResultsModel(IEngine *engine, QObject *parent)
-    :QAbstractTableModel(parent), engine(engine)
+ResultsModel::ResultsModel(std::vector<QRecord>*records, QObject *parent)
+    :QAbstractTableModel(parent), records(records)
 {
 }
 
@@ -19,8 +19,29 @@ int ResultsModel::columnCount(const QModelIndex & /*parent*/) const
 
 
 void ResultsModel::onResultsChanged(){
-    results = engine->calculateGradeResults();
-    perc = 1.f/engine->getEntries().size();
+    int count = 0;
+    results = std::vector<int>(6,0);
+    for(auto& qrec : *records){
+        count += qrec.record.count();
+        char grade = qrec.record.getGrade()[0];
+        if(grade == 'A'){
+            results[0] += qrec.record.count();
+        }
+        else if(grade == 'B'){
+            results[1] += qrec.record.count();
+        }
+        else if(grade == 'C'){
+            results[2] += qrec.record.count();
+        }
+        else if(grade == 'D'){
+            results[3] += qrec.record.count();
+        }
+        else if(grade == 'E'){
+            results[4] += qrec.record.count();
+        }
+    }
+    results[5] = count;
+    perc = 1.f/count;
     auto top_left = index(0,1,QModelIndex());
     auto bottom_right = index(rowCount(),columnCount(),QModelIndex());
     emit dataChanged(top_left, bottom_right, {Qt::EditRole});

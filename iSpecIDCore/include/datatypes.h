@@ -36,10 +36,11 @@ namespace ispecid{ namespace datatypes{
         std::string cluster;
         std::string source;
         std::string grade;
+        int size;
 
         public:
-        Record(std::string species_name, std::string cluster, std::string source, std::string grade):
-            species_name(species_name), cluster(cluster), source(source), grade(grade)
+        Record(std::string species_name, std::string cluster, std::string source, std::string grade, int size = 1):
+            species_name(species_name), cluster(cluster), source(source), grade(grade), size(size)
         {
         };
 
@@ -58,6 +59,24 @@ namespace ispecid{ namespace datatypes{
         }
         std::string getGrade(){
             return grade;
+        }        
+        int count(){
+            return size;
+        }
+        void setSpeciesName(std::string species_name){
+            this->species_name = species_name;
+        }
+        void setCluster(std::string cluster){
+            this->cluster = cluster;
+        }
+        void setSource(std::string source){
+            this->source = source;
+        }
+        void setGrade(std::string grade){
+            this->grade = grade;
+        }
+        void addCount(int icount){
+            size += icount;
         }
         static bool goodRecord(Record& record){
             return record.species_name.empty() || record.cluster.empty() || record.source.empty();
@@ -80,7 +99,6 @@ namespace ispecid{ namespace datatypes{
             species_name(species_name), grade(grade), record_count(0)
         {
         };
-
 
         void setGrade( std::string grade){
             this->grade = grade;
@@ -118,7 +136,7 @@ namespace ispecid{ namespace datatypes{
         }
 
         static void addRecord(Species& species, Record& record){
-            species.record_count++;
+            species.record_count+=record.count();
             species.sources.insert(record.getSource());
             species.clusters.insert(record.getCluster());
         }

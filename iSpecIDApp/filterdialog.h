@@ -4,6 +4,7 @@
 #include <QDialog>
 #include "iSpecIDApp/filterscrollarea.h"
 #include "ui_filterdialog.h"
+#include "qrecord.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class FilterDialog; }
@@ -17,14 +18,12 @@ class FilterDialog : public QDialog
 public:
     FilterDialog(QStringList header, QList<QStringList> completions, QWidget *parent = nullptr);
     ~FilterDialog();
-    template<class T>
-    using Func = std::function<bool(T)>;
-    template<class T>
-    Func<T> getFilterFunc(){
+    using Func = std::function<bool(QRecord)>;
+    Func getFilterFunc(){
         bool keep = ui->keepCheckBox->isChecked();
-        auto func = fs->getFilterFunc<T>();
+        auto func = fs->getFilterFunc();
         if(keep){
-            func = [func](T item) {return !func(item);};
+            func = [func](QRecord item) {return !func(item);};
         }
         return func;
     }

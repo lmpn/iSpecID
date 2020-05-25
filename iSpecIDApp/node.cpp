@@ -83,7 +83,7 @@ void Node::removeEdge(Edge *edge)
 }
 
 
-QSet<Edge *> Node::edges() const
+QSet<Edge *> Node::edges()
 {
     return edge_set;
 }
@@ -110,7 +110,7 @@ void Node::setColor(QString grade){
         mc = QColor(Qt::gray);
         dmc = QColor(Qt::darkGray);
     }
-    else if( grade == "E1" || grade == "E2"){
+    else if( grade == "E"){
         mc = QColor(Qt::red);
         dmc = QColor(Qt::darkRed);
     }else if( grade == "U"){

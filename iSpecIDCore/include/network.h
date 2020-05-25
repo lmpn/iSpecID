@@ -2,7 +2,7 @@
 #define NETWORK_H
 #include <string>
 namespace ispecid{ namespace network{
-    static size_t writeCallback(void *contents, size_t size, size_t nmemb, void *userp);
+    void prepareNetwork();
     std::string getPage(const char* url);
 }}
 #endif

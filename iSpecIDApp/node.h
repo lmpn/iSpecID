@@ -55,11 +55,9 @@
 #include <QVector>
 #include <QFont>
 #include "edge.h"
-#include "graphscene.h"
 #include "utils.h"
 
 class Edge;
-class GraphScene;
 
 class Node : public QGraphicsItem
 {
@@ -67,7 +65,7 @@ public:
     Node(QString name, QString grade);
 
 
-    QSet<Edge *> edges() const;
+    QSet<Edge *> edges();
     QString getName() const;
     void addEdge(Edge *edge);
     void removeEdge(Edge *edge);

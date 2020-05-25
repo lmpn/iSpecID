@@ -2,18 +2,19 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QFileDialog>
-#include <QKeyEvent>
+#include <QUndoStack>
+#include <QTimer>
+#include <QMovie>
 #include <QFutureWatcher>
-#include <iostream>
-
+#include "ispecid.h"
+#include "qrecord.h"
+#include "dbconnection.h"
 #include "graphscene.h"
-#include "resultsmodel.h"
-#include "recordmodel.h"
-#include "annotator.h"
-#include "iengine.h"
+
+using namespace ispecid::datatypes;
 
 
+using namespace ispecid::datatypes;
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
@@ -24,64 +25,107 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
+    MainWindow(QString app_dir, QWidget *parent = nullptr);
     ~MainWindow();
+    void loadRecords();
+    void setupRecordsTable();
+    void setupOriginalResultsTable();
+    void setupCurrentResultsTable();
+    void setupGraphScene();
+    void gradingTableAdjust(QTableView *tableView);
+    void deleteRecordRows();
+    void enableMenuDataActions(bool enable);
+    void showGradingErrors(std::vector<std::string> &errors);
+    void updateApp();
+    void loading(bool load, QString text="");
+    QString createCompleter();
 signals:
     void updateGraph();
     void updateColorGraph();
+    void annotateFinish();
     void updateRecords();
     void updateResults();
     void showComponent(QString);
     void updateCurrentResults();
     void saveGraph(QString);
+    void postQuery(QString);
+    void loadFinished(int,int,int);
+    void saveFinished();
+    void errorOccured();
+    void stopLoading();
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
-    /*
-    #if QT_CONFIG(wheelevent)
-        void wheelEvent(QWheelEvent *event) override;
-    #endif*/
     void scaleView(qreal scaleFactor);
 
 private slots:
+    void onStopLoading();
+    void onSaveFinished();
+    void onLoadFinished(int,int,int);
+    void onAnnotateFinished();
+    void onAnnotate();
+    void onErrorOccured();
+    void exportDataToTSV();
+    void loadDistanceMatrix();
+    void onActionPerformed();
+    void onComboBoxChanged();
     void zoomIn();
     void zoomOut();
-    void loadFile();
-//    void onGraphComboBoxActivated(const QString &arg1);
-    void onComboBoxChanged();
-    void loadFileFinish();
-    void onAnnotateData();
-    void showFilter();
-    void onActionPerformed();
+    void onLoadProject();
+    void onSaveProject();
+    void onNewProject();
     void saveGraph();
-    void saveFile();
-    void saveAsFile();
-    void undo();
-    void onSaveConfig(double max_dist, int min_labs, int min_seqs);
     void showGradingOptions();
-    void annotateFinished();
+    void showFilter();
+    void onSaveConfig(double, int, int);
+
 
 private:
-    QString current_save_path;
-    Ui::MainWindow *ui;
-    IEngine *engine;
-    std::vector<Record> undoEntries;
-    std::vector<Record> undoFilteredEntries;
-    GraphScene *graph;
-    std::vector<std::string> errors;
-    void setupGraphScene();
-    void setupCurrentResultsTable();
-    void setupOriginalResultsTable();
-    void setupRecordsTable();
-    void enableMenuDataActions(bool enable);
-    void updateApp();
-    void gradingTableAdjust(QTableView *tableView);
-    void deleteRecordRows();
-    QString createCompleter();
-    void removeRows();
-    void showGradingErrors(std::vector<std::string> &errors);
-    QFutureWatcher<void> *watcher;
+    QString app_dir;
+    QString project;
+    GradingParameters params;
+    DistanceMatrix distances;
+    std::vector<QRecord>* data;
+    GraphScene* graph;
+    Ui::MainWindow* ui;
+    QUndoStack* undoStack;
     QMovie* movie;
     QTimer* timer;
+    std::vector<std::string> errors;
+    ispecid::IEngine engine;
 };
+
+#include <QUndoCommand>
+
+
+//! [0]
+class ActionCommand : public QUndoCommand
+{
+public:
+
+    ActionCommand(std::vector<QRecord> *data, std::vector<QRecord> old,
+                  QUndoCommand *parent = nullptr): QUndoCommand(parent){
+        this->old = old;
+        this->current = *data;
+        this->data = data;
+    }
+
+
+    void undo() override{
+        *data = old;
+    };
+    void redo() override{
+        *data = current;
+    };
+
+private:
+    std::vector<QRecord> *data;
+    std::vector<QRecord> old;
+    std::vector<QRecord> current;
+};
+
+
+
+
+
 #endif // MAINWINDOW_H

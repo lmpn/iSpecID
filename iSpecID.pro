@@ -1,4 +1,4 @@
-QT       += core gui concurrent
+QT       += core gui concurrent sql
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -17,45 +17,51 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
         app.cpp \
-        iSpecIDApp/edge.cpp \
-        iSpecIDApp/gradingoptionsdialog.cpp \
-        iSpecIDApp/graphscene.cpp \
-        iSpecIDApp/node.cpp \
-        iSpecIDApp/resultsmodel.cpp \
+        iSpecIDApp/dbconnection.cpp \
         iSpecIDApp/mainwindow.cpp \
+        iSpecIDApp/projectselectiondialog.cpp \
         iSpecIDApp/recordmodel.cpp \
+        iSpecIDApp/resultsmodel.cpp \
+        iSpecIDApp/node.cpp \
+        iSpecIDApp/edge.cpp \
+        iSpecIDApp/graphscene.cpp \
+        iSpecIDApp/gradingoptionsdialog.cpp \
+        iSpecIDApp/filterdialog.cpp \
         iSpecIDCore/src/annotator.cpp \
-        iSpecIDCore/src/record.cpp \
         iSpecIDCore/src/iengine.cpp \
-        iSpecIDCore/src/miner.cpp \
         iSpecIDCore/src/utils.cpp \
-        iSpecIDApp/filterdialog.cpp
+        iSpecIDCore/src/network.cpp
 
 
 HEADERS += \
-        iSpecIDApp/filterItem.h \
-        iSpecIDApp/gradingoptionsdialog.h \
-        iSpecIDCore/include/iengine.h \
-        iSpecIDCore/include/annotator.h \
-        iSpecIDCore/include/species.h \
-        iSpecIDCore/include/miner.h \
-        iSpecIDCore/include/record.h \
-        iSpecIDCore/include/utils.h \
-        iSpecIDCore/include/csv.hpp \
+        iSpecIDApp/dbconnection.h \
+        iSpecIDApp/projectselectiondialog.h \
+        iSpecIDApp/recordmodel.h \
+        iSpecIDApp/resultsmodel.h \
+        iSpecIDApp/qrecord.h \
+        iSpecIDApp/node.h \
         iSpecIDApp/edge.h \
         iSpecIDApp/graphscene.h \
-        iSpecIDApp/node.h \
-        iSpecIDApp/resultsmodel.h \
-        iSpecIDApp/mainwindow.h \
-        iSpecIDApp/recordmodel.h \
+        iSpecIDApp/filterItem.h \
+        iSpecIDApp/gradingoptionsdialog.h \
         iSpecIDApp/filterdialog.h \
         iSpecIDApp/filterOp.h \
-        iSpecIDApp/filterscrollarea.h
+        iSpecIDApp/filterscrollarea.h \
+        iSpecIDCore/include/iengine.h \
+        iSpecIDCore/include/annotator.h \
+        iSpecIDCore/include/datatypes.h \
+        iSpecIDCore/include/fileio.h \
+        iSpecIDCore/include/network.h \
+        iSpecIDCore/include/ispecid.h \
+        iSpecIDCore/include/utils.h \
+        iSpecIDCore/include/csv.hpp \
+        iSpecIDApp/mainwindow.h
 
 
 FORMS += \
-    iSpecIDApp/gradingoptionsdialog.ui \
     iSpecIDApp/mainwindow.ui \
+    iSpecIDApp/projectselectiondialog.ui \
+    iSpecIDApp/gradingoptionsdialog.ui \
     iSpecIDApp/filterdialog.ui
 
 RESOURCES += icons.qrc

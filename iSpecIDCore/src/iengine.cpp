@@ -1,9 +1,10 @@
 #include "iengine.h"
+#include "network.h"
 
 namespace ispecid{ 
 IEngine::IEngine()
 {
-
+    network::prepareNetwork();
     int cores = boost::thread::hardware_concurrency();
     pool = new boost::asio::thread_pool(cores);
 }

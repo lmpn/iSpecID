@@ -137,6 +137,33 @@ height: 25px
      </item>
      <item>
       <widget class="QDialogButtonBox" name="buttonBox">
+       <property name="styleSheet">
+        <string notr="true">QDialogButtonBox#buttonBox{
+color:white;
+background:rgb(25, 150, 141);
+border-color:rgb(25, 150, 141);
+border-radius: 5px;
+height: 25px
+}
+
+QPushButton#addBtn:hover
+{
+color:(220, 223, 223);
+background:rgb(21, 156, 143);
+border-color:rgb(21, 156, 143);
+border-radius: 5px;
+height: 25px
+}
+
+QPushButton#addBtn:pressed
+{
+color:rgb(211, 213, 213);
+background:rgb(16, 117, 107);
+border-color:rgb(16, 117, 107);
+border-radius: 5px;
+height: 25px
+}</string>
+       </property>
        <property name="standardButtons">
         <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
        </property>

@@ -5,11 +5,12 @@
 #include <QMenu>
 #include <qdebug.h>
 #include "graphscene.h"
+#include "utils.h"
 
 
 
-GraphScene::GraphScene(QWidget *parent, IEngine * engine)
-    : engine(engine)
+GraphScene::GraphScene(QWidget *parent, std::vector<QRecord> * records)
+    : records(records)
 {
     setParent(parent);
     setItemIndexMethod(QGraphicsScene::NoIndex);
@@ -19,29 +20,46 @@ GraphScene::GraphScene(QWidget *parent, IEngine * engine)
 
 
 void GraphScene::generateItems(){
-    auto data = engine->getGroupedEntries();
-    for(auto& pair: data){
-        auto bins = pair.second.bins;
-        Node *node = new Node(QString::fromStdString(pair.first), QString::fromStdString(pair.second.grade));
-        this->addItem(node);
-        node->hide();
-        nodes.insert(node->getName(), node);
-        for (auto bin_pair : bins) {
-            if(bin_pair.first == "") continue;
-            auto key = QString::fromStdString(bin_pair.first);
-            Node *bin = qgraphicsitem_cast<Node *>(nodes[key]);
-            if(bin == nullptr){
-                bin = new Node(key, QString());
-                nodes.insert(key,bin/*, bin_pair.second*/);
-                bin->hide();
-                this->addItem(bin);
+    for(auto& qrec: *records){
+        auto species_name = qrec.record.getSpeciesName();
+        auto cluster_name = qrec.record.getCluster();
+        auto grade = qrec.record.getGrade();
+        auto node_it = nodes.find(QString::fromStdString(species_name));
+        auto cluster_it = nodes.find(QString::fromStdString(cluster_name));
+        Node *node;
+        Node *cluster;
+        if(node_it == nodes.end()){
+            node = new Node(QString::fromStdString(species_name), QString::fromStdString(grade));
+            node->hide();
+            this->addItem(node);
+            nodes.insert(node->getName(), node);
+        }else{
+            node = qgraphicsitem_cast<Node *>(*node_it);
+        }
+        if(cluster_it == nodes.end()){
+            cluster = new Node(QString::fromStdString(cluster_name), "");
+            cluster->hide();
+            this->addItem(cluster);
+            nodes.insert(cluster->getName(), cluster);
+        }else{
+            cluster = qgraphicsitem_cast<Node *>(*cluster_it);
+        }
+        auto edges = node->edges();
+        Edge* edge = nullptr;
+        for(auto& e : edges){
+            if(e != nullptr && node == e->sourceNode() && cluster == e->destNode()){
+                edge = e;
             }
-            Edge * edge = new Edge(node, bin, bin_pair.second);
+        }
+        if(edge == nullptr){
+            edge = new Edge(node,cluster, qrec.record.count());
             connect(edge, SIGNAL(removeEdge(Edge *)),
                     this, SLOT(onRemoveEdge(Edge *)));
             edges << edge;
             edge->hide();
             this->addItem(edge);
+        }	else{
+            edge->addCount(qrec.record.count());
         }
     }
     update();
@@ -55,13 +73,11 @@ void GraphScene::onGraphChanged(){
     setSceneRect(itemsBoundingRect());                          // Re-shrink the scene to it's bounding contents
 }
 void GraphScene::onGraphColorChanged(){
-    auto group_records = engine->getGroupedEntries();
-    for(auto item: nodes){
-        auto node = qgraphicsitem_cast<Node *>(item);
-        std::string key = node->getName().toStdString();
-        Species sp = group_records[key];
-        if(sp.grade != "U")
-            node->setColor(QString::fromStdString(sp.grade));
+    for(auto& qrec: *records){
+        auto key = QString::fromStdString(qrec.record.getSpeciesName());
+        auto node = qgraphicsitem_cast<Node *>(nodes[key]);
+        node->setColor(QString::fromStdString(qrec.record.getGrade()));
+
     }
     update();
 }
@@ -85,10 +101,10 @@ void GraphScene::onRemoveEdge(Edge *edge){
         delete nodes[bin];
     }
     delete edge;
-    engine->filter([species_str, bin_str](Record item) {
-        return item["species_name"] == species_str && item["bin_uri"]==bin_str;
-    });
-    engine->group();
+    records->erase(std::remove_if(records->begin(), records->end(),
+                                  [species_str, bin_str](QRecord qrec){
+        return qrec.record.getSpeciesName() == species_str && qrec.record.getCluster() == bin_str;
+    }),records->end());
     cur_node_key = "";
     emit updateCombobox();
     emit updateRecords();

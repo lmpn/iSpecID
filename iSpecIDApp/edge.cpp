@@ -71,13 +71,16 @@ Edge::Edge(Node *sourceNode, Node *destNode, int count)
 }
 
 
+void Edge::addCount(int count){
+    this->count += count;
+}
 
-Node *Edge::sourceNode() const
+Node *Edge::sourceNode()
 {
     return source;
 }
 
-Node *Edge::destNode() const
+Node *Edge::destNode()
 {
     return dest;
 }

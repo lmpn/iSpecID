@@ -16,10 +16,11 @@ int main(int argc, char **argv)
     DistanceMatrix distances;
     ispecid::IEngine engine;
     GradingParameters params;
-    engine.annotate(data,distances,params);
+    auto errors = engine.annotate(data,distances,params);
     std::map<std::string,int> res;
     for (auto &r : data){
         auto idx = r.second.getGrade();
         res[idx] += r.second.recordCount();
     }
+    PRINTV(errors);
 }

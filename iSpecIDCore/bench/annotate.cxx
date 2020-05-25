@@ -26,6 +26,7 @@ static void V6_culicidae(benchmark::State& state) {
         Dataset data = utils::group(records,Record::getSpeciesName,Species::addRecord,Species::fromRecord);
         DistanceMatrix distances;
         ispecid::IEngine engine;
+        // /home/a77763t/dissertation/playground/datasets
         GradingParameters params;
         engine.annotate(data,distances,params);
         std::map<std::string,int> res;
@@ -76,6 +77,13 @@ static void V6_canidae(benchmark::State& state) {
     }
 }
 
+BENCHMARK(V6_culicidae)
+    ->Unit(benchmark::kMillisecond)
+    ->Iterations(1)
+    ->Repetitions(reps)
+    ->ReportAggregatesOnly(true)
+    ->ComputeStatistics("kbest", kbest);
+
 
 BENCHMARK(V6_canidae)
     ->Unit(benchmark::kMillisecond)
@@ -89,13 +97,6 @@ BENCHMARK(V6_aves)
     ->Repetitions(reps)
     ->ReportAggregatesOnly(true)
     ->ComputeStatistics("kbest", kbest);
-BENCHMARK(V6_culicidae)
-    ->Unit(benchmark::kMillisecond)
-    ->Iterations(1)
-    ->Repetitions(reps)
-    ->ReportAggregatesOnly(true)
-    ->ComputeStatistics("kbest", kbest);
-
 
 
 BENCHMARK_MAIN();

@@ -9,6 +9,7 @@
 #include <QTextEdit>
 #include "filterItem.h"
 #include "filterOp.h"
+#include "qrecord.h"
 #include <qdebug.h>
 
 
@@ -16,8 +17,7 @@ class FilterScrollArea : public QScrollArea
 {
     QWidget *contentWidget;
     QVBoxLayout *vlayout;
-    template<class T>
-    using Func = std::function<bool(T)>;
+    using Func = std::function<bool(QRecord)>;
 public:
     FilterScrollArea(QWidget *parent = Q_NULLPTR) :QScrollArea(parent){
         setWidgetResizable(true);
@@ -35,22 +35,18 @@ public:
         this->completions = completions;
     }
 
-    template<class T>
-    Func<T> getFilterFunc(){
+    Func getFilterFunc(){
         auto count = vlayout->count();
-        if(count == 1){
-            return [](T item){ return true;};
-        }
         FilterItem *filter_item = static_cast<FilterItem*>(vlayout->itemAt(0)->widget());
-        auto col = convertToColumnName(filter_item->current_group());
-        auto val = filter_item->current_val().toStdString();
-        Func<T> fn = [col, val](T item){ return item[col] == val;};
+        auto col = filter_item->current_group();
+        auto val = filter_item->current_val();
+        Func fn = getPred(col,val);
 
         for (int i = 1	; i < count; i+=2) {
             FilterItem *filter_item = static_cast<FilterItem*>(vlayout->itemAt(i+1)->widget());
-            auto col = convertToColumnName(filter_item->current_group());
-            auto val = filter_item->current_val().toStdString();
-            Func<T> fn_i = [col, val](T item){ return item[col] == val;};
+            auto col = filter_item->current_group();
+            auto val = filter_item->current_val();
+            Func fn_i = getPred(col, val);
             FilterOp * fo = static_cast<FilterOp*>(vlayout->itemAt(i)->widget());
             fn = fo->operate(fn,fn_i);
         }
@@ -68,6 +64,29 @@ public slots:
         vlayout->addWidget(filter_item);
     }
 private:
+    Func getPred(QString name, QString value){
+        auto std_value = value.toStdString();
+        if(name == "Species"){
+            return [std_value](QRecord qrec){
+                 return qrec.record.getSpeciesName() == std_value;
+            };
+        }
+        else if(name == "Bin"){
+            return [std_value](QRecord qrec){
+                 return qrec.record.getCluster() == std_value;
+            };
+        }
+        else if(name == "Institution"){
+            return [std_value](QRecord qrec){
+                 return qrec.record.getSource() == std_value;
+            };
+        }
+        else {
+            return [std_value](QRecord qrec){
+                 return qrec.record.getGrade() == std_value;
+            };
+        }
+    }
     std::string convertToColumnName(QString name){
         if(name == "Species"){
             return "species_name";
