@@ -727,6 +727,7 @@ height: 25px
     <addaction name="load_project_action"/>
     <addaction name="save_project_action"/>
     <addaction name="export_to_TSV_action"/>
+    <addaction name="close_project_action"/>
    </widget>
    <widget class="QMenu" name="menu_data">
     <property name="title">
@@ -785,6 +786,11 @@ height: 25px
   <action name="load_distance_matrix_action">
    <property name="text">
     <string>Load distance matrix</string>
+   </property>
+  </action>
+  <action name="close_project_action">
+   <property name="text">
+    <string>Close project</string>
    </property>
   </action>
  </widget>

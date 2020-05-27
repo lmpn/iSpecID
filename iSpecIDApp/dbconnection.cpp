@@ -23,6 +23,7 @@ void DbConnection::setup(){
     QSqlQuery query(db);
     _success = query.exec("CREATE TABLE IF NOT EXISTS projects (id integer primary key autoincrement, "
                           "name varchar(255) not null)");
+    _success = _success && query.exec("CREATE TABLE IF NOT EXISTS neighbours (clusterA varchar(255) primary key, clusterB varchar(255) not null, distance real not null, time int not null)");
     if(!_success){
         qDebug() << query.lastError();
         qDebug() << query.lastQuery();

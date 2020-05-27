@@ -1,7 +1,6 @@
 #include <cstring>
 #include <stdexcept>
 #include <string>
-#include <curl/curl.h>
 #include "network.h"
 
 namespace ispecid{ namespace network{

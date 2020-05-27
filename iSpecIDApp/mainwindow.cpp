@@ -8,6 +8,7 @@
 #include <QKeyEvent>
 #include <qdebug.h>
 #include <QCompleter>
+#include <QStringList>
 #include <qtconcurrentrun.h>
 #include "projectselectiondialog.h"
 #include "qrecord.h"
@@ -64,8 +65,16 @@ MainWindow::MainWindow(QString app_dir, QWidget *parent)
     connect(this, SIGNAL(stopLoading()), this,SLOT(onStopLoading()));
     connect(this, SIGNAL(errorOccured()), this,SLOT(onErrorOccured()));
     connect(this, SIGNAL(annotateFinish()), this,SLOT(onAnnotateFinished()));
+    connect(this, SIGNAL(error(QString,QString)), this,SLOT(onError(QString, QString)));
     connect(ui->export_to_TSV_action, SIGNAL(triggered()), this,SLOT(exportDataToTSV()));
     connect(ui->load_distance_matrix_action, SIGNAL(triggered()), this,SLOT(loadDistanceMatrix()));
+    connect(ui->close_project_action, &QAction::triggered, [this](){
+        project = "";
+        data->clear();
+        distances.clear();
+        undoStack->clear();
+        updateApp();
+    });
     ui->results_frame->hide();
     enableMenuDataActions(false);
     data = new std::vector<QRecord>();
@@ -74,6 +83,40 @@ MainWindow::MainWindow(QString app_dir, QWidget *parent)
 
 void MainWindow::onStopLoading(){
     loading(false, "");
+}
+
+void MainWindow::onError(QString error_type, QString error){
+    QMessageBox::critical( this, error_type, error, QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok );
+    onStopLoading();
+}
+
+void MainWindow::exportDataToTSVHelper(QString dir_path){
+    QString filename = dir_path + QDir::separator() + project + ".tsv";
+    DbConnection dbc(app_dir);
+    if(!dbc.createConnection()){
+        emit error("Export error", "SQLite3 error");
+        return;
+    }
+    QString valuesStat = "select * from %1";
+    valuesStat = valuesStat.arg(project);
+    QString headerStat = "SELECT group_concat(name) FROM PRAGMA_TABLE_INFO('%1')";
+    headerStat = headerStat.arg(project);
+    QFile file(filename);
+    if (!file.open(QIODevice::WriteOnly)) {
+        QString error_msg = "File %1 couldn't be open.";
+        error_msg = error_msg.arg(filename);
+        emit error("File open error", error_msg);
+        return;
+    }
+    QTextStream stream(&file);
+    auto header = dbc.execQuery(headerStat)[0];
+    auto values = dbc.execQuery(valuesStat);
+    stream << header.join("\t") + "\n";
+    for(auto& row : values){
+        stream << row.join("\t")+ "\n";
+    }
+    file.close();
+    emit stopLoading();
 }
 
 void MainWindow::exportDataToTSV(){
@@ -89,34 +132,8 @@ void MainWindow::exportDataToTSV(){
     loading(true, "Exporting project...");
     QtConcurrent::run(std::function<void(QString)>(
                           [this](QString dir_path){
-                          qDebug() << dir_path;
-                          QString filename = dir_path + QDir::separator() + project + ".tsv";
-                          qDebug() << filename;
-                          DbConnection dbc(app_dir);
-                          if(!dbc.createConnection()){
-                              QMessageBox::critical( this, "Export error", "SQLite3 error", QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok );
-                              return;
-                          }
-                          QString valuesStat = "select * from %1";
-                          valuesStat = valuesStat.arg(project);
-                          QString headerStat = "SELECT group_concat(name) FROM PRAGMA_TABLE_INFO('%1')";
-                          headerStat = headerStat.arg(project);
-                          QFile file(filename);
-                          if (!file.open(QIODevice::WriteOnly)) {
-                              QString error = "File %1 couldn't be open.";
-                              error = error.arg(filename);
-                              QMessageBox::critical(this, "File open error", error, QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok);
-                              return;
-                          }
-                          QTextStream stream(&file);
-                          auto header = dbc.execQuery(headerStat)[0];
-                          auto values = dbc.execQuery(valuesStat);
-                          stream << header.join("\t") + "\n";
-                          for(auto& row : values){
-                              stream << row.join("\t")+ "\n";
-                          }
-                          file.close();
-                          emit stopLoading();
+                            saveProjectHelper();
+                            exportDataToTSVHelper(dir_path);
                       }), dir_path);
 
 }
@@ -195,6 +212,7 @@ void MainWindow::onAnnotate(){
                 ),dataset);
 
 }
+
 void MainWindow::onAnnotateFinished(){
     if(!errors.empty()){
         showGradingErrors(errors);
@@ -204,10 +222,6 @@ void MainWindow::onAnnotateFinished(){
         ui->initial_results_frame->show();
         ui->current_results_frame->show();
         emit updateResults();
-    }
-    for(auto& d : distances){
-        auto& sd = d.second;
-        qDebug() << QString::fromStdString(sd.clusterA) << QString::fromStdString(sd.clusterB) << sd.distance;
     }
     emit updateColorGraph();
     emit updateCurrentResults();
@@ -223,10 +237,10 @@ void MainWindow::onNewProject()
     }
     else if(ok && new_project.isEmpty()){
         QMessageBox::critical( this, "New project error", "Error trying to create project", QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok );
-        emit errorOccured();
+        return;
     }
     else if(ok && !new_project.isEmpty()){
-        QString stat = "select * from projects where name = \"%1\"";
+        QString stat = "select * from projects where name = '%1'";
         stat = stat.arg(new_project);
         DbConnection dbc(app_dir);
         if(dbc.createConnection()){
@@ -237,7 +251,6 @@ void MainWindow::onNewProject()
             }
             if(!dbc.success()){
                 QMessageBox::critical( this, "SQLite error", "Creating project error", QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok );
-                emit errorOccured();
                 return;
             }
         }
@@ -252,26 +265,12 @@ void MainWindow::onNewProject()
         QtConcurrent::run(
                     std::function<void(QString)>([this](QString filename){
                         DbConnection dbc(app_dir);
-                        if(dbc.createConnection()){
-                            QString newProjectStat = "insert into projects (name) values (\"%1\")";
-                            newProjectStat = newProjectStat.arg(project);
-                            dbc.execQuery(newProjectStat);
-                            if(!dbc.success()){
-                                QMessageBox::critical(this, "SQLite error", "Error project", QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok);
-                                emit errorOccured();
-                                return;
-                            }
-                        }else{
-                            QMessageBox::critical(this, "SQLite error", "Error project", QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok);
-                            emit errorOccured();
-                            return;
-                        }
+
                         QFile file(filename);
                         if (!file.open(QIODevice::ReadOnly)) {
-                            QString error = "File %1 couldn't be open.";
-                            error = error.arg(filename);
-                            QMessageBox::critical(this, "File open error", error, QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok);
-                            emit errorOccured();
+                            QString error_msg = "File %1 couldn't be open.";
+                            error_msg = error_msg.arg(filename);
+                            emit error("File open error", error_msg);
                             return;
                         }
                         QString stat;
@@ -282,9 +281,8 @@ void MainWindow::onNewProject()
                         else if(filename.contains("tsv")){
                             delim = '\t';
                         }else{
-                            QMessageBox::critical( this, "Load file error", "Incorrect format file", QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok );
                             file.close();
-                            emit loadFinished(0,0,0);
+                            emit error("Load file error", "Incorrect format file");
                             return;
                         }
                         int current_size = 0;
@@ -300,9 +298,8 @@ void MainWindow::onNewProject()
                             auto bin = header.contains("bin_uri");
                             auto institution = header.contains("institution_storing");
                             if(!species || !bin || !institution){
-                                QMessageBox::critical(this, "File parse error", "File header misses species_name, bin_uri or institution_storing", QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok);
                                 file.close();
-                                emit loadFinished(0,0,0);
+                                emit error("Load file error", "Header doesn't have species_name, bin_uri or institution_storing");
                                 return;
                             }
                             if(!header.contains("grade")) {
@@ -314,14 +311,25 @@ void MainWindow::onNewProject()
                                 no_mod = true;
                             }
                         }
+                        if(dbc.createConnection()){
+                            QString newProjectStat = "insert into projects (name) values ('%1')";
+                            newProjectStat = newProjectStat.arg(project);
+                            dbc.execQuery(newProjectStat);
+                            if(!dbc.success()){
+                                emit error("SQLite error", "Error project");
+                                return;
+                            }
+                        }else{
+                            emit error("SQLite error", "Error project");
+                            return;
+                        }
                         QString header_join = header.join(",");
                         stat = "create table %1 ";
                         stat += "(" + header_join +")";
                         stat = stat.arg(project);
                         dbc.execQuery(stat);
                         if(!dbc.success()){
-                            QMessageBox::critical(this, "SQLite error", "Error creating table", QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok);
-                            emit errorOccured();
+                            emit error("SQLite error", "Error creating table");
                             return;
                         }
                         QString base_stat = "insert into %1 (" + header_join + ") values ";
@@ -329,23 +337,22 @@ void MainWindow::onNewProject()
                         stat = base_stat;
                         while (!in.atEnd()) {
                             QString line = in.readLine();
-                            QString line2 = line.replace("\"","");
-                            line = line.replace("\t", "\",\"");
+                            QString line2 = line.replace("'","");
+                            line = line.replace("\t", "','");
                             if(no_grade){
-                                line += "\",\"U";
+                                line += "','U";
                             }
                             if(no_mod){
-                                line += "\",\"";
+                                line += "','";
 
                             }
-                            line = "\"" + line + "\"";
+                            line = "'" + line + "'";
                             stat += "(" + line +")";
                             current_size++;
                             if(current_size == 500){
                                 dbc.execQuery(stat);
                                 if(!dbc.success()){
-                                    QMessageBox::critical(this, "SQLite error", "Error inserting in table", QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok);
-                                    emit errorOccured();
+                                    emit error("SQLite error", "Error inserting in table");
                                     return;
                                 }
                                 stat = base_stat;
@@ -357,8 +364,7 @@ void MainWindow::onNewProject()
                         stat.chop(1);
                         dbc.execQuery(stat);
                         if(!dbc.success()){
-                            QMessageBox::critical(this, "SQLite error", "Error inserting in table", QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok);
-                            emit errorOccured();
+                            emit error("SQLite error", "Error inserting in table");
                             return;
                         }
                         file.close();
@@ -383,7 +389,7 @@ void MainWindow::onLoadProject()
         QMessageBox::critical( this, "Load project error", "There was an error loading the project names", QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok );
         return;
     }
-    ProjectSelectionDialog *psd = new ProjectSelectionDialog(projects, this);
+    ProjectSelectionDialog *psd = new ProjectSelectionDialog(app_dir, project, projects, this);
     int exit = psd->exec();
     if(exit == 1){
         project = psd->getProject();
@@ -421,6 +427,7 @@ void MainWindow::loadRecords(){
     int bad_cluster = 0;
     int bad_source = 0;
     if(dbc.createConnection()){
+        distances.clear();
         data->clear();
         undoStack->clear();
         ui->results_frame->hide();
@@ -429,10 +436,10 @@ void MainWindow::loadRecords(){
         loadStat = loadStat.arg(project);
         auto result = dbc.execQuery(loadStat);
         if(!dbc.success()){
-            QMessageBox::critical(this, "SQLite error", "Error inserting in table", QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok);
-            emit errorOccured();
+            emit error("SQLite error", QString("Error loading in table %1").arg(project));
             return;
         }
+        QSet<QString> clusters;
         for(auto& record : result){
             QString species_name = record[0];
             QString cluster = record[1];
@@ -446,8 +453,25 @@ void MainWindow::loadRecords(){
             else if(!grade.isEmpty()){
                 Record rec(species_name.toStdString(),cluster.toStdString(),source.toStdString(),grade.toStdString(),count);
                 QRecord qrec({ids, rec});
+                clusters << cluster;
                 data->push_back(qrec);
             }
+        }
+        auto cluster_ids = clusters.values();
+        auto cluster_ids_str = cluster_ids.join("','");
+        QString clustersLoadStat = "select clusterA, clusterB, distance from neighbours where clusterA in ('%1') and strftime('%s','now') - time < 864000 ";
+        clustersLoadStat = clustersLoadStat.arg(cluster_ids_str);
+        result = dbc.execQuery(clustersLoadStat);
+        if(!dbc.success()){
+            emit error("SQLite error", "Error loading in neighbours");
+            return;
+        }
+        for(auto& record : result){
+            std::string clusterA = record[0].toStdString();
+            std::string clusterB = record[1].toStdString();
+            double distance =  record[2].toDouble();
+            Neighbour neighbour = {clusterA,clusterB,distance};
+            distances.insert({clusterA, neighbour});
         }
     }
     emit loadFinished(bad_species, bad_cluster, bad_source);
@@ -472,38 +496,59 @@ void MainWindow::onSaveFinished(){
     loading(false);
 }
 
+
+
+void MainWindow::saveProjectHelper(){
+    DbConnection dbc(app_dir);
+    if(dbc.createConnection()){
+        QStringList updated_ids;
+        for(auto& qrec : *data){
+            updated_ids << qrec.ids;
+            auto ids = qrec.ids.join("','");
+            QString updateStat="update %1 set species_name= '%2', bin_uri = '%3', institution_storing = '%4', grade = '%5' where processid in ('%6')";
+            updateStat = updateStat
+                    .arg(project)
+                    .arg(QString::fromStdString(qrec.record.getSpeciesName()))
+                    .arg(QString::fromStdString(qrec.record.getCluster()))
+                    .arg(QString::fromStdString(qrec.record.getSource()))
+                    .arg(QString::fromStdString(qrec.record.getGrade()))
+                    .arg(ids);
+            dbc.execQuery(updateStat);
+            if (!dbc.success()) {
+                emit error("Save project error", "There was an error saving the project");
+            }
+        }
+        QString updateStat="update %1 set grade = '' where processid not in ('%2')";
+        updateStat = updateStat
+                .arg(project)
+                .arg(updated_ids.join("','"));
+        dbc.execQuery(updateStat);
+        if (!dbc.success()) {
+            emit error("Save project error", "There was an error saving the project");
+        }
+        for(auto& neighbour : distances){
+            QString updateStat="insert into neighbours(clusterA, clusterB, distance, time) values ('%1', '%2', '%3', strftime('%s','now')) "
+                    "ON CONFLICT(clusterA) DO UPDATE SET clusterB='%4', distance=%5, time=strftime('%s','now')  where strftime('%s','now') - time > 864000";
+            updateStat = updateStat
+                    .arg(QString::fromStdString(neighbour.second.clusterA))
+                    .arg(QString::fromStdString(neighbour.second.clusterB))
+                    .arg(neighbour.second.distance)
+                    .arg(QString::fromStdString(neighbour.second.clusterB))
+                    .arg(neighbour.second.distance);
+            dbc.execQuery(updateStat);
+            if (!dbc.success()) {
+                emit error("Save project error", "There was an error saving the project");
+            }
+        }
+        emit saveFinished();
+    }
+}
+
 void MainWindow::onSaveProject(){
     loading(true, "Saving project...");
     QtConcurrent::run(std::function<void(void)>([this](){
-        DbConnection dbc(app_dir);
-        if(dbc.createConnection()){
-            QStringList updated_ids;
-            for(auto& qrec : *data){
-                updated_ids << qrec.ids;
-                auto ids = qrec.ids.join("\",\"");
-                QString updateStat="update %1 set species_name= \"%2\", bin_uri = \"%3\", institution_storing = \"%4\", grade = \"%5\" where processid in (\"%6\")";
-                updateStat = updateStat
-                        .arg(project)
-                        .arg(QString::fromStdString(qrec.record.getSpeciesName()))
-                        .arg(QString::fromStdString(qrec.record.getCluster()))
-                        .arg(QString::fromStdString(qrec.record.getSource()))
-                        .arg(QString::fromStdString(qrec.record.getGrade()))
-                        .arg(ids);
-                dbc.execQuery(updateStat);
-                if (!dbc.success()) {
-                    QMessageBox::critical( this, "Save project error", "There was an error saving the project", QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok );
-                }
-            }
-            QString updateStat="update %1 set grade = \"\" where processid not in (\"%2\")";
-            updateStat = updateStat
-                    .arg(project)
-                    .arg(updated_ids.join("\",\""));
-            dbc.execQuery(updateStat);
-            if (!dbc.success()) {
-                QMessageBox::critical( this, "Save project error", "There was an error saving the project", QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok );
-            }
-            emit saveFinished();
-        }}));
+        saveProjectHelper();
+        }));
 }
 
 void MainWindow::setupRecordsTable(){
@@ -524,7 +569,7 @@ void MainWindow::setupRecordsTable(){
 
 void MainWindow::onComboBoxChanged(){
     auto first = createCompleter();
-    //emit showComponent(first);
+    emit showComponent(first);
 }
 
 QString MainWindow::createCompleter(){
@@ -703,7 +748,9 @@ void MainWindow::setupGraphScene()
             graph,SLOT(onGraphChanged()));
     connect(this, SIGNAL(updateColorGraph()),
             graph,SLOT(onGraphColorChanged()));
-    connect(ui->graph_combo_box, SIGNAL(currentIndexChanged(const QString&)),
+    connect(this, SIGNAL(showComponent(const QString&)),
+            graph,SLOT(setComponentVisible(QString)));
+    connect(ui->graph_combo_box, SIGNAL(currentIndexChanged(QString)),
             graph,SLOT(setComponentVisible(QString)));
     connect(graph, SIGNAL(updateCombobox()),
             this,SLOT(onComboBoxChanged()));
@@ -726,7 +773,8 @@ void MainWindow::showFilter()
     {
         headers << model->headerData(i, Qt::Horizontal, Qt::DecorationRole).toString();
     }
-    QSet<QString> species, bins, inst, grade;
+    QSet<QString> species, bins, inst;
+    QStringList grade;
     grade << "A" << "B" << "C" << "D" <<"E";
     for(auto& qrec: *data){
         species << QString::fromStdString(qrec.record.getSpeciesName());
@@ -736,7 +784,7 @@ void MainWindow::showFilter()
     QList<QStringList> completions = {
         species.values(),
         bins.values(),
-        grade.values(),
+        grade,
         inst.values()
     };
     auto ff = new FilterDialog(headers,completions);
@@ -744,21 +792,21 @@ void MainWindow::showFilter()
     if(ff->accepted()){
         auto pred = ff->getFilterFunc();
         auto temp = std::vector<QRecord>(data->begin(), data->end());
-        data->erase(std::remove_if(data->begin(), data->end(), pred), data->end());
-        int removedCount = temp.size()-data->size();
+        int removeCount = 0;
+        std::for_each(temp.begin(), temp.end(),[&removeCount](QRecord rec){removeCount += rec.record.count();});
+        temp.erase(std::remove_if(temp.begin(), temp.end(), pred), temp.end());
+        std::for_each(temp.begin(), temp.end(),[&removeCount](QRecord rec){removeCount -= rec.record.count();});
         QMessageBox* msgBox = new QMessageBox(this);
         msgBox->setText("Filter report.");
-        msgBox->setInformativeText(QString("Number of removed records: %1").arg(removedCount));
+        msgBox->setInformativeText(QString("Number of removed records: %1").arg(removeCount));
         msgBox->setStandardButtons(QMessageBox::No|QMessageBox::Ok);
         msgBox->setDefaultButton(QMessageBox::Ok);
         msgBox->exec();
         int apply = msgBox->result();
         if(apply == 1024){
             onActionPerformed();
+            data->erase(std::remove_if(data->begin(), data->end(), pred), data->end());
             updateApp();
-        }
-        else{
-            std::swap(*data, temp);
         }
         msgBox->deleteLater();
     }
@@ -807,6 +855,7 @@ void MainWindow::updateApp()
     emit updateGraph();
     emit updateRecords();
     emit updateCurrentResults();
+    ui->record_table->resizeColumnsToContents();
     auto first = createCompleter();
     emit showComponent(first);
 }

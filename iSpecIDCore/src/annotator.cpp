@@ -92,7 +92,6 @@ std::string findBinsNeighbour(datatypes::Dataset& data, datatypes::DistanceMatri
             try{
                 neighbour = parseBoldData(bin);
                 distances.insert({bin, neighbour});
-                std::cout << bin << std::endl;
             }catch(std::exception& e){
                 std::string exception_message(e.what());
                 error = exception_message;
@@ -137,7 +136,6 @@ std::string annotateItem( datatypes::Species& species, datatypes::Dataset& data,
         }
     }
     species.setGrade(grade);
-    std::cout << distances.size() << std::endl;
     return error;
 }
 

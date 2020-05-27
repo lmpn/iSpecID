@@ -39,6 +39,8 @@ public:
     void updateApp();
     void loading(bool load, QString text="");
     QString createCompleter();
+    void exportDataToTSVHelper(QString dir_path);
+    void saveProjectHelper();
 signals:
     void updateGraph();
     void updateColorGraph();
@@ -53,12 +55,14 @@ signals:
     void saveFinished();
     void errorOccured();
     void stopLoading();
+    void error(QString, QString);
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
     void scaleView(qreal scaleFactor);
 
 private slots:
+    void onError(QString error_type, QString error);
     void onStopLoading();
     void onSaveFinished();
     void onLoadFinished(int,int,int);
