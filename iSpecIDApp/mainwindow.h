@@ -64,6 +64,7 @@ protected:
 private slots:
     void onError(QString error_type, QString error);
     void onStopLoading();
+    void onSaveAsProject();
     void onSaveFinished();
     void onLoadFinished(int,int,int);
     void onAnnotateFinished();

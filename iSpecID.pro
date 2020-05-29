@@ -74,10 +74,11 @@ win32:{
         DEPENDPATH += $$PWD/../../../../../boost/include
         LIBS += -L$$PWD/../../../../../boost/lib/ -llibboost_regex-mgw81-mt-x64-1_72.dll
         LIBS += -L$$PWD/../../../../../boost/lib/ -llibboost_thread-mgw81-mt-x64-1_72.dll
+
         LIBS += -L$$PWD/winbuild/curl-7.70.0-win64-mingw/lib/ -llibcurl.dll
         INCLUDEPATH += $$PWD/winbuild/curl-7.70.0-win64-mingw/include
         DEPENDPATH += $$PWD/winbuild/curl-7.70.0-win64-mingw/include
-        win32-g++: PRE_TARGETDEPS += $$PWD/winbuild/curl-7.70.0-win64-mingw/lib/libcurl.dll.a
+        PRE_TARGETDEPS += $$PWD/winbuild/curl-7.70.0-win64-mingw/lib/libcurl.dll.a
         RC_ICONS = icons/main_icon.ico
 }
 macx:{
@@ -98,12 +99,3 @@ macx:{
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
-
-
-
-
-
-
-
-
-

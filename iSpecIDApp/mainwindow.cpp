@@ -40,6 +40,8 @@ MainWindow::MainWindow(QString app_dir, QWidget *parent)
             this, SLOT(onNewProject()));
     connect(ui->load_project_action, SIGNAL(triggered()),
             this, SLOT(onLoadProject()));
+    connect(ui->save_as_project_action, SIGNAL(triggered()),
+            this, SLOT(onSaveAsProject()));
     connect(ui->save_project_action, SIGNAL(triggered()),
             this, SLOT(onSaveProject()));
     connect(ui->save_graph_button, SIGNAL(clicked()),
@@ -73,6 +75,8 @@ MainWindow::MainWindow(QString app_dir, QWidget *parent)
         data->clear();
         distances.clear();
         undoStack->clear();
+        ui->results_frame->hide();
+        enableMenuDataActions(false);
         updateApp();
     });
     ui->results_frame->hide();
@@ -132,8 +136,8 @@ void MainWindow::exportDataToTSV(){
     loading(true, "Exporting project...");
     QtConcurrent::run(std::function<void(QString)>(
                           [this](QString dir_path){
-                            saveProjectHelper();
-                            exportDataToTSVHelper(dir_path);
+                          saveProjectHelper();
+                          exportDataToTSVHelper(dir_path);
                       }), dir_path);
 
 }
@@ -191,6 +195,7 @@ void MainWindow::onErrorOccured(){
 }
 
 void MainWindow::onAnnotate(){
+    if(data->size() == 0) return;
     onActionPerformed();
     loading(true, "Grading...");
     std::vector<Record> records;
@@ -226,6 +231,53 @@ void MainWindow::onAnnotateFinished(){
     emit updateColorGraph();
     emit updateCurrentResults();
     loading(false);
+}
+
+void MainWindow::onSaveAsProject(){
+    bool ok;
+    QString new_project = QInputDialog::getText( this, tr("New project"), tr("Project name:"), QLineEdit::Normal, "", &ok );
+    if(!ok || project.isEmpty()){
+        return;
+    }
+    else if(ok && new_project.isEmpty()){
+        QMessageBox::critical( this, "New project error", "Error trying to create project", QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok );
+        return;
+    }
+    else if(ok && !new_project.isEmpty()){
+        QString stat = "select * from projects where name = '%1'";
+        stat = stat.arg(new_project);
+        DbConnection dbc(app_dir);
+        if(dbc.createConnection()){
+            auto list = dbc.execQuery(stat);
+            if(dbc.success() && list.size() > 0){
+                QMessageBox::critical( this, "New project error", "Project already exists", QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok );
+                return;
+            }
+            if(!dbc.success()){
+                QMessageBox::critical( this, "SQLite error", "Creating project error", QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok );
+                return;
+            }
+        }
+
+        QString newProjectStat = "insert into projects (name) values ('%1')";
+        newProjectStat = newProjectStat.arg(new_project);
+        dbc.execQuery(newProjectStat);
+        if(!dbc.success()){
+            emit error("SQLite error", "Error project");
+            return;
+        }
+
+
+        QString insertStat = "create table %1 as select * from %2;";
+        insertStat = insertStat.arg(new_project);
+        insertStat = insertStat.arg(project);
+        dbc.execQuery(insertStat);
+        if(!dbc.success()){
+            emit error("SQLite error", "Error project");
+            return;
+        }
+        project = new_project;
+    }
 }
 
 void MainWindow::onNewProject()
@@ -459,7 +511,7 @@ void MainWindow::loadRecords(){
         }
         auto cluster_ids = clusters.values();
         auto cluster_ids_str = cluster_ids.join("','");
-        QString clustersLoadStat = "select clusterA, clusterB, distance from neighbours where clusterA in ('%1') and strftime('%s','now') - time < 864000 ";
+        QString clustersLoadStat = "select clusterA, clusterB, distance from neighbours where (clusterA in ('%1') or clusterB in ('%2')) and strftime('%s','now') - time < 864000 ";
         clustersLoadStat = clustersLoadStat.arg(cluster_ids_str);
         result = dbc.execQuery(clustersLoadStat);
         if(!dbc.success()){
@@ -528,12 +580,11 @@ void MainWindow::saveProjectHelper(){
         }
         for(auto& neighbour : distances){
             QString updateStat="insert into neighbours(clusterA, clusterB, distance, time) values ('%1', '%2', '%3', strftime('%s','now')) "
-                    "ON CONFLICT(clusterA) DO UPDATE SET clusterB='%4', distance=%5, time=strftime('%s','now')  where strftime('%s','now') - time > 864000";
-            updateStat = updateStat
+                               "ON CONFLICT(clusterA, clusterB) DO UPDATE SET distance=%4, time=strftime('%s','now')  where strftime('%s','now') - time > 864000";
+            QString updateStatFst = updateStat
                     .arg(QString::fromStdString(neighbour.second.clusterA))
                     .arg(QString::fromStdString(neighbour.second.clusterB))
                     .arg(neighbour.second.distance)
-                    .arg(QString::fromStdString(neighbour.second.clusterB))
                     .arg(neighbour.second.distance);
             dbc.execQuery(updateStat);
             if (!dbc.success()) {
@@ -548,7 +599,7 @@ void MainWindow::onSaveProject(){
     loading(true, "Saving project...");
     QtConcurrent::run(std::function<void(void)>([this](){
         saveProjectHelper();
-        }));
+    }));
 }
 
 void MainWindow::setupRecordsTable(){

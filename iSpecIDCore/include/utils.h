@@ -14,6 +14,32 @@
 
 #define PRINT(X) std::cout << X << std::endl;
 #define PRINTV(X) for(auto x : X){ std::cout << x << " "; }  std::cout << std::endl;
+#define STRICT_MODE_OFF                                                                 \
+    _Pragma("GCC diagnostic push")                                            \
+    _Pragma("GCC diagnostic ignored \"-Wreturn-type\"")             \
+    _Pragma("GCC diagnostic ignored \"-Wdelete-non-virtual-dtor\"") \
+    _Pragma("GCC diagnostic ignored \"-Wunused-parameter\"")        \
+    _Pragma("GCC diagnostic ignored \"-Wshadow\"")                  \
+    _Pragma("GCC diagnostic ignored \"-Wold-style-cast\"")          \
+    _Pragma("GCC diagnostic ignored \"-Wundef\"")          \
+    _Pragma("GCC diagnostic ignored \"-Wswitch-default\"")
+
+/* Addition options that can be enabled 
+    _Pragma("GCC diagnostic ignored \"-pedantic\"")                 \
+    _Pragma("GCC diagnostic ignored \"-Wpedantic\"")                \
+    _Pragma("GCC diagnostic ignored \"-Wformat=\"")                 \
+    _Pragma("GCC diagnostic ignored \"-Werror\"")                   \
+    _Pragma("GCC diagnostic ignored \"-Werror=\"")                  \
+    _Pragma("GCC diagnostic ignored \"-Wunused-variable\"")         \
+*/
+              
+#define STRICT_MODE_ON                                                                  \
+    _Pragma("GCC diagnostic pop")  
+
+
+
+
+    
 namespace utils{
     enum class Grade{
         A, B, C, D, E1, E2, U
@@ -34,7 +60,7 @@ namespace utils{
             }
         }
         return defaultValue;
-    };
+    }
 
     template <class _ForwardIterator, class _Tp>
     int findIndex(_ForwardIterator __first, _ForwardIterator __last, const _Tp &__value)
@@ -43,7 +69,7 @@ namespace utils{
         auto dist = std::distance(__first, elem);
         auto size = std::distance(__first, __last);
         return dist < size ? dist : -1;
-    };
+    }
 
 
     template<class K, class V>
@@ -135,8 +161,8 @@ namespace utils{
                 Value& current_value = (*value).second;
                 join_op(current_value, item);
             }else{
-                Value value = from_item(item);
-                result.insert({item_key, value});
+                Value new_value = from_item(item);
+                result.insert({item_key, new_value});
             }
         }
         return result;

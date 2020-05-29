@@ -3,7 +3,9 @@
 #include <string>
 #include <vector>
 #include <functional>
+STRICT_MODE_OFF
 #include "csv.hpp"
+STRICT_MODE_ON
 #include "datatypes.h"
 
 
@@ -14,10 +16,11 @@ namespace ispecid{ namespace fileio{
     template<class T>
     using OutMapper = std::function<std::vector<std::string>(T)>;
     template<class T>
-    using InMapper = std::function<T(std::vector<std::string>, csv::CSVRow&)>;
+    using InMapper = std::function<T(csv::CSVRow&)>;
 
     inline InMapper<Record> toRecord =
-        [](std::vector<std::string> header, csv::CSVRow& row){
+        [](csv::CSVRow& row){
+
             auto species_name = row["species_name"].get();
             auto source = row["institution_storing"].get();
             auto cluster = row["bin_uri"].get();
@@ -39,7 +42,7 @@ namespace ispecid{ namespace fileio{
         csv::CSVReader reader(file_path, format);
 
         for (auto& row: reader) {
-            T record = mapper({}, row);
+            T record = mapper(row);
             rows.push_back(record);
         }
         return rows;

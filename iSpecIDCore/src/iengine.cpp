@@ -2,14 +2,18 @@
 #include "network.h"
 
 namespace ispecid{ 
-IEngine::IEngine()
+IEngine::IEngine(int num_cores)
 {
     network::prepareNetwork();
-    int cores = boost::thread::hardware_concurrency();
+    int cores = num_cores;
+    int max_cores = boost::thread::hardware_concurrency();
+    if(num_cores == -1 || num_cores > max_cores){
+        cores = max_cores;
+    }
     pool = new boost::asio::thread_pool(cores);
 }
 
-std::vector<std::string> IEngine::annotate(datatypes::Dataset& data, datatypes::DistanceMatrix& distances, datatypes::GradingParameters& params, GradeFunc grade_func){
+std::vector<std::string> IEngine::annotate(Dataset& data, DistanceMatrix& distances, GradingParameters& params, GradeFunc grade_func){
     int tasks = data.size();
     std::vector<std::string> errors;
     int completed = 0;
@@ -35,6 +39,11 @@ std::vector<std::string> IEngine::annotate(datatypes::Dataset& data, datatypes::
         cv.wait(ul, [&](){return tasks == completed;});
     }
     return errors; 
+}
+
+std::vector<std::string> IEngine::annotate(std::vector<Record>& data, DistanceMatrix& distances, GradingParameters& params, GradeFunc grade_func){
+    auto dataset = utils::group(data,Record::getSpeciesName,Species::addRecord,Species::fromRecord);
+    return annotate(dataset, distances, params, grade_func); 
 }
 
 }

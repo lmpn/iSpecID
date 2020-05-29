@@ -24,13 +24,14 @@ using GradeFunc = std::function<std::string( Species&, Dataset&, DistanceMatrix&
 class IEngine
 {
 public:
-    IEngine();
+    IEngine(int num_cores = -1);
     ~IEngine(){
         pool->join();
         delete pool;
     };
 
     std::vector<std::string> annotate(Dataset& data, DistanceMatrix& distances, GradingParameters& parametes, GradeFunc grade_func = annotator::annotateItem);
+    std::vector<std::string> annotate(std::vector<Record>& data, DistanceMatrix& distances, GradingParameters& parametes, GradeFunc grade_func = annotator::annotateItem);
 
 private:
     boost::asio::thread_pool* pool;

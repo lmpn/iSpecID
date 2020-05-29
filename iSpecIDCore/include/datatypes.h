@@ -39,8 +39,8 @@ namespace ispecid{ namespace datatypes{
         int size;
 
         public:
-        Record(std::string species_name, std::string cluster, std::string source, std::string grade, int size = 1):
-            species_name(species_name), cluster(cluster), source(source), grade(grade), size(size)
+        Record(std::string _species_name, std::string _cluster, std::string _source, std::string _grade, int _size = 1):
+            species_name(_species_name), cluster(_cluster), source(_source), grade(_grade), size(_size)
         {
         };
 
@@ -63,20 +63,20 @@ namespace ispecid{ namespace datatypes{
         int count(){
             return size;
         }
-        void setSpeciesName(std::string species_name){
-            this->species_name = species_name;
+        void setSpeciesName(std::string _species_name){
+            this->species_name = _species_name;
         }
-        void setCluster(std::string cluster){
-            this->cluster = cluster;
+        void setCluster(std::string _cluster){
+            this->cluster = _cluster;
         }
-        void setSource(std::string source){
-            this->source = source;
+        void setSource(std::string _source){
+            this->source = _source;
         }
-        void setGrade(std::string grade){
-            this->grade = grade;
+        void setGrade(std::string _grade){
+            this->grade = _grade;
         }
-        void addCount(int icount){
-            size += icount;
+        void addCount(int _size){
+            size += _size;
         }
         static bool goodRecord(Record& record){
             return record.species_name.empty() || record.cluster.empty() || record.source.empty();
@@ -95,13 +95,13 @@ namespace ispecid{ namespace datatypes{
         int record_count;
 
         public:
-        Species(std::string species_name, std::string grade):
-            species_name(species_name), grade(grade), record_count(0)
+        Species(std::string _species_name, std::string _grade):
+            species_name(_species_name), grade(_grade), record_count(0)
         {
         };
 
-        void setGrade( std::string grade){
-            this->grade = grade;
+        void setGrade( std::string _grade){
+            this->grade = _grade;
         };
 
         std::string getFirstCluster(){
