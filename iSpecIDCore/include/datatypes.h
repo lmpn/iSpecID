@@ -1,6 +1,7 @@
 #ifndef DATATYPES_H
 #define DATATYPES_H 
 #include <string>
+#include <map>
 #include <unordered_map>
 #include <unordered_set>
 #include <boost/graph/adjacency_list.hpp>
@@ -159,6 +160,6 @@ namespace ispecid{ namespace datatypes{
     };
 
 using Dataset = std::unordered_map<std::string, Species>;
-using DistanceMatrix = std::unordered_map<std::string, Neighbour>;
+using DistanceMatrix = std::map<std::string, Neighbour>;
 }}
 #endif

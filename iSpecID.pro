@@ -29,7 +29,6 @@ SOURCES += \
         iSpecIDApp/filterdialog.cpp \
         iSpecIDCore/src/annotator.cpp \
         iSpecIDCore/src/iengine.cpp \
-        iSpecIDCore/src/utils.cpp \
         iSpecIDCore/src/network.cpp
 
 

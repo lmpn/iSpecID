@@ -178,11 +178,31 @@ void MainWindow::loadDistanceMatrix(){
                             bool ok;
                             double distance = elems[2].toDouble(&ok);
                             if (ok){
-                                Neighbour neighbour({elems[0].toStdString(), elems[1].toStdString(), distance});
-                                distances.insert({elems[0].toStdString(), neighbour});
+                                Neighbour neighbour_a({elems[0].toStdString(), elems[1].toStdString(), distance});
+                                Neighbour neighbour_b({elems[1].toStdString(), elems[0].toStdString(), distance});
+                                auto it_a = distances.find(elems[0].toStdString());
+                                if(it_a != distances.end()){
+                                    if(it_a->second.distance > distance){
+                                        distances[elems[0].toStdString()] = neighbour_a;
+                                    }
+                                }else{
+                                    distances[elems[0].toStdString()] = neighbour_a;
+                                }
+                                auto it_b = distances.find(elems[1].toStdString());
+                                if(it_b != distances.end()){
+                                    if(it_b->second.distance > distance){
+                                        distances[elems[1].toStdString()] = neighbour_b;
+                                    }
+                                }else{
+                                    distances[elems[1].toStdString()] = neighbour_b;
+                                }
                             }
 
                         }
+                    }
+                    for(auto& pair: distances){
+                        PRINT(pair.second.clusterA <<" "<< pair.second.clusterB <<" "<< pair.second.distance);
+
                     }
                     file.close();
                     emit stopLoading();
@@ -511,7 +531,7 @@ void MainWindow::loadRecords(){
         }
         auto cluster_ids = clusters.values();
         auto cluster_ids_str = cluster_ids.join("','");
-        QString clustersLoadStat = "select clusterA, clusterB, distance from neighbours where (clusterA in ('%1') or clusterB in ('%2')) and strftime('%s','now') - time < 864000 ";
+        QString clustersLoadStat = "select clusterA, clusterB, distance from neighbours where clusterA in ('%1') and strftime('%s','now') - time < 864000 ";
         clustersLoadStat = clustersLoadStat.arg(cluster_ids_str);
         result = dbc.execQuery(clustersLoadStat);
         if(!dbc.success()){
@@ -580,13 +600,24 @@ void MainWindow::saveProjectHelper(){
         }
         for(auto& neighbour : distances){
             QString updateStat="insert into neighbours(clusterA, clusterB, distance, time) values ('%1', '%2', '%3', strftime('%s','now')) "
-                               "ON CONFLICT(clusterA, clusterB) DO UPDATE SET distance=%4, time=strftime('%s','now')  where strftime('%s','now') - time > 864000";
-            QString updateStatFst = updateStat
+                               "ON CONFLICT(clusterA) DO UPDATE SET clusterB='%4', distance=%5, time=strftime('%s','now')  where strftime('%s','now') - time > 864000";
+            QString updateStatA = updateStat
                     .arg(QString::fromStdString(neighbour.second.clusterA))
                     .arg(QString::fromStdString(neighbour.second.clusterB))
                     .arg(neighbour.second.distance)
+                    .arg(QString::fromStdString(neighbour.second.clusterB))
                     .arg(neighbour.second.distance);
-            dbc.execQuery(updateStat);
+            QString updateStatB = updateStat
+                    .arg(QString::fromStdString(neighbour.second.clusterB))
+                    .arg(QString::fromStdString(neighbour.second.clusterA))
+                    .arg(neighbour.second.distance)
+                    .arg(QString::fromStdString(neighbour.second.clusterA))
+                    .arg(neighbour.second.distance);
+            dbc.execQuery(updateStatA);
+            if (!dbc.success()) {
+                emit error("Save project error", "There was an error saving the project");
+            }
+            dbc.execQuery(updateStatB);
             if (!dbc.success()) {
                 emit error("Save project error", "There was an error saving the project");
             }

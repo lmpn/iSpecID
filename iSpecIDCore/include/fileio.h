@@ -3,9 +3,7 @@
 #include <string>
 #include <vector>
 #include <functional>
-STRICT_MODE_OFF
 #include "csv.hpp"
-STRICT_MODE_ON
 #include "datatypes.h"
 
 
