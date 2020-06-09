@@ -94,14 +94,13 @@ void MainWindow::onError(QString error_type, QString error){
     onStopLoading();
 }
 
-void MainWindow::exportDataToTSVHelper(QString dir_path){
-    QString filename = dir_path + QDir::separator() + project + ".tsv";
+void MainWindow::exportDataToTSVHelper(QString filename){
     DbConnection dbc(app_dir);
     if(!dbc.createConnection()){
         emit error("Export error", "SQLite3 error");
         return;
     }
-    QString valuesStat = "select * from %1";
+    QString valuesStat = "select * from '%1'";
     valuesStat = valuesStat.arg(project);
     QString headerStat = "SELECT group_concat(name) FROM PRAGMA_TABLE_INFO('%1')";
     headerStat = headerStat.arg(project);
@@ -113,9 +112,9 @@ void MainWindow::exportDataToTSVHelper(QString dir_path){
         return;
     }
     QTextStream stream(&file);
-    auto header = dbc.execQuery(headerStat)[0];
+    auto header = dbc.execQuery(headerStat)[0][0];
     auto values = dbc.execQuery(valuesStat);
-    stream << header.join("\t") + "\n";
+    stream << header.replace(",","\t")+"\n";
     for(auto& row : values){
         stream << row.join("\t")+ "\n";
     }
@@ -128,17 +127,19 @@ void MainWindow::exportDataToTSV(){
         QMessageBox::critical( this, "Export error", "Error no data found", QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok );
         return;
     }
-    QString dir_path = QFileDialog::getExistingDirectory(this,"Save directory",QDir::homePath(),QFileDialog::DontUseNativeDialog);
-    if(dir_path.isEmpty()) {
+    QString file_path = QFileDialog::getSaveFileName(this,
+                                                   tr("Save Project"), "",
+                                                   tr("Tab Separated File (*.tsv);;All Files (*)"));
+    if(file_path.isEmpty()) {
         return;
     }
 
     loading(true, "Exporting project...");
     QtConcurrent::run(std::function<void(QString)>(
-                          [this](QString dir_path){
+                          [this](QString filename){
                           saveProjectHelper();
-                          exportDataToTSVHelper(dir_path);
-                      }), dir_path);
+                          exportDataToTSVHelper(filename);
+                      }), file_path);
 
 }
 
@@ -288,7 +289,7 @@ void MainWindow::onSaveAsProject(){
         }
 
 
-        QString insertStat = "create table %1 as select * from %2;";
+        QString insertStat = "create table '%1' as select * from '%2';";
         insertStat = insertStat.arg(new_project);
         insertStat = insertStat.arg(project);
         dbc.execQuery(insertStat);
@@ -396,7 +397,7 @@ void MainWindow::onNewProject()
                             return;
                         }
                         QString header_join = header.join(",");
-                        stat = "create table %1 ";
+                        stat = "create table '%1' ";
                         stat += "(" + header_join +")";
                         stat = stat.arg(project);
                         dbc.execQuery(stat);
@@ -404,7 +405,7 @@ void MainWindow::onNewProject()
                             emit error("SQLite error", "Error creating table");
                             return;
                         }
-                        QString base_stat = "insert into %1 (" + header_join + ") values ";
+                        QString base_stat = "insert into '%1' (" + header_join + ") values ";
                         base_stat = base_stat.arg(project);
                         stat = base_stat;
                         while (!in.atEnd()) {
@@ -504,7 +505,7 @@ void MainWindow::loadRecords(){
         undoStack->clear();
         ui->results_frame->hide();
         QSqlQuery query;
-        QString loadStat = "select species_name , bin_uri, institution_storing, grade, count(*), group_concat(processid) from %1 group by species_name, bin_uri, institution_storing;";
+        QString loadStat = "select species_name , bin_uri, institution_storing, grade, count(*), group_concat(processid) from '%1' group by species_name, bin_uri, institution_storing;";
         loadStat = loadStat.arg(project);
         auto result = dbc.execQuery(loadStat);
         if(!dbc.success()){
@@ -577,7 +578,7 @@ void MainWindow::saveProjectHelper(){
         for(auto& qrec : *data){
             updated_ids << qrec.ids;
             auto ids = qrec.ids.join("','");
-            QString updateStat="update %1 set species_name= '%2', bin_uri = '%3', institution_storing = '%4', grade = '%5' where processid in ('%6')";
+            QString updateStat="update '%1' set species_name= '%2', bin_uri = '%3', institution_storing = '%4', grade = '%5' where processid in ('%6')";
             updateStat = updateStat
                     .arg(project)
                     .arg(QString::fromStdString(qrec.record.getSpeciesName()))
@@ -590,7 +591,7 @@ void MainWindow::saveProjectHelper(){
                 emit error("Save project error", "There was an error saving the project");
             }
         }
-        QString updateStat="update %1 set grade = '' where processid not in ('%2')";
+        QString updateStat="update '%1' set grade = '' where processid not in ('%2')";
         updateStat = updateStat
                 .arg(project)
                 .arg(updated_ids.join("','"));

@@ -196,6 +196,7 @@ bool RecordModel::removeRows(int position, int rows, const QModelIndex &parent){
 void RecordModel::onRecordsChanged(){
     beginResetModel();
     if(cur_count!=0){
+
         removeRows(0, cur_count, QModelIndex());
     }
     cur_count = records->size();

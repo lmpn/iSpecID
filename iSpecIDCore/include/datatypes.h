@@ -4,8 +4,10 @@
 #include <map>
 #include <unordered_map>
 #include <unordered_set>
+#ifndef Q_MOC_RUN
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/connected_components.hpp>
+#endif
 
 namespace ispecid{ namespace datatypes{
     

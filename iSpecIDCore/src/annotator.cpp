@@ -1,5 +1,6 @@
 #include "annotator.h"
 #include <cstdio>
+#include <cfloat>
 
 namespace ispecid{namespace annotator {
 
@@ -37,7 +38,7 @@ bool speciesPerBIN(datatypes::Dataset& data, const std::string& bin){
 
 datatypes::Neighbour parseBoldData(std::string cluster){
     datatypes::Neighbour neighbour;
-    neighbour.distance = std::numeric_limits<int>::max();
+    neighbour.distance = DBL_MAX;
     neighbour.clusterA = cluster; 
     neighbour.clusterB = "";
     std::string url("http://v4.boldsystems.org/index.php/Public_BarcodeCluster?clusteruri=" + std::string(cluster));

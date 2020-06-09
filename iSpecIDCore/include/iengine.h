@@ -5,11 +5,14 @@
 #include <unordered_map>
 #include <mutex>
 #include <condition_variable>
+#ifndef Q_MOC_RUN
+#include <boost/thread.hpp>
 #include <boost/asio/thread_pool.hpp>
 #include <boost/asio/post.hpp>
-#include <boost/thread.hpp>
-#include "datatypes.h"
+#endif
 #include "annotator.h"
+#include "datatypes.h"
+#include "network.h"
 
 namespace ispecid{ 
 using namespace datatypes;

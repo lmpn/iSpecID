@@ -4,7 +4,10 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#ifndef Q_MOC_RUN
 #include <boost/regex.hpp>
+#endif
+#include <limits>
 #include "network.h"
 #include "datatypes.h"
 #include "utils.h"

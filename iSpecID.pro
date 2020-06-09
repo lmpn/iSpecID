@@ -27,8 +27,8 @@ SOURCES += \
         iSpecIDApp/graphscene.cpp \
         iSpecIDApp/gradingoptionsdialog.cpp \
         iSpecIDApp/filterdialog.cpp \
-        iSpecIDCore/src/annotator.cpp \
         iSpecIDCore/src/iengine.cpp \
+        iSpecIDCore/src/annotator.cpp \
         iSpecIDCore/src/network.cpp
 
 
@@ -47,8 +47,8 @@ HEADERS += \
         iSpecIDApp/filterOp.h \
         iSpecIDApp/filterscrollarea.h \
         iSpecIDCore/include/iengine.h \
-        iSpecIDCore/include/annotator.h \
         iSpecIDCore/include/datatypes.h \
+        iSpecIDCore/include/annotator.h \
         iSpecIDCore/include/fileio.h \
         iSpecIDCore/include/network.h \
         iSpecIDCore/include/ispecid.h \
@@ -68,16 +68,20 @@ RESOURCES += icons.qrc
 win32:{
         CONFIG += c++17
         INCLUDEPATH += "iSpecIDCore/include"
-        INCLUDEPATH += "C:\boost\include\boost-1_72"
-        INCLUDEPATH += $$PWD/../../../../../boost/include
-        DEPENDPATH += $$PWD/../../../../../boost/include
-        LIBS += -L$$PWD/../../../../../boost/lib/ -llibboost_regex-mgw81-mt-x64-1_72.dll
-        LIBS += -L$$PWD/../../../../../boost/lib/ -llibboost_thread-mgw81-mt-x64-1_72.dll
+        INCLUDEPATH += $$PWD/../../../vcpkg/installed/x64-windows/include/boost
 
-        LIBS += -L$$PWD/winbuild/curl-7.70.0-win64-mingw/lib/ -llibcurl.dll
-        INCLUDEPATH += $$PWD/winbuild/curl-7.70.0-win64-mingw/include
-        DEPENDPATH += $$PWD/winbuild/curl-7.70.0-win64-mingw/include
-        PRE_TARGETDEPS += $$PWD/winbuild/curl-7.70.0-win64-mingw/lib/libcurl.dll.a
+        LIBS += -L$$PWD/../../../vcpkg/installed/x64-windows/lib/ -lboost_thread-vc140-mt
+        INCLUDEPATH += $$PWD/../../../vcpkg/installed/x64-windows/include
+        DEPENDPATH += $$PWD/../../../vcpkg/installed/x64-windows/include
+
+        LIBS += -L$$PWD/../../../vcpkg/installed/x64-windows/lib/ -lboost_regex-vc140-mt
+        INCLUDEPATH += $$PWD/../../../vcpkg/installed/x64-windows/include
+        DEPENDPATH += $$PWD/../../../vcpkg/installed/x64-windows/include
+
+        LIBS += -L$$PWD/../../../vcpkg/installed/x64-windows/lib/ -llibcurl
+        INCLUDEPATH += $$PWD/../../../vcpkg/installed/x64-windows/include
+        DEPENDPATH += $$PWD/../../../vcpkg/installed/x64-windows/include
+
         RC_ICONS = icons/main_icon.ico
 }
 macx:{
@@ -98,3 +102,6 @@ macx:{
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+
+
