@@ -2,12 +2,17 @@
 
 
 namespace ispecid{ 
-IEngine::IEngine()
+IEngine::IEngine(int threads)
 {
     network::prepareNetwork();
     int max_cores = boost::thread::hardware_concurrency();
+    if(threads > max_cores){
+        threads = max_cores;
+    }else if(threads == 1){
+        threads = 2;
+    }
     int task_cores = 1;
-    int request_cores = max_cores - 1;
+    int request_cores = threads - 1;
     request_pool = new boost::asio::thread_pool(request_cores);
     task_pool = new boost::asio::thread_pool(task_cores);
 }

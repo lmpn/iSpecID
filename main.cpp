@@ -16,6 +16,6 @@ int main(int argc, char **argv)
     Dataset data = utils::group(records,Record::getSpeciesName,Species::addRecord,Species::fromRecord);
     DistanceMatrix distances;
     GradingParameters params;
-    ispecid::IEngine engine;
+    ispecid::IEngine engine(threads);
     auto errors = engine.annotate(data,distances,params);
 }

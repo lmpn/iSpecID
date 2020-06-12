@@ -31,7 +31,7 @@ using GradeFunc = std::function<std::string( Species&, Dataset&, DistanceMatrix&
 class IEngine
 {
 public:
-    IEngine();
+    IEngine(int threads);
     ~IEngine(){
         task_pool->join();
         request_pool->join();
