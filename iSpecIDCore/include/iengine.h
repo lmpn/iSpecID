@@ -9,10 +9,14 @@
 #include <boost/thread.hpp>
 #include <boost/asio/thread_pool.hpp>
 #include <boost/asio/post.hpp>
+#include <boost/regex.hpp>
 #endif
-#include "annotator.h"
 #include "datatypes.h"
 #include "network.h"
+#include "utils.h"
+#include <limits>
+#include <cstdio>
+#include <cfloat>
 
 namespace ispecid{ 
 using namespace datatypes;
@@ -27,19 +31,32 @@ using GradeFunc = std::function<std::string( Species&, Dataset&, DistanceMatrix&
 class IEngine
 {
 public:
-    IEngine(int num_cores = -1);
+    IEngine();
     ~IEngine(){
-        pool->join();
-        delete pool;
+        task_pool->join();
+        request_pool->join();
+        delete task_pool;
+        delete request_pool;
     };
 
-    std::vector<std::string> annotate(Dataset& data, DistanceMatrix& distances, GradingParameters& parametes, GradeFunc grade_func = annotator::annotateItem);
-    std::vector<std::string> annotate(std::vector<Record>& data, DistanceMatrix& distances, GradingParameters& parametes, GradeFunc grade_func = annotator::annotateItem);
+    std::vector<std::string> annotate(Dataset& data, DistanceMatrix& distances, GradingParameters& parametes);
+    std::vector<std::string> annotate(std::vector<Record>& data, DistanceMatrix& distances, GradingParameters& parametes);
 
 private:
-    boost::asio::thread_pool* pool;
-    std::condition_variable cv;
-    std::mutex lock;
+    bool speciesPerBIN(datatypes::Dataset& data, const std::string& bin);
+    datatypes::Neighbour parseBoldData(std::string cluster);
+    std::string findBinsNeighbour(datatypes::Dataset& data, datatypes::DistanceMatrix& distances, const std::unordered_set<std::string>& clusters, double max_distance);
+    void annotateItem( datatypes::Species& species, datatypes::Dataset& data, datatypes::DistanceMatrix& distances, datatypes::GradingParameters& params);
+
+    std::vector<std::string> errors;
+    boost::asio::thread_pool* task_pool;
+    boost::asio::thread_pool* request_pool;
+    std::condition_variable task_cv;
+    std::mutex task_lock;
+    std::condition_variable request_cv;
+    std::mutex request_lock;
+    int completed_requests;
+    int requests;
 };
 
 

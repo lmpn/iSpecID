@@ -42,7 +42,6 @@ datatypes::Neighbour parseBoldData(std::string cluster){
     neighbour.clusterA = cluster; 
     neighbour.clusterB = "";
     std::string url("http://v4.boldsystems.org/index.php/Public_BarcodeCluster?clusteruri=" + std::string(cluster));
-
     std::string page = network::getPage(url.c_str());
     static const boost::regex distance_regex  ("Distance to Nearest Neighbor:</th>\\s*<td>(\\d+.\\d+)%.*</td>");
     static const boost::regex cluster_regex  ("Nearest BIN URI:</th>\\s*<td>(.*?)</td>");

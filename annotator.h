@@ -8,6 +8,7 @@
 #include <boost/regex.hpp>
 #endif
 #include <limits>
+#include "utils.h"
 #include "network.h"
 #include "datatypes.h"
 #include "utils.h"
