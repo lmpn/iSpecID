@@ -17,6 +17,7 @@
 #include <limits>
 #include <cstdio>
 #include <cfloat>
+#include <atomic>
 #include <stdexcept>
 namespace ispecid{ 
 using namespace datatypes;
@@ -55,8 +56,8 @@ private:
     std::mutex task_lock;
     std::condition_variable request_cv;
     std::mutex request_lock;
-    int completed_requests;
-    int requests;
+    std::atomic<int> completed_requests;
+    std::atomic<int> requests;
 };
 
 

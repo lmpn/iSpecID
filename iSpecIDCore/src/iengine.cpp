@@ -107,7 +107,7 @@ std::string IEngine::findBinsNeighbour(datatypes::Dataset& data, datatypes::Dist
                     error = exception_message;
                 }
                 {
-                    auto ul = std::unique_lock<std::mutex>(task_lock);
+                    auto ul = std::unique_lock<std::mutex>(request_lock);
                     errors.push_back(error);
                     completed_requests++;
                     if(completed_requests == requests){
@@ -189,6 +189,7 @@ std::vector<std::string> IEngine::annotate(Dataset& data, DistanceMatrix& distan
         auto& species = pair.second;
         if(species.getGrade() == "Z"){
             annotateItem(species, data, distances, params);
+            PRINT(species.getSpeciesName() << " " << species.getGrade());
         }
     }
     return errors; 
