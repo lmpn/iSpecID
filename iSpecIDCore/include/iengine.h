@@ -17,7 +17,7 @@
 #include <limits>
 #include <cstdio>
 #include <cfloat>
-
+#include <stdexcept>
 namespace ispecid{ 
 using namespace datatypes;
 
@@ -31,7 +31,7 @@ using GradeFunc = std::function<std::string( Species&, Dataset&, DistanceMatrix&
 class IEngine
 {
 public:
-    IEngine(int threads);
+    IEngine(int cores);
     ~IEngine(){
         task_pool->join();
         request_pool->join();

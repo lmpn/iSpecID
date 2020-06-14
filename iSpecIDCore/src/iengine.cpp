@@ -2,18 +2,25 @@
 
 
 namespace ispecid{ 
-IEngine::IEngine(int threads)
+IEngine::IEngine(int cores)
 {
     network::prepareNetwork();
-    int max_cores = boost::thread::hardware_concurrency();
-    if(threads > max_cores){
-        threads = max_cores;
-    }else if(threads == 1){
-        threads = 2;
+    int available_cores = boost::thread::hardware_concurrency();
+    if(cores > available_cores){
+        cores = available_cores;
+    }else if(cores < 2){
+        throw std::runtime_error("Insuficient resources");
     }
-    int task_cores = 1;
-    int request_cores = threads - 1;
-    request_pool = new boost::asio::thread_pool(request_cores);
+    int task_cores = 2;
+    int network_cores = cores - 2;
+    if(network_cores < task_cores && cores > 2){
+        network_cores = 2;
+        task_cores = cores - 2;
+    }else if(cores == 2){
+        network_cores = 1;
+        task_cores = 1;
+    }
+    request_pool = new boost::asio::thread_pool(network_cores);
     task_pool = new boost::asio::thread_pool(task_cores);
 }
 
