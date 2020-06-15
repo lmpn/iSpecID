@@ -12,6 +12,7 @@ class GraphScene : public QGraphicsScene
 public:
     GraphScene(QWidget *parent, std::vector<QRecord>* records);
     void drawBackground(QPainter *painter, const QRectF &rect) override;
+    void mousePressEvent(QGraphicsSceneMouseEvent* pMouseEvent) override;
     ~GraphScene();
 
 public slots:

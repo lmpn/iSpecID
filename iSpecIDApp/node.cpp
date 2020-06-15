@@ -62,6 +62,7 @@ Node::Node(QString name, QString grade)
 {
     setFlag(ItemIsMovable);
     setFlag(ItemSendsGeometryChanges);
+    setFlag(ItemIsSelectable);
     setCacheMode(DeviceCoordinateCache);
     setZValue(-1);
     this->name = name;
@@ -161,7 +162,7 @@ void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
 
     QRadialGradient gradient(-3, -3, 10);
-    if (option->state & QStyle::State_Sunken) {
+    if (option->state & QStyle::State_Sunken || isSelected()) {
         gradient.setCenter(3, 3);
         gradient.setFocalPoint(3, 3);
         gradient.setColorAt(1, mc.lighter(120));
@@ -190,6 +191,10 @@ void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     painter->drawText(textRect, text);
 }
 
+void Node::setSelectNode(bool selected){
+    setSelected(selected);
+    update();
+}
 
 QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)
 {

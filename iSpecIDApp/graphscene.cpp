@@ -65,6 +65,17 @@ void GraphScene::generateItems(){
     update();
 }
 
+void GraphScene::mousePressEvent(QGraphicsSceneMouseEvent* pMouseEvent) {
+    QGraphicsItem* pItemUnderMouse = itemAt( pMouseEvent->scenePos().x(), pMouseEvent->scenePos().y(), QTransform());
+    if (pItemUnderMouse != nullptr && pItemUnderMouse->isEnabled() &&
+        pMouseEvent->modifiers() &  Qt::ControlModifier &&
+        pItemUnderMouse->flags() & QGraphicsItem::ItemIsSelectable){
+        auto m = qgraphicsitem_cast<Node *>(pItemUnderMouse);
+        m->setSelectNode(!pItemUnderMouse->isSelected());
+        return;
+    }
+    QGraphicsScene::mousePressEvent(pMouseEvent);
+}
 
 void GraphScene::onGraphChanged(){
     clearScene();

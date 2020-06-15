@@ -8,24 +8,12 @@ IEngine::IEngine(int cores)
     int available_cores = boost::thread::hardware_concurrency();
     if(cores > available_cores){
         cores = available_cores;
-    }else if(cores < 2){
-        throw std::runtime_error("Insuficient resources");
     }
-    int task_cores = 2;
-    int network_cores = cores - 2;
-    if(network_cores < task_cores && cores > 2){
-        network_cores = 2;
-        task_cores = cores - 2;
-    }else if(cores == 2){
-        network_cores = 1;
-        task_cores = 1;
-    }
-    request_pool = new boost::asio::thread_pool(network_cores);
-    task_pool = new boost::asio::thread_pool(task_cores);
+    pool = new boost::asio::thread_pool(cores);
 }
 
 
-bool IEngine::speciesPerBIN(datatypes::Dataset& data, const std::string& bin){
+bool IEngine::speciesPerBIN(Dataset& data, const std::string& bin){
     std::unordered_set<std::string_view> unique_set;
     size_t count = 0;
     for(auto & entry : data){
@@ -41,8 +29,8 @@ bool IEngine::speciesPerBIN(datatypes::Dataset& data, const std::string& bin){
 
 
 
-datatypes::Neighbour IEngine::parseBoldData(std::string cluster){
-    datatypes::Neighbour neighbour;
+Neighbour IEngine::parseBoldData(std::string cluster){
+    Neighbour neighbour;
     neighbour.distance = DBL_MAX;
     neighbour.clusterA = cluster; 
     neighbour.clusterB = "";
@@ -66,11 +54,21 @@ datatypes::Neighbour IEngine::parseBoldData(std::string cluster){
     return neighbour;
 }
 
+std::vector<Neighbour> getNeighbours(DistanceMatrix& distances, const std::unordered_set<std::string>& clusters){
+    std::vector<Neighbour> neighbours;
+    auto distances_end = distances.end();
+    for(auto& cluster : clusters){
+        auto neighbour_it = distances.find(cluster);
+        if(neighbour_it != distances_end){
+            neighbours.push_back((*neighbour_it).second);
+        }
+    }    
+    return neighbours;
+}
 
-
-std::string IEngine::findBinsNeighbour(datatypes::Dataset& data, datatypes::DistanceMatrix& distances, const std::unordered_set<std::string>& clusters, double max_distance)
+std::string IEngine::findBinsNeighbour(Dataset& data, DistanceMatrix& distances, const std::unordered_set<std::string>& clusters, double max_distance)
 {
-    size_t ctr, count, num_components;
+    size_t ctr, num_components;
     auto grade = "E";
 
     ctr = 0;
@@ -81,63 +79,58 @@ std::string IEngine::findBinsNeighbour(datatypes::Dataset& data, datatypes::Dist
             if(ctr>1) return grade;
         }
     }
-    count = clusters.size();
-    auto bins_begin = clusters.begin();
-    auto cur_elem = clusters.begin();
-    auto bins_end = clusters.end();
-    auto distances_end = distances.end();
-    datatypes::ugraph graph(count);
-    bool internet = false;
-    for(size_t  i = 0; i < count; i++){
-        std::string bin = *cur_elem;
-        auto neighbour_it = distances.find(bin);
-        datatypes::Neighbour neighbour;
-        if(neighbour_it != distances_end){
-            neighbour = (*neighbour_it).second;
-        }else{
-            internet = true;
-            requests++;
-            boost::asio::post(*request_pool, [&,bin](){
+
+
+    auto cluster_begin = clusters.begin();
+    auto cluster_end = clusters.end();
+    auto neighbours = getNeighbours(distances, clusters);
+    if(neighbours.size() != clusters.size()){
+        for(auto& cluster : clusters){
+            tasks++;
+            boost::asio::post(*pool, [&,cluster](){
                 std::string error;
                 try{
-                    datatypes::Neighbour request_neighbour = parseBoldData(bin);
-                    distances.insert({bin, request_neighbour});
+                    // PRINT("Fetching data for " << cluster);
+                    Neighbour request_neighbour = parseBoldData(cluster);
+                    distances.insert({cluster, request_neighbour});
                 }catch(std::exception& e){
                     std::string exception_message(e.what());
                     error = exception_message;
                 }
                 {
-                    auto ul = std::unique_lock<std::mutex>(request_lock);
+                    auto ul = std::unique_lock<std::mutex>(task_lock);
                     errors.push_back(error);
-                    completed_requests++;
-                    if(completed_requests == requests){
-                        request_cv.notify_one();
+                    completed_tasks++;
+                    // PRINT(completed_tasks<< "/" << tasks);
+                    if(completed_tasks == tasks){
+                        task_cv.notify_one();
                     }
                 }
             });
         }
-        if(!internet){
+        return "Z";
+    }else{
+        int i = 0;
+        ugraph graph(neighbours.size());
+        for(auto& neighbour : neighbours){
             auto item = clusters.find(neighbour.clusterB);
-            if( item!=bins_end && neighbour.distance <= max_distance) {
-                size_t ind = std::distance(bins_begin, item);
+            if(item != cluster_end && neighbour.distance <= max_distance) {
+                size_t ind = std::distance(cluster_begin, item);
                 boost::add_edge(i, ind, neighbour.distance, graph);
             }
+            i++;
         }
-        cur_elem++;
+        std::vector<int> component (neighbours.size());
+        num_components = boost::connected_components (graph, &component[0]);
+        if( num_components == 1){
+            grade="C";
+        }
+        return grade;
     }
-    if(internet){
-        return "Z";
-    }
-    std::vector<int> component (count);
-    num_components = boost::connected_components (graph, &component[0]);
-    if( num_components == 1){
-        grade="C";
-    }
-    return grade;
 }
 
 
-void IEngine::annotateItem( datatypes::Species& species, datatypes::Dataset& data, datatypes::DistanceMatrix& distances, datatypes::GradingParameters& params){
+void IEngine::annotateItem( Species& species, Dataset& data, DistanceMatrix& distances, GradingParameters& params){
     int min_sources = params.min_sources;
     int min_size = params.min_size;
     double max_distance = params.max_distance;
@@ -151,7 +144,7 @@ void IEngine::annotateItem( datatypes::Species& species, datatypes::Dataset& dat
             auto BINSpeciesConcordance = speciesPerBIN(data, bin);
             if(BINSpeciesConcordance){
                 int specimens_size = species.recordCount();
-                grade = specimens_size >= min_size ? "B" : "A";
+                grade = specimens_size >= min_size ? "A" : "B";
             }
         }else{
             grade = findBinsNeighbour(data, distances, species.getClusters(), max_distance);
@@ -162,34 +155,32 @@ void IEngine::annotateItem( datatypes::Species& species, datatypes::Dataset& dat
 
 std::vector<std::string> IEngine::annotate(Dataset& data, DistanceMatrix& distances, GradingParameters& params){
     errors.clear();
-    int tasks = data.size();
-    int completed = 0;
+    tasks = data.size();
+    completed_tasks = 0;
     for(auto& pair : data){
         auto& species = pair.second;
-        boost::asio::post(*task_pool, [&](){
+        boost::asio::post(*pool, [&](){
+            // PRINT("Grading " << species.getSpeciesName());
             annotateItem(species, data, distances, params);
             {
-                auto ul = std::unique_lock<std::mutex>(task_lock);
-                completed++;
-                if(completed == tasks){
+                completed_tasks++;
+                // PRINT(completed_tasks<< "/" << tasks);
+                if(completed_tasks == tasks){
                     task_cv.notify_one();
                 }
             }
+            // PRINT(species.getSpeciesName()<< "grade is: " << species.getGrade());
         });
     }
     {
         auto ul = std::unique_lock<std::mutex>(task_lock);
-        task_cv.wait(ul, [&](){return tasks == completed;});
-    }
-    {
-        auto ul = std::unique_lock<std::mutex>(request_lock);
-        request_cv.wait(ul, [&](){return requests == completed_requests;});
+        task_cv.wait(ul, [&](){return tasks == completed_tasks;});
     }
     for(auto& pair : data){
         auto& species = pair.second;
         if(species.getGrade() == "Z"){
             annotateItem(species, data, distances, params);
-            PRINT(species.getSpeciesName() << " " << species.getGrade());
+            // PRINT(species.getSpeciesName() << " " << species.getGrade());
         }
     }
     return errors; 

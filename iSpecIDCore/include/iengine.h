@@ -34,10 +34,8 @@ class IEngine
 public:
     IEngine(int cores);
     ~IEngine(){
-        task_pool->join();
-        request_pool->join();
-        delete task_pool;
-        delete request_pool;
+        pool->join();
+        delete pool;
     };
 
     std::vector<std::string> annotate(Dataset& data, DistanceMatrix& distances, GradingParameters& parametes);
@@ -50,14 +48,11 @@ private:
     void annotateItem( datatypes::Species& species, datatypes::Dataset& data, datatypes::DistanceMatrix& distances, datatypes::GradingParameters& params);
 
     std::vector<std::string> errors;
-    boost::asio::thread_pool* task_pool;
-    boost::asio::thread_pool* request_pool;
+    boost::asio::thread_pool* pool;
     std::condition_variable task_cv;
     std::mutex task_lock;
-    std::condition_variable request_cv;
-    std::mutex request_lock;
-    std::atomic<int> completed_requests;
-    std::atomic<int> requests;
+    std::atomic<int> completed_tasks;
+    std::atomic<int> tasks;
 };
 
 

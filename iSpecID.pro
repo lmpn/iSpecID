@@ -28,7 +28,6 @@ SOURCES += \
         iSpecIDApp/gradingoptionsdialog.cpp \
         iSpecIDApp/filterdialog.cpp \
         iSpecIDCore/src/iengine.cpp \
-        iSpecIDCore/src/annotator.cpp \
         iSpecIDCore/src/network.cpp
 
 
@@ -48,7 +47,6 @@ HEADERS += \
         iSpecIDApp/filterscrollarea.h \
         iSpecIDCore/include/iengine.h \
         iSpecIDCore/include/datatypes.h \
-        iSpecIDCore/include/annotator.h \
         iSpecIDCore/include/fileio.h \
         iSpecIDCore/include/network.h \
         iSpecIDCore/include/ispecid.h \

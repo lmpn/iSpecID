@@ -10,7 +10,6 @@ RecordModel::RecordModel(std::vector<QRecord> *records, QObject *parent)
     remove = false;
     sort_order = QVector<bool>(this->columnCount(), true);
     last_col = -1;
-
 }
 
 
@@ -220,6 +219,7 @@ bool RecordModel::setData(const QModelIndex &index, const QVariant &value, int r
             if(field_value != entry.getSpeciesName()){
                 emit actionPerformed();
                 entry.setSpeciesName(field_value);
+                qrec->modification += "Species name changed;";
                 for (auto it = records->begin(); it!=records->end(); it++) {
                     if(it != qrec && qrec->joinRecord(*it)){
                         records->erase(it);
@@ -236,6 +236,7 @@ bool RecordModel::setData(const QModelIndex &index, const QVariant &value, int r
             if(field_value != entry.getCluster()){
                 emit actionPerformed();
                 entry.setCluster(field_value);
+                qrec->modification += "Cluster changed;";
                 for (auto it = records->begin(); it!=records->end(); it++) {
                     if(it != qrec && qrec->joinRecord(*it)){
                         records->erase(it);
@@ -252,6 +253,7 @@ bool RecordModel::setData(const QModelIndex &index, const QVariant &value, int r
             if(field_value != entry.getSource()){
                 emit actionPerformed();
                 entry.setSource(field_value);
+                qrec->modification += "Source changed;";
                 for (auto it = records->begin(); it!=records->end(); it++) {
                     if(it != qrec && qrec->joinRecord(*it)){
                         records->erase(it);

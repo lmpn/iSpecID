@@ -257,13 +257,13 @@ background:qlineargradient(spread:pad, x1:0, y1:0.511364, x2:1, y2:0.511364, sto
              </sizepolicy>
             </property>
             <property name="verticalScrollBarPolicy">
-             <enum>Qt::ScrollBarAsNeeded</enum>
+             <enum>Qt::ScrollBarAlwaysOn</enum>
             </property>
             <property name="horizontalScrollBarPolicy">
-             <enum>Qt::ScrollBarAsNeeded</enum>
+             <enum>Qt::ScrollBarAlwaysOn</enum>
             </property>
             <property name="sizeAdjustPolicy">
-             <enum>QAbstractScrollArea::AdjustToContentsOnFirstShow</enum>
+             <enum>QAbstractScrollArea::AdjustToContents</enum>
             </property>
             <property name="resizeAnchor">
              <enum>QGraphicsView::AnchorUnderMouse</enum>
@@ -728,6 +728,7 @@ height: 25px
     <addaction name="save_project_action"/>
     <addaction name="save_as_project_action"/>
     <addaction name="export_to_TSV_action"/>
+    <addaction name="export_full_project_to_TSV_action"/>
     <addaction name="close_project_action"/>
    </widget>
    <widget class="QMenu" name="menu_data">
@@ -781,7 +782,7 @@ height: 25px
   </action>
   <action name="export_to_TSV_action">
    <property name="text">
-    <string>Export to TSV</string>
+    <string>Export project to TSV</string>
    </property>
   </action>
   <action name="load_distance_matrix_action">
@@ -800,6 +801,11 @@ height: 25px
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+S</string>
+   </property>
+  </action>
+  <action name="export_full_project_to_TSV_action">
+   <property name="text">
+    <string>Export full project to TSV</string>
    </property>
   </action>
  </widget>

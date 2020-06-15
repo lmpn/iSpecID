@@ -36,6 +36,8 @@ MainWindow::MainWindow(QString app_dir, QWidget *parent)
         QCursor cs = QCursor(pix);
         this->setCursor(cs);
     });
+    connect(ui->record_table, SIGNAL(clicked(const QModelIndex &)),
+            this, SLOT(onRecordTableClick(const QModelIndex& )));
     connect(ui->new_project_action, SIGNAL(triggered()),
             this, SLOT(onNewProject()));
     connect(ui->load_project_action, SIGNAL(triggered()),
@@ -68,7 +70,8 @@ MainWindow::MainWindow(QString app_dir, QWidget *parent)
     connect(this, SIGNAL(errorOccured()), this,SLOT(onErrorOccured()));
     connect(this, SIGNAL(annotateFinish()), this,SLOT(onAnnotateFinished()));
     connect(this, SIGNAL(error(QString,QString)), this,SLOT(onError(QString, QString)));
-    connect(ui->export_to_TSV_action, SIGNAL(triggered()), this,SLOT(exportDataToTSV()));
+    connect(ui->export_to_TSV_action, SIGNAL(triggered()), this,SLOT(exportDataToTSV(false)));
+    connect(ui->export_full_project_to_TSV_action, SIGNAL(triggered()), this,SLOT(exportDataToTSV(true)));
     connect(ui->load_distance_matrix_action, SIGNAL(triggered()), this,SLOT(loadDistanceMatrix()));
     connect(ui->close_project_action, &QAction::triggered, [this](){
         project = "";
@@ -82,7 +85,17 @@ MainWindow::MainWindow(QString app_dir, QWidget *parent)
     ui->results_frame->hide();
     enableMenuDataActions(false);
     data = new std::vector<QRecord>();
+    engine = new ispecid::IEngine(4);
     showMaximized();
+}
+
+void MainWindow::onRecordTableClick(const QModelIndex& index){
+    int col = index.column();
+    if (col < 2){
+        QString name = ui->record_table->model()->data(index).toString();
+        ui->graph_combo_box->setCurrentText(name);
+        emit showComponent(name);
+    }
 }
 
 void MainWindow::onStopLoading(){
@@ -94,13 +107,17 @@ void MainWindow::onError(QString error_type, QString error){
     onStopLoading();
 }
 
-void MainWindow::exportDataToTSVHelper(QString filename){
+void MainWindow::exportDataToTSVHelper(QString filename, bool full){
     DbConnection dbc(app_dir);
     if(!dbc.createConnection()){
         emit error("Export error", "SQLite3 error");
         return;
     }
-    QString valuesStat = "select * from '%1'";
+    QString valuesStat;
+    if(full)
+        valuesStat = "select * from '%1'";
+    else
+        valuesStat = "select * from '%1' where grade != DELETED and species_name != "" and institution_storing != "" and bin_uri != """;
     valuesStat = valuesStat.arg(project);
     QString headerStat = "SELECT group_concat(name) FROM PRAGMA_TABLE_INFO('%1')";
     headerStat = headerStat.arg(project);
@@ -122,7 +139,7 @@ void MainWindow::exportDataToTSVHelper(QString filename){
     emit stopLoading();
 }
 
-void MainWindow::exportDataToTSV(){
+void MainWindow::exportDataToTSV(bool full){
     if(data->size() == 0){
         QMessageBox::critical( this, "Export error", "Error no data found", QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok );
         return;
@@ -135,11 +152,11 @@ void MainWindow::exportDataToTSV(){
     }
 
     loading(true, "Exporting project...");
-    QtConcurrent::run(std::function<void(QString)>(
-                          [this](QString filename){
+    QtConcurrent::run(std::function<void(QString, bool)>(
+                          [this](QString filename, bool full){
                           saveProjectHelper();
-                          exportDataToTSVHelper(filename);
-                      }), file_path);
+                          exportDataToTSVHelper(filename, full);
+                      }), file_path, full);
 
 }
 
@@ -225,7 +242,7 @@ void MainWindow::onAnnotate(){
     QtConcurrent::run(
                 std::function<void(Dataset&)>(
                     [this](Dataset& dataset){
-                    this->errors = engine.annotate(dataset,this->distances,this->params);
+                    this->errors = engine->annotate(dataset,this->distances,this->params);
                     for(auto& item : *data){
                         std::string key = item.record.getSpeciesName();
                         auto grade_it = dataset.find(key);
@@ -505,7 +522,7 @@ void MainWindow::loadRecords(){
         undoStack->clear();
         ui->results_frame->hide();
         QSqlQuery query;
-        QString loadStat = "select species_name , bin_uri, institution_storing, grade, count(*), group_concat(processid) from '%1' group by species_name, bin_uri, institution_storing;";
+        QString loadStat = "select species_name , bin_uri, institution_storing, grade, count(*), group_concat(processid), modification from '%1' group by species_name, bin_uri, institution_storing;";
         loadStat = loadStat.arg(project);
         auto result = dbc.execQuery(loadStat);
         if(!dbc.success()){
@@ -520,12 +537,13 @@ void MainWindow::loadRecords(){
             QString grade = record[3];
             int count =record[4].toInt();
             QStringList ids = record[5].split(",");
+            QString modification = record[6];
             if(species_name.isEmpty()) bad_species+=count;
             else if(cluster.isEmpty()) bad_cluster+=count;
             else if(source.isEmpty()) bad_source+=count;
-            else if(!grade.isEmpty()){
+            else if(!grade.isEmpty() && grade != "DELETED"){
                 Record rec(species_name.toStdString(),cluster.toStdString(),source.toStdString(),grade.toStdString(),count);
-                QRecord qrec({ids, rec});
+                QRecord qrec({ids, modification, rec});
                 clusters << cluster;
                 data->push_back(qrec);
             }
@@ -569,8 +587,6 @@ void MainWindow::onSaveFinished(){
     loading(false);
 }
 
-
-
 void MainWindow::saveProjectHelper(){
     DbConnection dbc(app_dir);
     if(dbc.createConnection()){
@@ -578,20 +594,22 @@ void MainWindow::saveProjectHelper(){
         for(auto& qrec : *data){
             updated_ids << qrec.ids;
             auto ids = qrec.ids.join("','");
-            QString updateStat="update '%1' set species_name= '%2', bin_uri = '%3', institution_storing = '%4', grade = '%5' where processid in ('%6')";
+            auto mod = qrec.modification;
+            QString updateStat="update '%1' set species_name= '%2', bin_uri = '%3', institution_storing = '%4', grade = '%5', modification = '%6' where processid in ('%7')";
             updateStat = updateStat
                     .arg(project)
                     .arg(QString::fromStdString(qrec.record.getSpeciesName()))
                     .arg(QString::fromStdString(qrec.record.getCluster()))
                     .arg(QString::fromStdString(qrec.record.getSource()))
                     .arg(QString::fromStdString(qrec.record.getGrade()))
+                    .arg(mod)
                     .arg(ids);
             dbc.execQuery(updateStat);
             if (!dbc.success()) {
                 emit error("Save project error", "There was an error saving the project");
             }
         }
-        QString updateStat="update '%1' set grade = '' where processid not in ('%2')";
+        QString updateStat="update '%1' set grade = 'DELETED' where processid not in ('%2')";
         updateStat = updateStat
                 .arg(project)
                 .arg(updated_ids.join("','"));
@@ -950,4 +968,5 @@ MainWindow::~MainWindow()
     delete graph;
     delete data;
     delete ui;
+    delete engine;
 }

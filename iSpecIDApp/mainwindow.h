@@ -39,7 +39,7 @@ public:
     void updateApp();
     void loading(bool load, QString text="");
     QString createCompleter();
-    void exportDataToTSVHelper(QString dir_path);
+    void exportDataToTSVHelper(QString dir_path, bool full = true);
     void saveProjectHelper();
 signals:
     void updateGraph();
@@ -70,7 +70,7 @@ private slots:
     void onAnnotateFinished();
     void onAnnotate();
     void onErrorOccured();
-    void exportDataToTSV();
+    void exportDataToTSV(bool);
     void loadDistanceMatrix();
     void onActionPerformed();
     void onComboBoxChanged();
@@ -83,6 +83,7 @@ private slots:
     void showGradingOptions();
     void showFilter();
     void onSaveConfig(double, int, int);
+    void onRecordTableClick(const QModelIndex&  index);
 
 
 private:
@@ -97,7 +98,7 @@ private:
     QMovie* movie;
     QTimer* timer;
     std::vector<std::string> errors;
-    ispecid::IEngine engine;
+    ispecid::IEngine* engine;
 };
 
 #include <QUndoCommand>
