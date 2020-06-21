@@ -38,6 +38,8 @@ MainWindow::MainWindow(QString app_dir, QWidget *parent)
     });
     connect(ui->record_table, SIGNAL(clicked(const QModelIndex &)),
             this, SLOT(onRecordTableClick(const QModelIndex& )));
+    connect(ui->record_table, SIGNAL(clicked(const QModelIndex &)),
+            this, SLOT(onRecordTableClick(const QModelIndex& )));
     connect(ui->new_project_action, SIGNAL(triggered()),
             this, SLOT(onNewProject()));
     connect(ui->load_project_action, SIGNAL(triggered()),
@@ -60,18 +62,22 @@ MainWindow::MainWindow(QString app_dir, QWidget *parent)
             this, SLOT(onAnnotate()));
     connect(ui->undo_button, &QPushButton::clicked,
             [this](){
-        if(undoStack->count() >0) {
+        if(undoStack->count() > 0) {
             undoStack->undo();
             updateApp();
         }});
-    connect(this, SIGNAL(loadFinished(int,int,int)), this,SLOT(onLoadFinished(int,int,int)));
+    connect(this, SIGNAL(loadFinished(int,int,int,int)), this,SLOT(onLoadFinished(int,int,int,int)));
     connect(this, SIGNAL(saveFinished()), this,SLOT(onSaveFinished()));
     connect(this, SIGNAL(stopLoading()), this,SLOT(onStopLoading()));
     connect(this, SIGNAL(errorOccured()), this,SLOT(onErrorOccured()));
     connect(this, SIGNAL(annotateFinish()), this,SLOT(onAnnotateFinished()));
     connect(this, SIGNAL(error(QString,QString)), this,SLOT(onError(QString, QString)));
-    connect(ui->export_to_TSV_action, SIGNAL(triggered()), this,SLOT(exportDataToTSV(false)));
-    connect(ui->export_full_project_to_TSV_action, SIGNAL(triggered()), this,SLOT(exportDataToTSV(true)));
+    connect(ui->export_to_TSV_action, &QAction::triggered, [&](){
+        exportDataToTSV(false);
+    });
+    connect(ui->export_full_project_to_TSV_action, &QAction::triggered, [&](){
+        exportDataToTSV(true);
+    });
     connect(ui->load_distance_matrix_action, SIGNAL(triggered()), this,SLOT(loadDistanceMatrix()));
     connect(ui->close_project_action, &QAction::triggered, [this](){
         project = "";
@@ -87,6 +93,7 @@ MainWindow::MainWindow(QString app_dir, QWidget *parent)
     data = new std::vector<QRecord>();
     engine = new ispecid::IEngine(4);
     showMaximized();
+
 }
 
 void MainWindow::onRecordTableClick(const QModelIndex& index){
@@ -114,12 +121,18 @@ void MainWindow::exportDataToTSVHelper(QString filename, bool full){
         return;
     }
     QString valuesStat;
-    if(full)
-        valuesStat = "select * from '%1'";
-    else
-        valuesStat = "select * from '%1' where grade != DELETED and species_name != "" and institution_storing != "" and bin_uri != """;
+    filename = filename.replace(".tsv","");
+    QString params_filename = filename + "_params.txt";
+    if(full){
+        valuesStat = "select * from \"%1\"";
+        filename = filename + "_" + QString::number(params.max_distance) + "_" + QString::number(params.min_sources) + "_" + QString::number(params.min_size) + ".tsv";
+    }
+    else{
+        valuesStat = "select * from \"%1\" where modification not like \"%DELETED%\" and species_name != \"\" and institution_storing != \"\" and bin_uri != \"\"";
+        filename = filename + "_pruned_" + QString::number(params.max_distance) + "_" + QString::number(params.min_sources) + "_" + QString::number(params.min_size)+".tsv";
+    }
     valuesStat = valuesStat.arg(project);
-    QString headerStat = "SELECT group_concat(name) FROM PRAGMA_TABLE_INFO('%1')";
+    QString headerStat = "SELECT group_concat(name) FROM PRAGMA_TABLE_INFO(\"%1\")";
     headerStat = headerStat.arg(project);
     QFile file(filename);
     if (!file.open(QIODevice::WriteOnly)) {
@@ -128,11 +141,32 @@ void MainWindow::exportDataToTSVHelper(QString filename, bool full){
         emit error("File open error", error_msg);
         return;
     }
+
+    QFile file_params(params_filename);
+    if (!file_params.open(QIODevice::WriteOnly)) {
+        QString error_msg = "File %1 couldn't be open.";
+        error_msg = error_msg.arg(params_filename);
+        emit error("File open error", error_msg);
+        return;
+    }
+
+    QString max_dist = "max_distance " + QString::number(params.max_distance);
+    QString min_sources = "min_sources " + QString::number(params.min_sources);
+    QString min_records = "min_records " + QString::number(params.min_size);
+    auto params_str = max_dist +"\n" +min_sources +"\n" + min_records;
+    file_params.write(params_str.toUtf8());
+    file_params.close();
+
     QTextStream stream(&file);
     auto header = dbc.execQuery(headerStat)[0][0];
+    int index = header.split(',').indexOf("grade");
     auto values = dbc.execQuery(valuesStat);
     stream << header.replace(",","\t")+"\n";
+    QString grade_ast = "";
+    if(params.min_sources == 1)
+        grade_ast = "*";
     for(auto& row : values){
+        row[index] += grade_ast;
         stream << row.join("\t")+ "\n";
     }
     file.close();
@@ -145,8 +179,9 @@ void MainWindow::exportDataToTSV(bool full){
         return;
     }
     QString file_path = QFileDialog::getSaveFileName(this,
-                                                   tr("Save Project"), "",
-                                                   tr("Tab Separated File (*.tsv);;All Files (*)"));
+                                                     tr("Save Project"), "",
+                                                     tr("Tab Separated File (*.tsv);;All Files (*)"),
+                                                     0, QFileDialog::DontUseNativeDialog);
     if(file_path.isEmpty()) {
         return;
     }
@@ -273,7 +308,7 @@ void MainWindow::onAnnotateFinished(){
 
 void MainWindow::onSaveAsProject(){
     bool ok;
-    QString new_project = QInputDialog::getText( this, tr("New project"), tr("Project name:"), QLineEdit::Normal, "", &ok );
+    QString new_project = QInputDialog::getText( this, tr("Save project as"), tr("Project name:"), QLineEdit::Normal, "", &ok );
     if(!ok || project.isEmpty()){
         return;
     }
@@ -282,7 +317,7 @@ void MainWindow::onSaveAsProject(){
         return;
     }
     else if(ok && !new_project.isEmpty()){
-        QString stat = "select * from projects where name = '%1'";
+        QString stat = "select * from projects where name = \"%1\"";
         stat = stat.arg(new_project);
         DbConnection dbc(app_dir);
         if(dbc.createConnection()){
@@ -297,8 +332,8 @@ void MainWindow::onSaveAsProject(){
             }
         }
 
-        QString newProjectStat = "insert into projects (name) values ('%1')";
-        newProjectStat = newProjectStat.arg(new_project);
+        QString newProjectStat = "insert into projects (name,max_dist,sources,records) values (\"%1\",%2,%3,%4)";
+        newProjectStat = newProjectStat.arg(new_project).arg(params.max_distance).arg(params.min_sources).arg(params.min_size);;
         dbc.execQuery(newProjectStat);
         if(!dbc.success()){
             emit error("SQLite error", "Error project");
@@ -306,7 +341,7 @@ void MainWindow::onSaveAsProject(){
         }
 
 
-        QString insertStat = "create table '%1' as select * from '%2';";
+        QString insertStat = "create table \"%1\" as select * from \"%2\";";
         insertStat = insertStat.arg(new_project);
         insertStat = insertStat.arg(project);
         dbc.execQuery(insertStat);
@@ -330,7 +365,7 @@ void MainWindow::onNewProject()
         return;
     }
     else if(ok && !new_project.isEmpty()){
-        QString stat = "select * from projects where name = '%1'";
+        QString stat = "select * from projects where name = \"%1\"";
         stat = stat.arg(new_project);
         DbConnection dbc(app_dir);
         if(dbc.createConnection()){
@@ -397,12 +432,13 @@ void MainWindow::onNewProject()
                                 no_grade = true;
                             }
                             if(!header.contains("modification")){
+
                                 header << "modification";
                                 no_mod = true;
                             }
                         }
                         if(dbc.createConnection()){
-                            QString newProjectStat = "insert into projects (name) values ('%1')";
+                            QString newProjectStat = "insert into projects (name, max_dist, sources, records) values (\"%1\", 2.0, 2, 3)";
                             newProjectStat = newProjectStat.arg(project);
                             dbc.execQuery(newProjectStat);
                             if(!dbc.success()){
@@ -414,7 +450,7 @@ void MainWindow::onNewProject()
                             return;
                         }
                         QString header_join = header.join(",");
-                        stat = "create table '%1' ";
+                        stat = "create table \"%1\" ";
                         stat += "(" + header_join +")";
                         stat = stat.arg(project);
                         dbc.execQuery(stat);
@@ -422,21 +458,21 @@ void MainWindow::onNewProject()
                             emit error("SQLite error", "Error creating table");
                             return;
                         }
-                        QString base_stat = "insert into '%1' (" + header_join + ") values ";
+                        QString base_stat = "insert into \"%1\" (" + header_join + ") values ";
                         base_stat = base_stat.arg(project);
                         stat = base_stat;
                         while (!in.atEnd()) {
                             QString line = in.readLine();
-                            QString line2 = line.replace("'","");
-                            line = line.replace("\t", "','");
+                            line = line.replace("\"","").split("\t").join("\",\"");
                             if(no_grade){
-                                line += "','U";
+                                line += "\",\"U";
                             }
                             if(no_mod){
-                                line += "','";
+
+                                line += "\",\"";
 
                             }
-                            line = "'" + line + "'";
+                            line = "\"" + line + "\"";
                             stat += "(" + line +")";
                             current_size++;
                             if(current_size == 500){
@@ -458,6 +494,28 @@ void MainWindow::onNewProject()
                             return;
                         }
                         file.close();
+
+                        QString updateSourceStat="update \"%1\" set modification= \"DELETED: empty source\" where institution_storing == \"\"";
+                        updateSourceStat = updateSourceStat.arg(project);
+                        dbc.execQuery(updateSourceStat);
+                        if(!dbc.success()){
+                            emit error("SQLite error", "Error inserting in table");
+                            return;
+                        }
+                        QString updateClusterStat="update \"%1\" set modification= \"DELETED: empty cluster/bin_uri\" where bin_uri == \"\"";
+                        updateClusterStat = updateClusterStat.arg(project);
+                        dbc.execQuery(updateClusterStat);
+                        if(!dbc.success()){
+                            emit error("SQLite error", "Error inserting in table");
+                            return;
+                        }
+                        QString updateSpeciesNameStat="update \"%1\" set modification= \"DELETED: empty name\" where species_name == \"\"";
+                        updateSpeciesNameStat= updateSpeciesNameStat.arg(project);
+                        dbc.execQuery(updateSpeciesNameStat);
+                        if(!dbc.success()){
+                            emit error("SQLite error", "Error inserting in table");
+                            return;
+                        }
                         loadRecords();
                     }
                     ),filename);
@@ -470,10 +528,13 @@ void MainWindow::onLoadProject()
 {
     DbConnection dbc(app_dir);
     QStringList projects;
+    QList<GradingParameters> params_list;
     if(dbc.createConnection()){
-        auto result = dbc.execQuery("select name from projects");
+        auto result = dbc.execQuery("select name, sources, records, max_dist from projects");
         for(auto& record : result){
             projects << record.first();
+            GradingParameters gp = {record[1].toInt(), record[2].toInt(), record[3].toDouble()};
+            params_list << gp;
         }
     }else{
         QMessageBox::critical( this, "Load project error", "There was an error loading the project names", QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok );
@@ -484,6 +545,7 @@ void MainWindow::onLoadProject()
     if(exit == 1){
         project = psd->getProject();
         if(!project.isEmpty()){
+            params = params_list[projects.indexOf(project)];
             loading(true, "Loading project");
             QtConcurrent::run(std::function<void(void)>([this](){
                 loadRecords();
@@ -516,13 +578,14 @@ void MainWindow::loadRecords(){
     int bad_species = 0;
     int bad_cluster = 0;
     int bad_source = 0;
+    int deleted = 0;
     if(dbc.createConnection()){
         distances.clear();
         data->clear();
         undoStack->clear();
         ui->results_frame->hide();
         QSqlQuery query;
-        QString loadStat = "select species_name , bin_uri, institution_storing, grade, count(*), group_concat(processid), modification from '%1' group by species_name, bin_uri, institution_storing;";
+        QString loadStat = "select species_name , bin_uri, institution_storing, grade, count(*), group_concat(processid), modification from \"%1\" group by species_name, bin_uri, institution_storing;";
         loadStat = loadStat.arg(project);
         auto result = dbc.execQuery(loadStat);
         if(!dbc.success()){
@@ -535,13 +598,16 @@ void MainWindow::loadRecords(){
             QString cluster = record[1];
             QString source =  record[2];
             QString grade = record[3];
-            int count =record[4].toInt();
+            int count = record[4].toInt();
             QStringList ids = record[5].split(",");
             QString modification = record[6];
             if(species_name.isEmpty()) bad_species+=count;
             else if(cluster.isEmpty()) bad_cluster+=count;
             else if(source.isEmpty()) bad_source+=count;
-            else if(!grade.isEmpty() && grade != "DELETED"){
+            else if(modification == "DELETED by user;"){
+                deleted+=count;
+            }
+            else{
                 Record rec(species_name.toStdString(),cluster.toStdString(),source.toStdString(),grade.toStdString(),count);
                 QRecord qrec({ids, modification, rec});
                 clusters << cluster;
@@ -549,8 +615,8 @@ void MainWindow::loadRecords(){
             }
         }
         auto cluster_ids = clusters.values();
-        auto cluster_ids_str = cluster_ids.join("','");
-        QString clustersLoadStat = "select clusterA, clusterB, distance from neighbours where clusterA in ('%1') and strftime('%s','now') - time < 864000 ";
+        auto cluster_ids_str = cluster_ids.join("\",\"");
+        QString clustersLoadStat = "select clusterA, clusterB, distance from neighbours where clusterA in (\"%1\") and strftime(\"%s\",\"now\") - time < 864000 ";
         clustersLoadStat = clustersLoadStat.arg(cluster_ids_str);
         result = dbc.execQuery(clustersLoadStat);
         if(!dbc.success()){
@@ -565,10 +631,10 @@ void MainWindow::loadRecords(){
             distances.insert({clusterA, neighbour});
         }
     }
-    emit loadFinished(bad_species, bad_cluster, bad_source);
+    emit loadFinished(bad_species, bad_cluster, bad_source, deleted);
 }
 
-void MainWindow::onLoadFinished(int bad_species, int bad_cluster , int bad_source )
+void MainWindow::onLoadFinished(int bad_species, int bad_cluster , int bad_source, int deleted )
 {
     setupRecordsTable();
     setupOriginalResultsTable();
@@ -577,8 +643,8 @@ void MainWindow::onLoadFinished(int bad_species, int bad_cluster , int bad_sourc
     enableMenuDataActions(true);
     updateApp();
     loading(false);
-    QString warning = "%1 records were filtered:\n%2 with empty species name\n%3 with empty cluster name\n%4 with empty source";
-    warning = warning.arg(bad_source+bad_species+bad_cluster).arg(bad_species).arg(bad_cluster).arg(bad_source);
+    QString warning = "%1 records were filtered:\n%2 with empty species name\n%3 with empty cluster name\n%4 with empty source\n%5 deleted by user";
+    warning = warning.arg(bad_source+bad_species+bad_cluster).arg(bad_species).arg(bad_cluster).arg(bad_source).arg(deleted);
     QMessageBox::warning( this, "Loading report", warning, QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok);
 
 }
@@ -595,7 +661,7 @@ void MainWindow::saveProjectHelper(){
             updated_ids << qrec.ids;
             auto ids = qrec.ids.join("','");
             auto mod = qrec.modification;
-            QString updateStat="update '%1' set species_name= '%2', bin_uri = '%3', institution_storing = '%4', grade = '%5', modification = '%6' where processid in ('%7')";
+            QString updateStat="update \"%1\" set species_name= \"%2\", bin_uri = \"%3\", institution_storing = \"%4\", grade = \"%5\", modification = \"%6\" where processid in (\"%7\")";
             updateStat = updateStat
                     .arg(project)
                     .arg(QString::fromStdString(qrec.record.getSpeciesName()))
@@ -609,17 +675,17 @@ void MainWindow::saveProjectHelper(){
                 emit error("Save project error", "There was an error saving the project");
             }
         }
-        QString updateStat="update '%1' set grade = 'DELETED' where processid not in ('%2')";
+        QString updateStat="update \"%1\" set modification = \"DELETED by user;\" where processid not in (\"%2\") and modification not like \"%DELETED%\"";
         updateStat = updateStat
                 .arg(project)
-                .arg(updated_ids.join("','"));
+                .arg(updated_ids.join("\",\""));
         dbc.execQuery(updateStat);
         if (!dbc.success()) {
             emit error("Save project error", "There was an error saving the project");
         }
         for(auto& neighbour : distances){
-            QString updateStat="insert into neighbours(clusterA, clusterB, distance, time) values ('%1', '%2', '%3', strftime('%s','now')) "
-                               "ON CONFLICT(clusterA) DO UPDATE SET clusterB='%4', distance=%5, time=strftime('%s','now')  where strftime('%s','now') - time > 864000";
+            QString updateStat="insert into neighbours(clusterA, clusterB, distance, time) values (\"%1\", \"%2\", \"%3\", strftime(\"%s\",\"now\")) "
+                               "ON CONFLICT(clusterA) DO UPDATE SET clusterB=\"%4\", distance=%5, time=strftime(\"%s\",\"now\")  where strftime(\"%s\",\"now\") - time > 864000";
             QString updateStatA = updateStat
                     .arg(QString::fromStdString(neighbour.second.clusterA))
                     .arg(QString::fromStdString(neighbour.second.clusterB))
@@ -641,12 +707,19 @@ void MainWindow::saveProjectHelper(){
                 emit error("Save project error", "There was an error saving the project");
             }
         }
+        QString paramsStat = "update projects set max_dist = %1, sources = %2, records = %3 where name = \"%4\"";
+        paramsStat = paramsStat.arg(params.max_distance).arg(params.min_sources).arg(params.min_size);
+        dbc.execQuery(paramsStat);
+        if (!dbc.success()) {
+            emit error("Save project error", "There was an error saving the project");
+        }
         emit saveFinished();
     }
 }
 
 void MainWindow::onSaveProject(){
     loading(true, "Saving project...");
+    if(project.isEmpty()) return;
     QtConcurrent::run(std::function<void(void)>([this](){
         saveProjectHelper();
     }));
@@ -662,8 +735,11 @@ void MainWindow::setupRecordsTable(){
     ui->record_table->setSelectionBehavior(QAbstractItemView::SelectionBehavior::SelectRows);
     connect(this, SIGNAL(updateRecords()),
             record_model,SLOT(onRecordsChanged()));
-    connect(ui->record_table->horizontalHeader(), SIGNAL(sectionClicked( int )),
-            record_model, SLOT(sortBySection(int)));
+    connect(ui->record_table->horizontalHeader(), &QHeaderView::sectionClicked,
+            [this,record_model](int column){
+            record_model->sortBySection(column);
+            ui->record_table->resizeColumnsToContents();
+    });
     connect(record_model, SIGNAL(updateCombobox()),
             this, SLOT(onComboBoxChanged()));
 }
@@ -687,6 +763,7 @@ QString MainWindow::createCompleter(){
     ui->graph_combo_box->clear();
     ui->graph_combo_box->setCompleter(completer);
     ui->graph_combo_box->addItems(unique);
+    ui->graph_combo_box->setInsertPolicy(QComboBox::NoInsert);
     ui->graph_combo_box->update();
     if(unique.contains(current)){
         ui->graph_combo_box->setCurrentText(current);
@@ -742,10 +819,6 @@ void MainWindow::deleteRecordRows()
 
 void MainWindow::scaleView(qreal scaleFactor)
 {
-    qreal factor = this->ui->graph_viewer->transform().scale(scaleFactor, scaleFactor).mapRect(QRectF(0, 0, 1, 1)).width();
-    if (factor < 0.07 || factor > 100)
-        return;
-
     this->ui->graph_viewer->scale(scaleFactor, scaleFactor);
 }
 
@@ -763,12 +836,20 @@ void MainWindow::saveGraph()
 {
     QString fileName = QFileDialog::getSaveFileName(this,
                                                     tr("Save "), "",
-                                                    tr("(*.png);;All Files (*)"));
+                                                    tr("(*.png);;All Files (*)"),
+                                                    0,
+                                                    QFileDialog::DontUseNativeDialog);
     if (fileName.isEmpty())
         return;
     else {
-        const QPixmap pixmap = ui->graph_viewer->grab();
-        pixmap.save(fileName);
+        auto area = graph->sceneRect();
+        auto image = new QImage(area.width()+100, area.height()+100, QImage::Format_ARGB32_Premultiplied);
+        auto painter = new QPainter(image);
+        painter->fillRect(image->rect(),Qt::white);
+        painter->translate(10,10);
+        graph->render(painter, image->rect(), area);
+        painter->end();
+        image->save(fileName+".png","PNG",100);
     }
 }
 
@@ -851,8 +932,17 @@ void MainWindow::setupGraphScene()
             graph,SLOT(onGraphColorChanged()));
     connect(this, SIGNAL(showComponent(const QString&)),
             graph,SLOT(setComponentVisible(QString)));
-    connect(ui->graph_combo_box, SIGNAL(currentIndexChanged(QString)),
-            graph,SLOT(setComponentVisible(QString)));
+    connect(ui->graph_combo_box, &QComboBox::currentTextChanged,  [this](){
+        auto text = ui->graph_combo_box->currentText();
+        auto count = ui->graph_combo_box->count();
+        for (int index = 0; index < count;  index++){
+            auto data = ui->graph_combo_box->itemText(index);
+            if(data == text){
+                graph->setComponentVisible(text);
+                break;
+            }
+        }
+    });
     connect(graph, SIGNAL(updateCombobox()),
             this,SLOT(onComboBoxChanged()));
     connect(graph, SIGNAL(actionPerformed()),
@@ -925,9 +1015,20 @@ void MainWindow::showGradingOptions()
 
 void MainWindow::onSaveConfig(double max_dist, int min_labs, int min_seqs)
 {
+    DbConnection dbc(app_dir);
+    if(!dbc.createConnection()){
+        emit error("Export error", "SQLite3 error");
+        return;
+    }
     params.max_distance = max_dist;
     params.min_sources = min_labs;
     params.min_size = min_seqs;
+    QString paramsStat = "update projects set max_dist = %1, sources = %2, records = %3 where name = \"%4\"";
+    paramsStat = paramsStat.arg(params.max_distance).arg(params.min_sources).arg(params.min_size).arg(project);
+    dbc.execQuery(paramsStat);
+    if (!dbc.success()) {
+        emit error("Save project error", "There was an error saving the project");
+    }
 }
 
 void MainWindow::showGradingErrors(std::vector<std::string> &errors)

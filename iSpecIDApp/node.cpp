@@ -156,6 +156,7 @@ QPainterPath Node::shape() const
 void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *)
 {
     painter->setFont(f);
+    painter->setPen(Qt::black);
     painter->setPen(Qt::NoPen);
     painter->setBrush(Qt::darkGray);
     painter->drawEllipse(-7, -7, 20, 20);
@@ -221,6 +222,34 @@ void Node::mousePressEvent(QGraphicsSceneMouseEvent *event)
 void Node::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
     update();
+    auto sc = scene();
+    QRectF sc_rect = sceneBoundingRect();
+    QSet<Node*> current;
+    QSet<Node*> seen;
+    QSet<Node*> next;
+    seen << this;
+    current << this;
+    while(!current.isEmpty()){
+        for(auto& n : current){
+            for(auto& e : n->edges()){
+                auto src = e->sourceNode();
+                auto dest = e->destNode();
+                if(!seen.contains(src) && !next.contains(src)){
+                    sc_rect |= src->sceneBoundingRect();
+                    next << src;
+                    seen << src;
+                }if(!seen.contains(dest) && !next.contains(dest)){
+                    sc_rect |= dest->sceneBoundingRect();
+                    next << dest;
+                    seen << dest;
+                }
+            }
+        }
+        current.swap(next);
+        next.clear();
+    }
+
+    sc->setSceneRect(sc_rect);
     QGraphicsItem::mouseReleaseEvent(event);
 }
 
@@ -261,7 +290,6 @@ bool Node::advancePosition()
 {
     if (new_pos == pos())
         return false;
-
     setPos(new_pos);
     return true;
 }

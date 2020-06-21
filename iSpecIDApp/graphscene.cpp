@@ -126,6 +126,7 @@ void GraphScene::onRemoveEdge(Edge *edge){
 
 void GraphScene::setComponentVisibleDFS( Node *root, bool visible){
     if(root->isVisible() == visible) return;
+    QRectF scene_rect;
     root->setVisible(visible);
     QSet<Edge*> current = root->edges();
     QSet<Edge*> next;
@@ -136,6 +137,7 @@ void GraphScene::setComponentVisibleDFS( Node *root, bool visible){
     float s_h = 75;
     auto it = current.begin();
     root->setPos(w/2,0);
+    scene_rect |= root->sceneBoundingRect();
     while(current.size() > 0){
         for(int i = 0; i < size; i++){
             auto edge = *(it + i);
@@ -152,6 +154,8 @@ void GraphScene::setComponentVisibleDFS( Node *root, bool visible){
                 next += src->edges();
                 src->setPos(s_w+i*offset,s_h);
             }
+            scene_rect |= src->sceneBoundingRect();
+            scene_rect |= dest->sceneBoundingRect();
         }
         current = next;
         next = QSet<Edge*>();
@@ -161,6 +165,7 @@ void GraphScene::setComponentVisibleDFS( Node *root, bool visible){
         s_w = 50 + (w - offset*size)/2;
         it = current.begin();
     }
+    setSceneRect(scene_rect);
 }
 
 void GraphScene::setComponentVisible(QString key){
@@ -203,5 +208,7 @@ void GraphScene::drawBackground(QPainter *painter, const QRectF &rect)
 {
     Q_UNUSED(rect);
     Q_UNUSED(painter);
+//    painter->setPen(Qt::black);
+//    painter->drawRect(sceneRect());
 }
 

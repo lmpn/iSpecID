@@ -99,7 +99,8 @@ std::string IEngine::findBinsNeighbour(Dataset& data, DistanceMatrix& distances,
                 }
                 {
                     auto ul = std::unique_lock<std::mutex>(task_lock);
-                    errors.push_back(error);
+                    if(!error.empty())
+                        errors.push_back(error);
                     completed_tasks++;
                     // PRINT(completed_tasks<< "/" << tasks);
                     if(completed_tasks == tasks){

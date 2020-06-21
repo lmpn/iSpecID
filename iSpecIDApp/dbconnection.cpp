@@ -23,7 +23,7 @@ bool DbConnection::createConnection(){
 void DbConnection::setup(){
     QSqlQuery query(db);
     _success = query.exec("CREATE TABLE IF NOT EXISTS projects (id integer primary key autoincrement, "
-                          "name varchar(255) not null)");
+                          "name varchar(255) not null, max_dist double, sources integer, records integer)");
     _success = _success && query.exec("CREATE TABLE IF NOT EXISTS neighbours"
                                       "(clusterA varchar(255) not null primary key,"
                                       "clusterB varchar(255) not null,"

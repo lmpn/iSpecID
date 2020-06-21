@@ -27,7 +27,7 @@ bool GradingOptionsDialog::handleClick(){
     if(!ui->max_dist_text->text().isEmpty())
     {
         dist = ui->max_dist_text->text().toDouble(&ok);
-        if(!ok ||(dist > 100 && dist < 0) ){
+        if(!ok ||(dist > 100 || dist < 0) ){
             showErrorMessage("Maximun distance error","Value should be between 0 and 100");
             dist = 2;
         }

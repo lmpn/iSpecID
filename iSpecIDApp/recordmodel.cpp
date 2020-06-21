@@ -222,7 +222,7 @@ bool RecordModel::setData(const QModelIndex &index, const QVariant &value, int r
                 qrec->modification += "Species name changed;";
                 for (auto it = records->begin(); it!=records->end(); it++) {
                     if(it != qrec && qrec->joinRecord(*it)){
-                        records->erase(it);
+                        records->erase(qrec);
                         onRecordsChanged();
                         break;
                     }

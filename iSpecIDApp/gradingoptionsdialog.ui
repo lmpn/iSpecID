@@ -211,6 +211,13 @@ height: 25px
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>max_dist_text</tabstop>
+  <tabstop>min_lab_text</tabstop>
+  <tabstop>min_sequences_text</tabstop>
+  <tabstop>save_options_button</tabstop>
+  <tabstop>ok_button</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

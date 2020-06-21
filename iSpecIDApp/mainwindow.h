@@ -41,6 +41,7 @@ public:
     QString createCompleter();
     void exportDataToTSVHelper(QString dir_path, bool full = true);
     void saveProjectHelper();
+
 signals:
     void updateGraph();
     void updateColorGraph();
@@ -51,7 +52,7 @@ signals:
     void updateCurrentResults();
     void saveGraph(QString);
     void postQuery(QString);
-    void loadFinished(int,int,int);
+    void loadFinished(int,int,int,int);
     void saveFinished();
     void errorOccured();
     void stopLoading();
@@ -66,7 +67,7 @@ private slots:
     void onStopLoading();
     void onSaveAsProject();
     void onSaveFinished();
-    void onLoadFinished(int,int,int);
+    void onLoadFinished(int,int,int,int);
     void onAnnotateFinished();
     void onAnnotate();
     void onErrorOccured();
