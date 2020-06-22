@@ -7,9 +7,7 @@
 ## Guide
 ```bash
 $ git clone git@github.com:lmpn/ecsi.git
-$ cd ecsi
-$ git submodule update --init --recursive
-$ git clone https://github.com/google/googletest.git third_party/benchmark/googletest
+$ cd iSpecID
 $ mkdir build
 $ cmake -DCMAKE_BUILD_TYPE:STRING=Release -H. -Bbuild -G "Unix Makefiles"
 $ cmake --build build --config Release --target all -- -j 6
