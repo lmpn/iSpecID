@@ -17,5 +17,5 @@ int main(int argc, char **argv)
     DistanceMatrix distances;
     GradingParameters params;
     ispecid::IEngine engine(threads);
-    auto errors = engine.annotate(data,distances,params);
+    auto errors = engine.annotateOmp(data,distances,params);
 }
