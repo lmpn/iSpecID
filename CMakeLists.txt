@@ -18,7 +18,8 @@ endif()
 
 list(APPEND CMAKE_PREFIX_PATH "/usr/local/opt/curl/")
 
-option(BIN "Create binary" ON)
+option(BIN "Create BIN binary" ON)
+option(MPI "Create MPI binary" OFF)
 if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 8.0)
   set(CMAKE_CXX17_STANDARD_COMPILE_OPTION "-std=c++17")
   set(CMAKE_CXX17_EXTENSION_COMPILE_OPTION "-std=gnu++17")
@@ -61,11 +62,11 @@ if(BIN)
     if(COMMAND cmake_policy)
         cmake_policy(SET CMP0003 NEW)
     endif(COMMAND cmake_policy)
-
     add_executable( isid "${PROJECT_SOURCE_DIR}/main.cpp" ${core}  )
     target_link_libraries(isid -lpthread)
     target_link_libraries(isid ${CURL_LIBRARIES})
     target_link_libraries(isid ${Boost_LIBRARIES})
 endif()
+
 
 unset(BIN CACHE)

@@ -131,6 +131,55 @@ std::string IEngine::findBinsNeighbour(Dataset& data, DistanceMatrix& distances,
 }
 
 
+std::string IEngine::findBinsNeighbourOmp(Dataset& data, DistanceMatrix& distances, const std::unordered_set<std::string>& clusters, double max_distance)
+{
+    size_t ctr, num_components;
+    auto grade = "E";
+
+    ctr = 0;
+    for(auto& pair : data){
+        auto& current_clusters = pair.second.getClusters();
+        if(utils::hasIntersection(clusters,current_clusters)){
+            ctr+=1;
+            if(ctr>1) return grade;
+        }
+    }
+
+
+    auto cluster_begin = clusters.begin();
+    auto cluster_end = clusters.end();
+    auto neighbours = getNeighbours(distances, clusters);
+    if(neighbours.size() != clusters.size()){
+        for(auto& cluster : clusters){
+                std::string error;
+                try{
+                    // PRINT("Fetching data for " << cluster);
+                    Neighbour request_neighbour = parseBoldData(cluster);
+                    distances.insert({cluster, request_neighbour});
+                }catch(std::exception& e){
+                    std::string exception_message(e.what());
+                    error = exception_message;
+                }
+        }
+    }
+        int i = 0;
+        ugraph graph(neighbours.size());
+        for(auto& neighbour : neighbours){
+            auto item = clusters.find(neighbour.clusterB);
+            if(item != cluster_end && neighbour.distance <= max_distance) {
+                size_t ind = std::distance(cluster_begin, item);
+                boost::add_edge(i, ind, neighbour.distance, graph);
+            }
+            i++;
+        }
+        std::vector<int> component (neighbours.size());
+        num_components = boost::connected_components (graph, &component[0]);
+        if( num_components == 1){
+            grade="C";
+        }
+        return grade;
+}
+
 void IEngine::annotateItem( Species& species, Dataset& data, DistanceMatrix& distances, GradingParameters& params){
     int min_sources = params.min_sources;
     int min_size = params.min_size;
@@ -161,16 +210,13 @@ std::vector<std::string> IEngine::annotate(Dataset& data, DistanceMatrix& distan
     for(auto& pair : data){
         auto& species = pair.second;
         boost::asio::post(*pool, [&](){
-            // PRINT("Grading " << species.getSpeciesName());
             annotateItem(species, data, distances, params);
             {
                 completed_tasks++;
-                // PRINT(completed_tasks<< "/" << tasks);
                 if(completed_tasks == tasks){
                     task_cv.notify_one();
                 }
             }
-            // PRINT(species.getSpeciesName()<< "grade is: " << species.getGrade());
         });
     }
     {
@@ -181,11 +227,66 @@ std::vector<std::string> IEngine::annotate(Dataset& data, DistanceMatrix& distan
         auto& species = pair.second;
         if(species.getGrade() == "Z"){
             annotateItem(species, data, distances, params);
-            // PRINT(species.getSpeciesName() << " " << species.getGrade());
         }
     }
     return errors; 
 }
+
+std::vector<std::string> IEngine::annotateOmp(Dataset& data, DistanceMatrix& distances, GradingParameters& params){
+    Dataset local_data; 
+    DistanceMatrix local_distances; 
+    GradingParameters local_params;
+    
+    #pragma omp parallel
+    {
+        for(auto& pair : data){
+            local_data.insert(pair);
+        }
+
+        for(auto& pair : distances){
+            local_distances.insert(pair);
+        }
+
+        local_params = params;
+
+        #pragma omp single
+        {
+            for(auto& pair : data){
+                auto& species = pair.second;
+                #pragma omp task
+                {
+                    annotateItemOmp(species, local_data, local_distances, local_params);
+                }
+            }
+        }
+
+    }
+    return errors;
+}
+
+void IEngine::annotateItemOmp( Species& species, Dataset& data, DistanceMatrix& distances, GradingParameters& params){
+    int min_sources = params.min_sources;
+    int min_size = params.min_size;
+    double max_distance = params.max_distance;
+    std::string grade = "D";
+    int size = species.sourcesCount();
+    if(size >= min_sources){
+        grade = "E";
+        if(species.clustersCount() == 1){
+            const std::string& bin = species.getFirstCluster();
+            auto BINSpeciesConcordance = speciesPerBIN(data, bin);
+            if(BINSpeciesConcordance){
+                int specimens_size = species.recordCount();
+                grade = specimens_size >= min_size ? "A" : "B";
+            }
+        }else{
+            grade = findBinsNeighbourOmp(data, distances, species.getClusters(), max_distance);
+        }
+    }
+    species.setGrade(grade);
+}
+
+
 
 std::vector<std::string> IEngine::annotate(std::vector<Record>& data, DistanceMatrix& distances, GradingParameters& params){
     auto dataset = utils::group(data,Record::getSpeciesName,Species::addRecord,Species::fromRecord);
