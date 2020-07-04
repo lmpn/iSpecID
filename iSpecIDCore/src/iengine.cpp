@@ -154,12 +154,11 @@ void IEngine::annotateItem( Species& species, Dataset& data, DistanceMatrix& dis
 
 std::vector<std::string> IEngine::annotate(Dataset& data, DistanceMatrix& distances, GradingParameters& params){
     errors.clear();
-    tasks = 0;
+    tasks = data.size();
     completed_tasks = 0;
     for(auto& pair : data){
         auto& species = pair.second;
         annotateItem(species, data, distances, params);
-        /*
         boost::asio::post(*pool, [&](){
             annotateItem(species, data, distances, params);
             {
@@ -169,7 +168,6 @@ std::vector<std::string> IEngine::annotate(Dataset& data, DistanceMatrix& distan
                 }
             }
         });
-        */
     }
     {
         auto ul = std::unique_lock<std::mutex>(task_lock);
@@ -186,12 +184,11 @@ std::vector<std::string> IEngine::annotate(Dataset& data, DistanceMatrix& distan
 
 std::vector<std::string> IEngine::annotateMPI(Dataset& sub_data, Dataset& data, DistanceMatrix& distances, GradingParameters& params){
     errors.clear();
-    tasks = 0;
+    tasks = sub_data.size();
     completed_tasks = 0;
     for(auto& pair : sub_data){
         auto& species = pair.second;
         annotateItem(species, data, distances, params);
-        /*
         boost::asio::post(*pool, [&](){
             annotateItem(species, data, distances, params);
             {
@@ -201,7 +198,6 @@ std::vector<std::string> IEngine::annotateMPI(Dataset& sub_data, Dataset& data, 
                 }
             }
         });
-        */
     }
     {
         auto ul = std::unique_lock<std::mutex>(task_lock);
