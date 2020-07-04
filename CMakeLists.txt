@@ -46,6 +46,9 @@ else()
     message(FATAL_ERROR "Could not find Boost")
 endif()
 
+find_package(MPI REQUIRED)
+
+
 
 include_directories(
     ${PROJECT_SOURCE_DIR}/iSpecIDCore/include
@@ -68,5 +71,21 @@ if(BIN)
     target_link_libraries(isid ${Boost_LIBRARIES})
 endif()
 
+if(MPI)
+    include_directories(${MPI_INCLUDE_PATH})
+    if(COMMAND cmake_policy)
+        cmake_policy(SET CMP0003 NEW)
+    endif(COMMAND cmake_policy)
+    add_executable( mpiisid "${PROJECT_SOURCE_DIR}/mainmpi.cpp" ${core}  )
+    target_link_libraries(mpiisid -lpthread)
+    target_link_libraries(mpiisid ${CURL_LIBRARIES})
+    target_link_libraries(mpiisid ${Boost_LIBRARIES})
+    target_link_libraries(mpiisid ${MPI_LIBRARIES})
+    if(MPI_COMPILE_FLAGS)
+    set_target_properties(mpiisid PROPERTIES COMPILE_FLAGS "${MPI_COMPILE_FLAGS}")
+    endif()
 
-unset(BIN CACHE)
+    if(MPI_LINK_FLAGS)
+    set_target_properties(mpiisid PROPERTIES LINK_FLAGS "${MPI_LINK_FLAGS}")
+    endif()
+endif()

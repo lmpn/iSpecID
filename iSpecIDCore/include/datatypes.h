@@ -113,6 +113,12 @@ namespace ispecid{ namespace datatypes{
         std::string getSpeciesName(){
             return species_name;
         }
+        void setClusters( std::unordered_set<std::string> cset){
+            clusters = cset;
+        }
+        void setSources( std::unordered_set<std::string> sset){
+            sources = sset;
+        }
         const std::unordered_set<std::string>& getClusters(){
             return clusters;
         }
@@ -121,6 +127,9 @@ namespace ispecid{ namespace datatypes{
         }
         std::string getGrade(){
             return grade;
+        }
+        void setRecordCount(int count){
+            record_count = count;
         }
         int recordCount(){
             return record_count;
@@ -147,16 +156,16 @@ namespace ispecid{ namespace datatypes{
             std::string out = species_name; 
             out = out + " sources:{";
             for(auto& s :sources){
-                out= out + s + " "; 
+                out= out + s + "|"; 
             }
             out = out + "}";
             out = out + " clusters:{";
             for(auto& s :clusters){
-                out= out + s + " "; 
+                out= out + s + "|"; 
             }
             out = out + "} ";
             out = out + "grade: " + grade;
-            out = out + "size: " + std::to_string(record_count);
+            out = out + " size: " + std::to_string(record_count) + "\n";
             return out;
         }
     };
