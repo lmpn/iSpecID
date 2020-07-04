@@ -98,6 +98,7 @@ namespace ispecid{ namespace datatypes{
         int record_count;
 
         public:
+        Species(){}
         Species(std::string _species_name, std::string _grade):
             species_name(_species_name), grade(_grade), record_count(0)
         {

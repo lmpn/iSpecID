@@ -18,4 +18,7 @@ int main(int argc, char **argv)
     GradingParameters params;
     ispecid::IEngine engine(threads);
     auto errors = engine.annotate(data,distances,params);
+    for(auto& pair: data){
+        PRINT(pair.second.getSpeciesName() << ":" << pair.second.getGrade());
+    }
 }

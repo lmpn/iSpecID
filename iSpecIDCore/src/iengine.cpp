@@ -90,7 +90,6 @@ std::string IEngine::findBinsNeighbour(Dataset& data, DistanceMatrix& distances,
             boost::asio::post(*pool, [&,cluster](){
                 std::string error;
                 try{
-                    // PRINT("Fetching data for " << cluster);
                     Neighbour request_neighbour = parseBoldData(cluster);
                     distances.insert({cluster, request_neighbour});
                 }catch(std::exception& e){
@@ -102,7 +101,6 @@ std::string IEngine::findBinsNeighbour(Dataset& data, DistanceMatrix& distances,
                     if(!error.empty())
                         errors.push_back(error);
                     completed_tasks++;
-                    // PRINT(completed_tasks<< "/" << tasks);
                     if(completed_tasks == tasks){
                         task_cv.notify_one();
                     }
@@ -156,7 +154,7 @@ void IEngine::annotateItem( Species& species, Dataset& data, DistanceMatrix& dis
 
 std::vector<std::string> IEngine::annotate(Dataset& data, DistanceMatrix& distances, GradingParameters& params){
     errors.clear();
-    tasks = data.size();
+    tasks = 0;
     completed_tasks = 0;
     for(auto& pair : data){
         auto& species = pair.second;
@@ -186,6 +184,37 @@ std::vector<std::string> IEngine::annotate(Dataset& data, DistanceMatrix& distan
     return errors; 
 }
 
+std::vector<std::string> IEngine::annotateMPI(Dataset& sub_data, Dataset& data, DistanceMatrix& distances, GradingParameters& params){
+    errors.clear();
+    tasks = 0;
+    completed_tasks = 0;
+    for(auto& pair : sub_data){
+        auto& species = pair.second;
+        annotateItem(species, data, distances, params);
+        /*
+        boost::asio::post(*pool, [&](){
+            annotateItem(species, data, distances, params);
+            {
+                completed_tasks++;
+                if(completed_tasks == tasks){
+                    task_cv.notify_one();
+                }
+            }
+        });
+        */
+    }
+    {
+        auto ul = std::unique_lock<std::mutex>(task_lock);
+        task_cv.wait(ul, [&](){return tasks == completed_tasks;});
+    }
+    for(auto& pair : sub_data){
+        auto& species = pair.second;
+        if(species.getGrade() == "Z"){
+            annotateItem(species, data, distances, params);
+        }
+    }
+    return errors; 
+}
 
 
 

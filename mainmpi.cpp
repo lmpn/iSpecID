@@ -21,7 +21,7 @@ int main(int argc, char** argv)
     Dataset data = utils::group(records, Record::getSpeciesName, Species::addRecord, Species::fromRecord);
     DistanceMatrix distances;
     GradingParameters params;
-    // ispecid::IEngine engine(threads);
+    // 
     // auto errors = engine.annotateOmp(data,distances,params);
     int ierr;
     int num_procs;
@@ -53,14 +53,7 @@ int main(int argc, char** argv)
     MPI_Bcast(&params_dist, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     MPI_Bcast(&params_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&params_sources, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    std::cout << "rank: " << rank << "\n"
-        << "threads: " << threads << "\n"
-        << "data_size: " << data_size << "\n"
-        << "distances_size: " << distances_size << "\n"
-        << "params_size: " << params_size << "\n"
-        << "params_dist: " << params_dist << "\n"
-        << "params_sources: " << params_sources << "\n"
-        << std::endl;
+    
     GradingParameters local_params = { params_sources, params_size, params_dist };
     Dataset local_data;
     DistanceMatrix local_distances;
@@ -107,13 +100,6 @@ int main(int argc, char** argv)
             grade = new char[grade_size];
         }
         MPI_Bcast(grade, grade_size, MPI_CHAR, 0, MPI_COMM_WORLD);
-        std::cout << "rank: " << rank << "\n"
-            << "clusters: " << cluster_size << "\n"
-            << "sources: " << sources_size << "\n"
-            << "records: " << record_count << "\n"
-            << "species name: " << species_name << "\n"
-            << "grade: " << grade << "\n"
-            << std::endl; 
         for (int cs = 0; cs < cluster_size; cs++) {
             int size;
             char* buf;
@@ -152,17 +138,93 @@ int main(int argc, char** argv)
         nsp.setClusters(clusters);
         nsp.setSources(sources);
         nsp.setRecordCount(record_count);
-        local_data.insert({std::string(species_name), nsp });
+        data.insert({std::string(species_name), nsp });
         if (rank == 0)
         {
           it++;
         }
     }
-
-
-
+    ispecid::IEngine engine(threads/num_procs);
+    int start = data_size * rank / num_procs;
+    int end = data_size * (rank+1) / num_procs;
+    int counter = 0;
+    for(auto& pair : data){
+        if(counter >= start && counter < end){
+            local_data.insert(pair);
+            if(counter == end){
+                break;
+            }
+        }
+        counter++;
+    }
+    engine.annotateMPI(local_data, data, distances, params);
     //
 
+    if(rank == 0){
+        for(int irank = 1; irank < num_procs; irank++){
+            int size;
+            MPI_Recv(&size, 1, MPI_INT, irank, 0,MPI_COMM_WORLD, NULL);
+            for(int i = 0; i < size; i++){
+                char* species_name;
+                int species_name_size;
+                char* grade;
+                int grade_size;
+                MPI_Recv(&species_name_size, 1, MPI_INT, irank, 0, MPI_COMM_WORLD, NULL);
+                species_name = new char[species_name_size];
+                MPI_Recv(species_name, species_name_size, MPI_CHAR, irank, 0, MPI_COMM_WORLD, NULL);
+                MPI_Recv(&grade_size, 1, MPI_INT, irank, 0, MPI_COMM_WORLD, NULL);
+                grade = new char[grade_size];
+                MPI_Recv(grade, grade_size, MPI_CHAR, irank, 0, MPI_COMM_WORLD, NULL);
+                Species& species = data.at(std::string(species_name));
+                species.setGrade(std::string(grade));
+                data[species.getSpeciesName()] = species;
+            }
+        }
+        for(auto& pair: local_data){
+            auto species = pair.second;
+            data[species.getSpeciesName()] = species;
+        }
+    }
+    else if(rank != 0){
+        int size = local_data.size();
+        MPI_Send(&size,1,MPI_INT,0,0,MPI_COMM_WORLD);
+        for(auto& pair : local_data){
+            auto species = pair.second;
+            char* species_name;
+            int species_name_size;
+            char* grade;
+            int grade_size;
+            species_name = strdup(species.getSpeciesName().data());
+            species_name_size = strlen(species_name)+1;
+            grade = strdup(species.getGrade().data());
+            grade_size = strlen(grade)+1;
+            MPI_Send(&species_name_size, 1, MPI_INT,0, 0, MPI_COMM_WORLD);
+            MPI_Send(species_name, species_name_size, MPI_CHAR, 0,0, MPI_COMM_WORLD);
+            MPI_Send(&grade_size, 1, MPI_INT, 0,0, MPI_COMM_WORLD);
+            MPI_Send(grade, grade_size, MPI_CHAR, 0,0, MPI_COMM_WORLD);
+        }
+    }
     MPI_Finalize();
+    if(rank == 0){
+        for(auto& pair: data){
+            PRINT(pair.second.getSpeciesName() << ":" << pair.second.getGrade());
+        }
+
+    }
     return 0;
 }
+
+
+
+
+/*
+std::cout << "rank: " << rank << "\n"
+        << "threads: " << threads << "\n"
+        << "data_size: " << data_size << "\n"
+        << "distances_size: " << distances_size << "\n"
+        << "params_size: " << params_size << "\n"
+        << "params_dist: " << params_dist << "\n"
+        << "params_sources: " << params_sources << "\n"
+        << std::endl;
+
+*/
