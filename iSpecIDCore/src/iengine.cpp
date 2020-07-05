@@ -158,7 +158,6 @@ std::vector<std::string> IEngine::annotate(Dataset& data, DistanceMatrix& distan
     completed_tasks = 0;
     for(auto& pair : data){
         auto& species = pair.second;
-        annotateItem(species, data, distances, params);
         boost::asio::post(*pool, [&](){
             annotateItem(species, data, distances, params);
             {
@@ -188,7 +187,6 @@ std::vector<std::string> IEngine::annotateMPI(Dataset& sub_data, Dataset& data, 
     completed_tasks = 0;
     for(auto& pair : sub_data){
         auto& species = pair.second;
-        annotateItem(species, data, distances, params);
         boost::asio::post(*pool, [&](){
             annotateItem(species, data, distances, params);
             {

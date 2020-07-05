@@ -18,7 +18,7 @@ endif()
 
 list(APPEND CMAKE_PREFIX_PATH "/usr/local/opt/curl/")
 
-option(BIN "Create BIN binary" OFF)
+option(BIN "Create BIN binary" ON)
 option(MPI "Create MPI binary" ON)
 if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 8.0)
   set(CMAKE_CXX17_STANDARD_COMPILE_OPTION "-std=c++17")
