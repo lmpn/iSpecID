@@ -44,10 +44,10 @@ public:
     std::vector<std::string> annotateMPI(Dataset& sub_data, Dataset& data, DistanceMatrix& distances, GradingParameters& params);
 
 private:
-    bool speciesPerBIN(datatypes::Dataset& data, const std::string& bin);
-    datatypes::Neighbour parseBoldData(std::string cluster);
-    std::string findBinsNeighbour(datatypes::Dataset& data, datatypes::DistanceMatrix& distances, const std::unordered_set<std::string>& clusters, double max_distance);
-    void annotateItem( datatypes::Species& species, datatypes::Dataset& data, datatypes::DistanceMatrix& distances, datatypes::GradingParameters& params);
+    bool speciesPerBIN(Dataset& data, const std::string& bin);
+    Neighbour parseBoldData(std::string cluster);
+    std::string findBinsNeighbour(Species& species, Dataset& data, DistanceMatrix& distances, double max_distance);
+    void annotateItem( Species& species, Dataset& data, DistanceMatrix& distances, GradingParameters& params);
 
     std::vector<std::string> errors;
     boost::asio::thread_pool* pool;

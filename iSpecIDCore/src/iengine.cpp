@@ -66,11 +66,11 @@ std::vector<Neighbour> getNeighbours(DistanceMatrix& distances, const std::unord
     return neighbours;
 }
 
-std::string IEngine::findBinsNeighbour(Dataset& data, DistanceMatrix& distances, const std::unordered_set<std::string>& clusters, double max_distance)
+std::string IEngine::findBinsNeighbour(Species& species, Dataset& data, DistanceMatrix& distances, double max_distance)
 {
     size_t ctr, num_components;
     auto grade = "E";
-
+    const std::unordered_set<std::string> clusters = species.getClusters();
     ctr = 0;
     for(auto& pair : data){
         auto& current_clusters = pair.second.getClusters();
@@ -84,7 +84,7 @@ std::string IEngine::findBinsNeighbour(Dataset& data, DistanceMatrix& distances,
     auto cluster_begin = clusters.begin();
     auto cluster_end = clusters.end();
     auto neighbours = getNeighbours(distances, clusters);
-    if(neighbours.size() != clusters.size()){
+    if(neighbours.size() != clusters.size() && species.getGrade() != "Z"){
         for(auto& cluster : clusters){
             tasks++;
             boost::asio::post(*pool, [&,cluster](){
@@ -146,7 +146,7 @@ void IEngine::annotateItem( Species& species, Dataset& data, DistanceMatrix& dis
                 grade = specimens_size >= min_size ? "A" : "B";
             }
         }else{
-            grade = findBinsNeighbour(data, distances, species.getClusters(), max_distance);
+            grade = findBinsNeighbour(species, data, distances, max_distance);
         }
     }
     species.setGrade(grade);
