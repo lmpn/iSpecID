@@ -53,7 +53,22 @@ int main(int argc, char** argv)
     MPI_Bcast(&params_dist, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     MPI_Bcast(&params_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&params_sources, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    
+
+    std::cout 
+        << "----------------PREPARE PHASE-------------------\n" 
+        << "rank: " << rank << "\n"
+        << "threads: " << threads << "\n"
+        << "data_size: " << data_size << "\n"
+        << "distances_size: " << distances_size << "\n"
+        << "params_size: " << params_size << "\n"
+        << "params_dist: " << params_dist << "\n"
+        << "params_sources: " << params_sources << "\n"
+        << "------------------------------------------------\n" ;
+
+
+
+
+
     GradingParameters local_params = { params_sources, params_size, params_dist };
     Dataset local_data;
     DistanceMatrix local_distances;
@@ -148,6 +163,7 @@ int main(int argc, char** argv)
     int start = data_size * rank / num_procs;
     int end = data_size * (rank+1) / num_procs;
     int counter = 0;
+    ;
     for(auto& pair : data){
         if(counter >= start && counter < end){
             local_data.insert(pair);
@@ -157,8 +173,17 @@ int main(int argc, char** argv)
         }
         counter++;
     }
+    std::cout 
+        << "----------------COMPUTE PHASE-------------------\n" 
+        << "rank: " << rank << "\n"
+        << "threads per proc: " << threads/num_procs << "\n"
+        << "start_pos: " << start << "\n"
+        << "end_pos: " << end << "\n"
+        << "dataset size: " << data.size() << "\n"
+        << "local dataset size: " << local_data.size() << "\n"
+        << "------------------------------------------------\n";
     engine.annotateMPI(local_data, data, distances, params);
-    //
+    
 
     if(rank == 0){
         for(int irank = 1; irank < num_procs; irank++){
