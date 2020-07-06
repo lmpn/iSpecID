@@ -72,8 +72,8 @@ int main(int argc, char** argv)
         int species_name_size;
         char* grade;
         int grade_size;
-        std::unordered_set<std::string>::iterator clusters_it;
-        std::unordered_set<std::string>::iterator sources_it;
+        std::unordered_set<std::string>::const_iterator clusters_it;
+        std::unordered_set<std::string>::const_iterator sources_it;
         std::unordered_set<std::string> clusters;
         std::unordered_set<std::string> sources;
         if (rank == 0) {
