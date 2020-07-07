@@ -10,76 +10,81 @@ RecordModel::RecordModel(std::vector<QRecord> *records, QObject *parent)
     remove = false;
     sort_order = QVector<bool>(this->columnCount(), true);
     last_col = -1;
+    qDebug() << sort_order;
 }
 
 
 
 
 void RecordModel::sortBySection(int col){
-
     if(col== 0){
-        if(last_col == col) sort_order[col]=!sort_order[col];
         if(sort_order[col]){
             std::sort(records->begin(), records->end(), [](QRecord a, QRecord b){
                 return a.record.getSpeciesName().compare(b.record.getSpeciesName())<0;
             });
+            sort_order[col]= false;
         }
         else{
             std::sort(records->begin(), records->end(), [](QRecord a, QRecord b){
                 return a.record.getSpeciesName().compare(b.record.getSpeciesName())>0;
             });
+            sort_order[col]= true;
         }
     }
     else if(col== 1){
-        if(last_col == col) sort_order[col]=!sort_order[col];
         if(sort_order[col]){
             std::sort(records->begin(), records->end(), [](QRecord a, QRecord b){
                 return a.record.getCluster().compare(b.record.getCluster())<0;
             });
+            sort_order[col]= false;
         }
         else{
             std::sort(records->begin(), records->end(), [](QRecord a, QRecord b){
                 return a.record.getCluster().compare(b.record.getCluster())>0;
             });
+            sort_order[col]= true;
         }
     }
     else if(col== 2){
-        if(last_col == col) sort_order[col]=!sort_order[col];
         if(sort_order[col]){
             std::sort(records->begin(), records->end(), [](QRecord a, QRecord b){
                 return a.record.getGrade().compare(b.record.getGrade())<0;
             });
+            sort_order[col]= false;
         }
         else{
             std::sort(records->begin(), records->end(), [](QRecord a, QRecord b){
                 return a.record.getGrade().compare(b.record.getGrade())>0;
             });
+            sort_order[col]= true;
         }
     }
     else if(col== 3){
-        if(last_col == col) sort_order[col]=!sort_order[col];
         if(sort_order[col]){
             std::sort(records->begin(), records->end(), [](QRecord a, QRecord b){
                 return a.record.getSource().compare(b.record.getSource())<0;
             });
+            sort_order[col]= false;
         }
         else{
             std::sort(records->begin(), records->end(), [](QRecord a, QRecord b){
                 return a.record.getSource().compare(b.record.getSource())>0;
             });
+            sort_order[col]= true;
         }
     }
     else if(col== 4){
-        if(last_col == col) sort_order[col]=!sort_order[col];
         if(sort_order[col]){
             std::sort(records->begin(), records->end(), [](QRecord a, QRecord b){
                 return a.record.count() > b.record.count();
             });
+            sort_order[col]= false;
         }
         else{
             std::sort(records->begin(), records->end(), [](QRecord a, QRecord b){
                 return a.record.count() < b.record.count();
             });
+            sort_order[col]= true;
         }
     }
     last_col = col;
@@ -104,7 +109,7 @@ QVariant RecordModel::headerData(int section, Qt::Orientation orientation, int r
     {
         QString sort = "";
         if(last_col == section){
-            sort = sort_order[last_col] ? "(ASC)" : "(DESC)";
+            sort = sort_order[last_col] ? "(DESC)" : "(ASC)";
         }
         switch (section) {
         case 0:

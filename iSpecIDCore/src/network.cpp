@@ -33,11 +33,11 @@ std::string getPage(const char* url)
             fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
             fprintf(stderr, "Url failed: %s\n", url);
             curl_easy_cleanup(curl_handle);
-            throw std::runtime_error("Error on curl");
+            throw std::runtime_error("Can't connect to www.boldsystems.org to access nearest neighbors details. Please check your internet connection and  / or try again later");
         }
     }else{
         curl_easy_cleanup(curl_handle);
-        throw std::runtime_error("Error on curl");
+        throw std::runtime_error("Can't connect to www.boldsystems.org to access nearest neighbors details. Please check your internet connection and  / or try again later");
     }
     curl_easy_cleanup(curl_handle);
     return data;

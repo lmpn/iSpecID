@@ -3,7 +3,7 @@
 #include <QMessageBox>
 #include <qdebug.h>
 
-GradingOptionsDialog::GradingOptionsDialog(QWidget *parent) :
+GradingOptionsDialog::GradingOptionsDialog(ispecid::datatypes::GradingParameters params , QWidget *parent) :
     QDialog(parent),
     ui(new Ui::GradingOptionsDialog)
 {
@@ -12,6 +12,9 @@ GradingOptionsDialog::GradingOptionsDialog(QWidget *parent) :
             this, SLOT(onSaveOptionsButtonClicked()));
     connect(ui->ok_button, SIGNAL(clicked()),
             this, SLOT(onOkButtonClicked()));
+    ui->min_lab_text->setText(QString::number(params.min_sources));
+    ui->min_sequences_text->setText(QString::number(params.min_size));
+    ui->max_dist_text->setText(QString::number(params.max_distance));
 }
 
 

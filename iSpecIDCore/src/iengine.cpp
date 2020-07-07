@@ -178,6 +178,10 @@ std::vector<std::string> IEngine::annotate(Dataset& data, DistanceMatrix& distan
             annotateItem(species, data, distances, params);
         }
     }
+    {
+        auto ul = std::unique_lock<std::mutex>(task_lock);
+        task_cv.wait(ul, [&](){return tasks == completed_tasks;});
+    }
     return errors; 
 }
 
@@ -206,6 +210,10 @@ std::vector<std::string> IEngine::annotateMPI(Dataset& sub_data, Dataset& data, 
         if(species.getGrade() == "Z"){
             annotateItem(species, data, distances, params);
         }
+    }
+    {
+        auto ul = std::unique_lock<std::mutex>(task_lock);
+        task_cv.wait(ul, [&](){return tasks == completed_tasks;});
     }
     return errors; 
 }

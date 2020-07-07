@@ -11,7 +11,6 @@
 #include <boost/asio/post.hpp>
 #include <boost/regex.hpp>
 #endif
-#include <omp.h>
 #include "datatypes.h"
 #include "network.h"
 #include "utils.h"

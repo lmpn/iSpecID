@@ -2,7 +2,7 @@
 #define GRADINGOPTIONSDIALOG_H
 
 #include <QDialog>
-
+#include "datatypes.h"
 namespace Ui {
 class GradingOptionsDialog;
 }
@@ -12,7 +12,7 @@ class GradingOptionsDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit GradingOptionsDialog(QWidget *parent = nullptr);
+    explicit GradingOptionsDialog(ispecid::datatypes::GradingParameters params, QWidget *parent = nullptr);
     ~GradingOptionsDialog();
     bool handleClick();
 

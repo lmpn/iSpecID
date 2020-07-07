@@ -747,6 +747,9 @@ void MainWindow::setupRecordsTable(){
         disconnect(ui->record_table->horizontalHeader(), &QHeaderView::sectionClicked, model, nullptr);
         delete model;
     }
+    QSortFilterProxyModel* proxyModel;
+    proxyModel.setSourceModel( &model );
+    table.setModel( &proxyModel ); 
     ui->record_table->setModel(record_model);
     ui->record_table->setSelectionBehavior(QAbstractItemView::SelectionBehavior::SelectRows);
     connect(this, SIGNAL(updateRecords()),

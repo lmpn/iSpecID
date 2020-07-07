@@ -36,34 +36,34 @@ int main(int argc, char** argv)
     }
     ierr = MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     ierr = MPI_Comm_size(MPI_COMM_WORLD, &num_procs);
-    if (rank == 0) {
-        std::cout << "\n";
-        std::cout << "ISID:\n";
-        std::cout << "  The number of processes available is " << num_procs << "\n";
-        std::cout << "  Data size: " << data.size() << "\n";
-    }
+    // if (rank == 0) {
+    //     std::cout << "\n";
+    //     std::cout << "ISID:\n";
+    //     std::cout << "  The number of processes available is " << num_procs << "\n";
+    //     std::cout << "  Data size: " << data.size() << "\n";
+    // }
     int data_size = data.size();
     int distances_size = distances.size();
     double params_dist = params.max_distance;
     int params_size = params.min_size;
     int params_sources = params.min_sources;
-    MPI_Bcast(&threads, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&data_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&distances_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&params_dist, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&params_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&params_sources, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(static_cast<void *>( &threads), 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(static_cast<void *>( &data_size), 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(static_cast<void *>( &distances_size), 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(static_cast<void *>( &params_dist), 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(static_cast<void *>( &params_size), 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(static_cast<void *>( &params_sources), 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-    std::cout 
-        << "----------------PREPARE PHASE-------------------\n" 
-        << "rank: " << rank << "\n"
-        << "threads: " << threads << "\n"
-        << "data_size: " << data_size << "\n"
-        << "distances_size: " << distances_size << "\n"
-        << "params_size: " << params_size << "\n"
-        << "params_dist: " << params_dist << "\n"
-        << "params_sources: " << params_sources << "\n"
-        << "------------------------------------------------\n" ;
+    // std::cout 
+    //     << "----------------PREPARE PHASE-------------------\n" 
+    //     << "rank: " << rank << "\n"
+    //     << "threads: " << threads << "\n"
+    //     << "data_size: " << data_size << "\n"
+    //     << "distances_size: " << distances_size << "\n"
+    //     << "params_size: " << params_size << "\n"
+    //     << "params_dist: " << params_dist << "\n"
+    //     << "params_sources: " << params_sources << "\n"
+    //     << "------------------------------------------------\n" ;
 
 
 
@@ -102,19 +102,19 @@ int main(int argc, char** argv)
             clusters_it = it->second.getClusters().begin();
             sources_it = it->second.getSources().begin();
         }
-        MPI_Bcast(&cluster_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
-        MPI_Bcast(&sources_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
-        MPI_Bcast(&record_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
-        MPI_Bcast(&species_name_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Bcast(static_cast<void *>( &cluster_size), 1, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Bcast(static_cast<void *>( &sources_size), 1, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Bcast(static_cast<void *>( &record_count), 1, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Bcast(static_cast<void *>( &species_name_size), 1, MPI_INT, 0, MPI_COMM_WORLD);
         if(rank != 0){
-            species_name = new char[species_name_size];
+            species_name = static_cast<char*>(malloc(sizeof(char)*species_name_size));
         }
-        MPI_Bcast(species_name, species_name_size, MPI_CHAR, 0, MPI_COMM_WORLD);
-        MPI_Bcast(&grade_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Bcast(static_cast<void *> (species_name), species_name_size, MPI_CHAR, 0, MPI_COMM_WORLD);
+        MPI_Bcast(static_cast<void *>( &grade_size), 1, MPI_INT, 0, MPI_COMM_WORLD);
         if(rank != 0){
-            grade = new char[grade_size];
+            grade = static_cast<char*>(malloc(sizeof(char)*grade_size));
         }
-        MPI_Bcast(grade, grade_size, MPI_CHAR, 0, MPI_COMM_WORLD);
+        MPI_Bcast(static_cast<void *> (grade), grade_size, MPI_CHAR, 0, MPI_COMM_WORLD);
         for (int cs = 0; cs < cluster_size; cs++) {
             int size;
             char* buf;
@@ -122,15 +122,16 @@ int main(int argc, char** argv)
                 size = clusters_it->size()+1;
                 buf = strdup(clusters_it->data());
             }
-            MPI_Bcast(&size, 1, MPI_INT, 0, MPI_COMM_WORLD);
+            MPI_Bcast(static_cast<void *>( &size), 1, MPI_INT, 0, MPI_COMM_WORLD);
             if(rank!=0){
-                buf = new char[size];
+                buf = static_cast<char*>(malloc(sizeof(char)*size));
             }
-            MPI_Bcast(buf, size + 1, MPI_CHAR, 0, MPI_COMM_WORLD);
+            MPI_Bcast(static_cast<void *> (buf), size + 1, MPI_CHAR, 0, MPI_COMM_WORLD);
             clusters.insert(std::string(buf));
             if (rank == 0) {
                 clusters_it++;
             }
+            free(buf);
         }
         for (int ss = 0; ss < sources_size; ss++) {
             int size;
@@ -139,15 +140,16 @@ int main(int argc, char** argv)
                 size = sources_it->size()+1;
                 buf = strdup(sources_it->data());
             }
-            MPI_Bcast(&size, 1, MPI_INT, 0, MPI_COMM_WORLD);
+            MPI_Bcast(static_cast<void *>( &size), 1, MPI_INT, 0, MPI_COMM_WORLD);
             if(rank!=0){
-                buf = new char[size];
+                buf = static_cast<char*>(malloc(sizeof(char)*size));
             }
-            MPI_Bcast(buf, size + 1, MPI_CHAR, 0, MPI_COMM_WORLD);
+            MPI_Bcast(static_cast<void *> (buf), size + 1, MPI_CHAR, 0, MPI_COMM_WORLD);
             sources.insert(std::string(buf));
             if (rank == 0){
                 sources_it++;
             }
+            free(buf);
         }
         Species nsp = {std::string(species_name), std::string(grade)};
         nsp.setClusters(clusters);
@@ -157,13 +159,15 @@ int main(int argc, char** argv)
         if (rank == 0)
         {
           it++;
+        }else{
+            delete [] species_name;
+            delete [] grade;
         }
     }
     ispecid::IEngine engine(threads/num_procs);
     int start = data_size * rank / num_procs;
     int end = data_size * (rank+1) / num_procs;
     int counter = 0;
-    ;
     for(auto& pair : data){
         if(counter >= start && counter < end){
             local_data.insert(pair);
@@ -173,37 +177,52 @@ int main(int argc, char** argv)
         }
         counter++;
     }
-    std::cout 
-        << "----------------COMPUTE PHASE-------------------\n" 
-        << "rank: " << rank << "\n"
-        << "threads per proc: " << threads/num_procs << "\n"
-        << "start_pos: " << start << "\n"
-        << "end_pos: " << end << "\n"
-        << "dataset size: " << data.size() << "\n"
-        << "local dataset size: " << local_data.size() << "\n"
-        << "------------------------------------------------\n";
+    // std::cout 
+        // << "----------------COMPUTE PHASE-------------------\n" 
+        // << "rank: " << rank << "\n"
+        // << "threads per proc: " << threads/num_procs << "\n"
+        // << "start_pos: " << start << "\n"
+        // << "end_pos: " << end << "\n"
+        // << "dataset size: " << data.size() << "\n"
+        // << "local dataset size: " << local_data.size() << "\n"
+        // << "------------------------------------------------\n";
     engine.annotateMPI(local_data, data, distances, params);
-    
+    // std::cout 
+    //     << "----------------END COMPUTE PHASE-------------------\n" 
+    //     << "rank: " << rank << "\n"
+    //     << "threads per proc: " << threads/num_procs << "\n"
+    //     << "start_pos: " << start << "\n"
+    //     << "end_pos: " << end << "\n"
+    //     << "dataset size: " << data.size() << "\n"
+    //     << "local dataset size: " << local_data.size() << "\n"
+    //     << "------------------------------------------------\n";
 
     if(rank == 0){
         for(int irank = 1; irank < num_procs; irank++){
             int size;
-            MPI_Recv(&size, 1, MPI_INT, irank, 0,MPI_COMM_WORLD, NULL);
+            MPI_Recv(static_cast<void *>( &size), 1, MPI_INT, irank, 0,MPI_COMM_WORLD, NULL);
+        //     std::cout 
+        // << "----------------MERGE PHASE-------------------\n" 
+        // << "rank: " << rank << "\n"
+        // << "remote dataset size: " << size << "\n"
+        // << "remote rank: " << irank << "\n";
             for(int i = 0; i < size; i++){
                 char* species_name;
                 int species_name_size;
                 char* grade;
                 int grade_size;
-                MPI_Recv(&species_name_size, 1, MPI_INT, irank, 0, MPI_COMM_WORLD, NULL);
-                species_name = new char[species_name_size];
-                MPI_Recv(species_name, species_name_size, MPI_CHAR, irank, 0, MPI_COMM_WORLD, NULL);
-                MPI_Recv(&grade_size, 1, MPI_INT, irank, 0, MPI_COMM_WORLD, NULL);
-                grade = new char[grade_size];
-                MPI_Recv(grade, grade_size, MPI_CHAR, irank, 0, MPI_COMM_WORLD, NULL);
+                MPI_Recv(static_cast<void *>( &species_name_size), 1, MPI_INT, irank, 0, MPI_COMM_WORLD, NULL);
+                species_name =static_cast<char*>(malloc(sizeof(char)*species_name_size));
+                MPI_Recv(static_cast<void *> (species_name), species_name_size, MPI_CHAR, irank, 0, MPI_COMM_WORLD, NULL);
+                MPI_Recv(static_cast<void *>( &grade_size), 1, MPI_INT, irank, 0, MPI_COMM_WORLD, NULL);
+                grade = static_cast<char*>(malloc(sizeof(char)*grade_size));
+                MPI_Recv(static_cast<void *> (grade), grade_size, MPI_CHAR, irank, 0, MPI_COMM_WORLD, NULL);
                 Species& species = data.at(std::string(species_name));
                 species.setGrade(std::string(grade));
                 data[species.getSpeciesName()] = species;
+                // std::cout << "Received " << species_name << " graded " << grade << "\n";
             }
+        // std::cout << "------------------------------------------------\n";
         }
         for(auto& pair: local_data){
             auto species = pair.second;
@@ -212,7 +231,7 @@ int main(int argc, char** argv)
     }
     else if(rank != 0){
         int size = local_data.size();
-        MPI_Send(&size,1,MPI_INT,0,0,MPI_COMM_WORLD);
+        MPI_Send(static_cast<void *>( &size),1,MPI_INT,0,0,MPI_COMM_WORLD);
         for(auto& pair : local_data){
             auto species = pair.second;
             char* species_name;
@@ -223,19 +242,20 @@ int main(int argc, char** argv)
             species_name_size = strlen(species_name)+1;
             grade = strdup(species.getGrade().data());
             grade_size = strlen(grade)+1;
-            MPI_Send(&species_name_size, 1, MPI_INT,0, 0, MPI_COMM_WORLD);
+            MPI_Send(static_cast<void *>( &species_name_size), 1, MPI_INT,0, 0, MPI_COMM_WORLD);
             MPI_Send(species_name, species_name_size, MPI_CHAR, 0,0, MPI_COMM_WORLD);
-            MPI_Send(&grade_size, 1, MPI_INT, 0,0, MPI_COMM_WORLD);
+            MPI_Send(static_cast<void *>( &grade_size), 1, MPI_INT, 0,0, MPI_COMM_WORLD);
             MPI_Send(grade, grade_size, MPI_CHAR, 0,0, MPI_COMM_WORLD);
         }
     }
-    MPI_Finalize();
     if(rank == 0){
         for(auto& pair: data){
             PRINT(pair.second.getSpeciesName() << ":" << pair.second.getGrade());
         }
 
     }
+    MPI_Finalize();
+    
     return 0;
 }
 
