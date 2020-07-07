@@ -22,7 +22,6 @@ int main(int argc, char** argv)
     DistanceMatrix distances;
     GradingParameters params;
      
-     auto errors = engine.annotateOmp(data,distances,params);
     int ierr;
     int num_procs;
     int rank;
@@ -159,8 +158,8 @@ int main(int argc, char** argv)
         {
           it++;
         }else{
-            delete [] species_name;
-            delete [] grade;
+            free(species_name);
+            free(grade);
         }
     }
     ispecid::IEngine engine(threads/num_procs);
@@ -219,7 +218,9 @@ int main(int argc, char** argv)
                 Species& species = data.at(std::string(species_name));
                 species.setGrade(std::string(grade));
                 data[species.getSpeciesName()] = species;
-                 std::cout << "Received " << species_name << " graded " << grade << "\n";
+                free(species_name);
+                free(grade);
+                std::cout << "Received " << species_name << " graded " << grade << "\n";
             }
          std::cout << "------------------------------------------------\n";
         }
@@ -245,6 +246,8 @@ int main(int argc, char** argv)
             MPI_Send(species_name, species_name_size, MPI_CHAR, 0,0, MPI_COMM_WORLD);
             MPI_Send(static_cast<void *>( &grade_size), 1, MPI_INT, 0,0, MPI_COMM_WORLD);
             MPI_Send(grade, grade_size, MPI_CHAR, 0,0, MPI_COMM_WORLD);
+            free(species_name);
+            free(grade);
         }
     }
     if(rank == 0){
