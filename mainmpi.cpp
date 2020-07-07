@@ -21,8 +21,8 @@ int main(int argc, char** argv)
     Dataset data = utils::group(records, Record::getSpeciesName, Species::addRecord, Species::fromRecord);
     DistanceMatrix distances;
     GradingParameters params;
-    // 
-    // auto errors = engine.annotateOmp(data,distances,params);
+     
+     auto errors = engine.annotateOmp(data,distances,params);
     int ierr;
     int num_procs;
     int rank;
@@ -36,12 +36,12 @@ int main(int argc, char** argv)
     }
     ierr = MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     ierr = MPI_Comm_size(MPI_COMM_WORLD, &num_procs);
-    // if (rank == 0) {
-    //     std::cout << "\n";
-    //     std::cout << "ISID:\n";
-    //     std::cout << "  The number of processes available is " << num_procs << "\n";
-    //     std::cout << "  Data size: " << data.size() << "\n";
-    // }
+     if (rank == 0) {
+         std::cout << "\n";
+         std::cout << "ISID:\n";
+         std::cout << "  The number of processes available is " << num_procs << "\n";
+         std::cout << "  Data size: " << data.size() << "\n";
+     }
     int data_size = data.size();
     int distances_size = distances.size();
     double params_dist = params.max_distance;
@@ -54,16 +54,16 @@ int main(int argc, char** argv)
     MPI_Bcast(static_cast<void *>( &params_size), 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(static_cast<void *>( &params_sources), 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-    // std::cout 
-    //     << "----------------PREPARE PHASE-------------------\n" 
-    //     << "rank: " << rank << "\n"
-    //     << "threads: " << threads << "\n"
-    //     << "data_size: " << data_size << "\n"
-    //     << "distances_size: " << distances_size << "\n"
-    //     << "params_size: " << params_size << "\n"
-    //     << "params_dist: " << params_dist << "\n"
-    //     << "params_sources: " << params_sources << "\n"
-    //     << "------------------------------------------------\n" ;
+     std::cout 
+         << "----------------PREPARE PHASE-------------------\n" 
+         << "rank: " << rank << "\n"
+         << "threads: " << threads << "\n"
+         << "data_size: " << data_size << "\n"
+         << "distances_size: " << distances_size << "\n"
+         << "params_size: " << params_size << "\n"
+         << "params_dist: " << params_dist << "\n"
+         << "params_sources: " << params_sources << "\n"
+         << "------------------------------------------------\n" ;
 
 
 
@@ -78,7 +78,6 @@ int main(int argc, char** argv)
         it = data.begin();
     }
 
-    //SEND DATASET
     for (int i = 0; i < data_size; i++) {
         int cluster_size;
         int sources_size;
@@ -177,35 +176,35 @@ int main(int argc, char** argv)
         }
         counter++;
     }
-    // std::cout 
-        // << "----------------COMPUTE PHASE-------------------\n" 
-        // << "rank: " << rank << "\n"
-        // << "threads per proc: " << threads/num_procs << "\n"
-        // << "start_pos: " << start << "\n"
-        // << "end_pos: " << end << "\n"
-        // << "dataset size: " << data.size() << "\n"
-        // << "local dataset size: " << local_data.size() << "\n"
-        // << "------------------------------------------------\n";
+     std::cout 
+         << "----------------COMPUTE PHASE-------------------\n" 
+         << "rank: " << rank << "\n"
+         << "threads per proc: " << threads/num_procs << "\n"
+         << "start_pos: " << start << "\n"
+         << "end_pos: " << end << "\n"
+         << "dataset size: " << data.size() << "\n"
+         << "local dataset size: " << local_data.size() << "\n"
+         << "------------------------------------------------\n";
     engine.annotateMPI(local_data, data, distances, params);
-    // std::cout 
-    //     << "----------------END COMPUTE PHASE-------------------\n" 
-    //     << "rank: " << rank << "\n"
-    //     << "threads per proc: " << threads/num_procs << "\n"
-    //     << "start_pos: " << start << "\n"
-    //     << "end_pos: " << end << "\n"
-    //     << "dataset size: " << data.size() << "\n"
-    //     << "local dataset size: " << local_data.size() << "\n"
-    //     << "------------------------------------------------\n";
+     std::cout 
+         << "----------------END COMPUTE PHASE-------------------\n" 
+         << "rank: " << rank << "\n"
+         << "threads per proc: " << threads/num_procs << "\n"
+         << "start_pos: " << start << "\n"
+         << "end_pos: " << end << "\n"
+         << "dataset size: " << data.size() << "\n"
+         << "local dataset size: " << local_data.size() << "\n"
+         << "------------------------------------------------\n";
 
     if(rank == 0){
         for(int irank = 1; irank < num_procs; irank++){
             int size;
             MPI_Recv(static_cast<void *>( &size), 1, MPI_INT, irank, 0,MPI_COMM_WORLD, NULL);
-        //     std::cout 
-        // << "----------------MERGE PHASE-------------------\n" 
-        // << "rank: " << rank << "\n"
-        // << "remote dataset size: " << size << "\n"
-        // << "remote rank: " << irank << "\n";
+             std::cout 
+         << "----------------MERGE PHASE-------------------\n" 
+         << "rank: " << rank << "\n"
+         << "remote dataset size: " << size << "\n"
+         << "remote rank: " << irank << "\n";
             for(int i = 0; i < size; i++){
                 char* species_name;
                 int species_name_size;
@@ -220,9 +219,9 @@ int main(int argc, char** argv)
                 Species& species = data.at(std::string(species_name));
                 species.setGrade(std::string(grade));
                 data[species.getSpeciesName()] = species;
-                // std::cout << "Received " << species_name << " graded " << grade << "\n";
+                 std::cout << "Received " << species_name << " graded " << grade << "\n";
             }
-        // std::cout << "------------------------------------------------\n";
+         std::cout << "------------------------------------------------\n";
         }
         for(auto& pair: local_data){
             auto species = pair.second;
