@@ -31,6 +31,14 @@ namespace ispecid{ namespace datatypes{
         std::string clusterA;
         std::string clusterB;
         double distance;
+
+        neighbour(){};
+        neighbour(std::string clusterA_, std::string clusterB_, double distance_){
+            clusterA = clusterA_;
+            clusterB = clusterB_;
+            distance = distance_;
+        }
+
     }Neighbour;
 
     class Record{
@@ -169,9 +177,20 @@ namespace ispecid{ namespace datatypes{
             out = out + " size: " + std::to_string(record_count) + "\n";
             return out;
         }
+        int sizeInBytes(){
+            int total = 4;
+            total += species_name.size();
+            for(auto &c : clusters)
+                total += c.size();
+                
+            for(auto &s : clusters)
+                total += s.size();
+            total += grade.size();
+            return total;
+        }
     };
 
-using Dataset = std::unordered_map<std::string, Species>;
+using Dataset = std::map<std::string, Species>;
 using DistanceMatrix = std::map<std::string, Neighbour>;
 }}
 #endif

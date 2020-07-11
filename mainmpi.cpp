@@ -11,72 +11,53 @@
 using namespace ispecid::datatypes;
 using namespace ispecid::fileio;
 
-int main(int argc, char** argv)
+void masterSetup(
+    int argc, 
+    char** argv,
+    int rank, 
+    int& threads, 
+    Dataset& data, 
+    DistanceMatrix& distances,
+    GradingParameters& params,
+    int& data_size, 
+    int& distances_size, 
+    double& params_dist, 
+    int& params_size, 
+    int& params_sources, 
+    int num_procs)
 {
-    std::string file_path = utils::argParse<std::string>(argc, argv, "--data=", "/Users/lmpn/Desktop/diss/datasets/tsv/canidae.tsv");
-    int threads = utils::argParse<int>(argc, argv, "--threads=", 1);
-    std::vector<std::string> header;
-    auto records = loadFile<Record>(file_path, toRecord, Format::TSV);
-    records = utils::filter(records, Record::goodRecord);
-    Dataset data = utils::group(records, Record::getSpeciesName, Species::addRecord, Species::fromRecord);
-    DistanceMatrix distances;
-    GradingParameters params;
-     
-    int ierr;
-    int num_procs;
-    int rank;
-    ierr = MPI_Init(&argc, &argv);
-
-    if (ierr != 0) {
+    if (rank == 0) {
+        std::string file_path = utils::argParse<std::string>(argc, argv, "--data=", "/Users/lmpn/Desktop/diss/datasets/tsv/canidae.tsv");
+        threads = utils::argParse<int>(argc, argv, "--threads=", 1);
+        auto records = loadFile<Record>(file_path, toRecord, Format::TSV);
+        records = utils::filter(records, Record::goodRecord);
+        data = utils::group(records, Record::getSpeciesName, Species::addRecord, Species::fromRecord);
+        data_size = data.size();
+        distances_size = distances.size();
+        params_dist = params.max_distance;
+        params_size = params.min_size;
+        params_sources = params.min_sources;
         std::cout << "\n";
-        std::cout << "ISID - Fatal error!\n";
-        std::cout << "  MPI_Init returned ierr = " << ierr << "\n";
-        exit(1);
+        std::cout << "ISID:\n";
+        std::cout << "  The number of processes available is " << num_procs << "\n";
+        std::cout << "  Data size: " << data.size() << "\n";
     }
-    ierr = MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    ierr = MPI_Comm_size(MPI_COMM_WORLD, &num_procs);
-     if (rank == 0) {
-         std::cout << "\n";
-         std::cout << "ISID:\n";
-         std::cout << "  The number of processes available is " << num_procs << "\n";
-         std::cout << "  Data size: " << data.size() << "\n";
-     }
-    int data_size = data.size();
-    int distances_size = distances.size();
-    double params_dist = params.max_distance;
-    int params_size = params.min_size;
-    int params_sources = params.min_sources;
+}
+
+void broadcastSetup(int& threads, int& data_size, int& distances_size, double& params_dist, int& params_size, int& params_sources){
     MPI_Bcast(static_cast<void *>( &threads), 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(static_cast<void *>( &data_size), 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(static_cast<void *>( &distances_size), 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(static_cast<void *>( &params_dist), 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     MPI_Bcast(static_cast<void *>( &params_size), 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(static_cast<void *>( &params_sources), 1, MPI_INT, 0, MPI_COMM_WORLD);
+}
 
-     std::cout 
-         << "----------------PREPARE PHASE-------------------\n" 
-         << "rank: " << rank << "\n"
-         << "threads: " << threads << "\n"
-         << "data_size: " << data_size << "\n"
-         << "distances_size: " << distances_size << "\n"
-         << "params_size: " << params_size << "\n"
-         << "params_dist: " << params_dist << "\n"
-         << "params_sources: " << params_sources << "\n"
-         << "------------------------------------------------\n" ;
-
-
-
-
-
-    GradingParameters local_params = { params_sources, params_size, params_dist };
-    Dataset local_data;
-    DistanceMatrix local_distances;
-
+void broadcastDataset(int rank, int data_size, Dataset& data){
     Dataset::iterator it;
     if (rank == 0) {
         it = data.begin();
     }
-
     for (int i = 0; i < data_size; i++) {
         int cluster_size;
         int sources_size;
@@ -93,10 +74,10 @@ int main(int argc, char** argv)
             cluster_size = it->second.clustersCount();
             sources_size = it->second.sourcesCount();
             record_count = it->second.recordCount();
-            species_name = strdup(it->second.getSpeciesName().data());
-            species_name_size = strlen(species_name)+1;
-            grade = strdup(it->second.getGrade().data());
-            grade_size = strlen(grade)+1;
+            species_name = strdup(it->second.getSpeciesName().c_str());
+            species_name_size = it->second.getSpeciesName().length();
+            grade = strdup(it->second.getGrade().c_str());
+            grade_size = it->second.getGrade().length();
             clusters_it = it->second.getClusters().begin();
             sources_it = it->second.getSources().begin();
         }
@@ -117,15 +98,15 @@ int main(int argc, char** argv)
             int size;
             char* buf;
             if (rank == 0) {
-                size = clusters_it->size()+1;
-                buf = strdup(clusters_it->data());
+                size = clusters_it->length();
+                buf = strdup(clusters_it->c_str());
             }
             MPI_Bcast(static_cast<void *>( &size), 1, MPI_INT, 0, MPI_COMM_WORLD);
             if(rank!=0){
                 buf = static_cast<char*>(malloc(sizeof(char)*size));
             }
-            MPI_Bcast(static_cast<void *> (buf), size + 1, MPI_CHAR, 0, MPI_COMM_WORLD);
-            clusters.insert(std::string(buf));
+            MPI_Bcast(static_cast<void *> (buf), size, MPI_CHAR, 0, MPI_COMM_WORLD);
+            clusters.insert(std::string(buf, size));
             if (rank == 0) {
                 clusters_it++;
             }
@@ -135,34 +116,36 @@ int main(int argc, char** argv)
             int size;
             char* buf;
             if (rank == 0) {
-                size = sources_it->size()+1;
-                buf = strdup(sources_it->data());
+                size = sources_it->length();
+                buf = strdup(sources_it->c_str());
             }
             MPI_Bcast(static_cast<void *>( &size), 1, MPI_INT, 0, MPI_COMM_WORLD);
             if(rank!=0){
                 buf = static_cast<char*>(malloc(sizeof(char)*size));
             }
-            MPI_Bcast(static_cast<void *> (buf), size + 1, MPI_CHAR, 0, MPI_COMM_WORLD);
-            sources.insert(std::string(buf));
+            MPI_Bcast(static_cast<void *> (buf), size, MPI_CHAR, 0, MPI_COMM_WORLD);
+            sources.insert(std::string(buf,size));;
             if (rank == 0){
                 sources_it++;
             }
             free(buf);
         }
-        Species nsp = {std::string(species_name), std::string(grade)};
+        Species nsp = {std::string(species_name, species_name_size), std::string(grade, grade_size)};
         nsp.setClusters(clusters);
         nsp.setSources(sources);
         nsp.setRecordCount(record_count);
-        data.insert({std::string(species_name), nsp });
+        data.insert({std::string(species_name, species_name_size), nsp });
         if (rank == 0)
         {
           it++;
-        }else{
-            free(species_name);
-            free(grade);
         }
+        free(species_name);
+        free(grade);
     }
-    ispecid::IEngine engine(threads/num_procs);
+}
+
+
+void createSubDataset(int rank, Dataset& local_data, Dataset& data, int data_size, int num_procs){
     int start = data_size * rank / num_procs;
     int end = data_size * (rank+1) / num_procs;
     int counter = 0;
@@ -175,35 +158,13 @@ int main(int argc, char** argv)
         }
         counter++;
     }
-     std::cout 
-         << "----------------COMPUTE PHASE-------------------\n" 
-         << "rank: " << rank << "\n"
-         << "threads per proc: " << threads/num_procs << "\n"
-         << "start_pos: " << start << "\n"
-         << "end_pos: " << end << "\n"
-         << "dataset size: " << data.size() << "\n"
-         << "local dataset size: " << local_data.size() << "\n"
-         << "------------------------------------------------\n";
-    engine.annotateMPI(local_data, data, distances, params);
-     std::cout 
-         << "----------------END COMPUTE PHASE-------------------\n" 
-         << "rank: " << rank << "\n"
-         << "threads per proc: " << threads/num_procs << "\n"
-         << "start_pos: " << start << "\n"
-         << "end_pos: " << end << "\n"
-         << "dataset size: " << data.size() << "\n"
-         << "local dataset size: " << local_data.size() << "\n"
-         << "------------------------------------------------\n";
+}
 
+void retriveResults(int rank, int num_procs, Dataset& local_data, Dataset& data){
     if(rank == 0){
         for(int irank = 1; irank < num_procs; irank++){
             int size;
             MPI_Recv(static_cast<void *>( &size), 1, MPI_INT, irank, 0,MPI_COMM_WORLD, NULL);
-             std::cout 
-         << "----------------MERGE PHASE-------------------\n" 
-         << "rank: " << rank << "\n"
-         << "remote dataset size: " << size << "\n"
-         << "remote rank: " << irank << "\n";
             for(int i = 0; i < size; i++){
                 char* species_name;
                 int species_name_size;
@@ -215,14 +176,12 @@ int main(int argc, char** argv)
                 MPI_Recv(static_cast<void *>( &grade_size), 1, MPI_INT, irank, 0, MPI_COMM_WORLD, NULL);
                 grade = static_cast<char*>(malloc(sizeof(char)*grade_size));
                 MPI_Recv(static_cast<void *> (grade), grade_size, MPI_CHAR, irank, 0, MPI_COMM_WORLD, NULL);
-                Species& species = data.at(std::string(species_name));
-                species.setGrade(std::string(grade));
+                Species& species = data.at(std::string(species_name, species_name_size));
+                species.setGrade(std::string(grade, grade_size));
                 data[species.getSpeciesName()] = species;
-                free(species_name);
                 free(grade);
-                std::cout << "Received " << species_name << " graded " << grade << "\n";
+                free(species_name);
             }
-         std::cout << "------------------------------------------------\n";
         }
         for(auto& pair: local_data){
             auto species = pair.second;
@@ -238,18 +197,64 @@ int main(int argc, char** argv)
             int species_name_size;
             char* grade;
             int grade_size;
-            species_name = strdup(species.getSpeciesName().data());
-            species_name_size = strlen(species_name)+1;
-            grade = strdup(species.getGrade().data());
-            grade_size = strlen(grade)+1;
+            species_name = strdup(species.getSpeciesName().c_str());
+            species_name_size = species.getSpeciesName().length();
+            grade = strdup(species.getGrade().c_str());
+            grade_size = species.getGrade().length();
             MPI_Send(static_cast<void *>( &species_name_size), 1, MPI_INT,0, 0, MPI_COMM_WORLD);
-            MPI_Send(species_name, species_name_size, MPI_CHAR, 0,0, MPI_COMM_WORLD);
+            MPI_Send(static_cast<void *>( species_name), species_name_size, MPI_CHAR, 0,0, MPI_COMM_WORLD);
             MPI_Send(static_cast<void *>( &grade_size), 1, MPI_INT, 0,0, MPI_COMM_WORLD);
-            MPI_Send(grade, grade_size, MPI_CHAR, 0,0, MPI_COMM_WORLD);
+            MPI_Send(static_cast<void *>( grade), grade_size, MPI_CHAR, 0,0, MPI_COMM_WORLD);
             free(species_name);
             free(grade);
         }
     }
+}
+
+
+int main(int argc, char** argv)
+{
+    
+     
+    int ierr;
+    int num_procs;
+    int rank;
+    int threads; 
+    Dataset data;
+    DistanceMatrix distances;
+    GradingParameters params;
+    int data_size;
+    int distances_size;
+    double params_dist;
+    int params_size;
+    int params_sources;
+    Dataset local_data;
+    DistanceMatrix local_distances;
+    GradingParameters local_params;
+
+    ierr = MPI_Init(&argc, &argv);
+    if (ierr != 0) {
+        std::cout << "\n";
+        std::cout << "ISID - Fatal error!\n";
+        std::cout << "  MPI_Init returned ierr = " << ierr << "\n";
+        exit(1);
+    }
+    ierr = MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    ierr = MPI_Comm_size(MPI_COMM_WORLD, &num_procs);
+    
+    
+    masterSetup( argc, argv, rank, threads, data, distances, params, data_size, distances_size, params_dist, params_size, params_sources, num_procs);
+    broadcastSetup(threads,data_size,distances_size,params_dist,params_size,params_sources);
+
+    local_params = { params_sources, params_size, params_dist };
+
+    broadcastDataset(rank, data_size, data);
+    createSubDataset(rank, local_data, data, data_size, num_procs);
+
+    ispecid::IEngine engine(threads, num_procs);
+    engine.annotateMPI(local_data, data, distances, params);
+    retriveResults(rank, num_procs, local_data, data);
+
     if(rank == 0){
         for(auto& pair: data){
             PRINT(pair.second.getSpeciesName() << ":" << pair.second.getGrade());
@@ -260,18 +265,3 @@ int main(int argc, char** argv)
     
     return 0;
 }
-
-
-
-
-/*
-std::cout << "rank: " << rank << "\n"
-        << "threads: " << threads << "\n"
-        << "data_size: " << data_size << "\n"
-        << "distances_size: " << distances_size << "\n"
-        << "params_size: " << params_size << "\n"
-        << "params_dist: " << params_dist << "\n"
-        << "params_sources: " << params_sources << "\n"
-        << std::endl;
-
-*/

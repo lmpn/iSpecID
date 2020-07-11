@@ -9,6 +9,7 @@
 #include <qdebug.h>
 #include <QCompleter>
 #include <QStringList>
+#include <QSortFilterProxyModel>
 #include <qtconcurrentrun.h>
 #include "projectselectiondialog.h"
 #include "qrecord.h"
@@ -751,11 +752,9 @@ void MainWindow::setupRecordsTable(){
     ui->record_table->setSelectionBehavior(QAbstractItemView::SelectionBehavior::SelectRows);
     connect(this, SIGNAL(updateRecords()),
             record_model,SLOT(onRecordsChanged()));
-    connect(ui->record_table->horizontalHeader(), &QHeaderView::sectionPressed,
-            [this](int column){
-        (( RecordModel *)ui->record_table->model())->sortBySection(column);
-//        ui->record_table->resizeColumnsToContents();
-    });
+    connect(ui->record_table->horizontalHeader(), SIGNAL(sectionClicked(int)),
+            record_model, SLOT(sortBySection(int))
+    );
     connect(record_model, SIGNAL(updateCombobox()),
             this, SLOT(onComboBoxChanged()));
 }

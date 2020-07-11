@@ -11,6 +11,7 @@
 #include <type_traits>
 #include <iterator>
 #include <memory>
+#include <map>
 
 #define PRINT(X) std::cout << X << std::endl;
 #define PRINTV(X) for(auto x : X){ std::cout << x << " "; }  std::cout << std::endl;
@@ -117,7 +118,7 @@ namespace utils{
 
 
     template<class Key, class Value>
-    using Aggregation  = std::unordered_map<Key, Value>;
+    using Aggregation = std::map<Key, Value>;
 
     template<class Item>
     using Table = std::vector<Item>;

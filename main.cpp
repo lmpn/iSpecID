@@ -16,9 +16,12 @@ int main(int argc, char **argv)
     Dataset data = utils::group(records,Record::getSpeciesName,Species::addRecord,Species::fromRecord);
     DistanceMatrix distances;
     GradingParameters params;
+    
     ispecid::IEngine engine(threads);
     auto errors = engine.annotate(data,distances,params);
+    int size = 0;
     for(auto& pair: data){
-        PRINT(pair.second.getSpeciesName() << ":" << pair.second.getGrade());
+        auto s = pair.second;
+        std::cout << s.getSpeciesName() << " " << s.getGrade() << std::endl;
     }
 }
