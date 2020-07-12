@@ -243,12 +243,11 @@ std::vector<std::string> IEngine::annotate(Dataset& data, DistanceMatrix& distan
     }
 
 
-    completed_tasks = 0;
     z_partitions = divide_(z_species, _cores);
     clusters_partitions = divide_<std::string>(clusters, _cores);
-    createFetch(clusters_partitions, distances_ptr);
-    wait();
     completed_tasks = 0;
+    tasks = tasks * 2;
+    createFetch(clusters_partitions, distances_ptr);
     createWork(z_partitions, data, distances, params);
     wait();
     for(auto& part : z_partitions){
