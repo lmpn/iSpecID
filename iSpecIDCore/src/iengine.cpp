@@ -218,14 +218,40 @@ void IEngine::createWork(std::vector<std::vector<Species>*>& partitions, Dataset
 std::vector<std::string> IEngine::annotate(Dataset& data, DistanceMatrix& distances, GradingParameters& params){
     errors.clear();
     completed_tasks = 0;
-    tasks = _cores;
-    std::vector<std::vector<Species>*> partitions = divide(data);
     DistanceMatrix* distances_ptr = &distances;
     std::vector<std::string> clusters;
-    std::vector<Species> z_species;
     std::vector<std::vector<std::string>*> clusters_partitions;
-    std::vector<std::vector<Species>*> z_partitions;
+    for(auto& pair : data){
+        auto& sp = pair.second;
+        annotateItem(sp, data, distances, params);
+        if(sp.getGrade() == "U"){
+            auto input = sp.getClusters();
+            for(auto str: input){
+                tasks++;
+                boost::asio::post(*pool, [this, str, distances_ptr](){
+                    try{
+                        Neighbour request_neighbour = parseBoldData(str);
+                        distances_ptr->insert({str, request_neighbour});
+                    }catch(std::exception e){
+                        errors.push_back(e.what());
+                    }
+                    {
+                        completed_tasks++;
+                        if(completed_tasks == tasks){
+                            task_cv.notify_one();
+                        }
+                    }
+                });
 
+            }
+        }
+    }
+    wait();
+    for(auto& pair : data){
+        auto& sp = pair.second;
+        annotateItem(sp, data, distances, params);
+    }
+/*
     createWork(partitions, data, distances, params);
     wait();
 
@@ -244,17 +270,13 @@ std::vector<std::string> IEngine::annotate(Dataset& data, DistanceMatrix& distan
 
 
     z_partitions = divide_(z_species, _cores);
-    clusters_partitions = divide_<std::string>(clusters, _cores);
-    completed_tasks = 0;
     tasks = tasks * 2;
-    createFetch(clusters_partitions, distances_ptr);
     createWork(z_partitions, data, distances, params);
-    wait();
     for(auto& part : z_partitions){
         for(auto& sp : *part){
             data[sp.getSpeciesName()].setGrade(sp.getGrade());
         }
-    }
+    }*/
     return errors;
 }
 
