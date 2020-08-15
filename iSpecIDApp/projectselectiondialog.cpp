@@ -15,21 +15,47 @@ ProjectSelectionDialog::ProjectSelectionDialog(QString app_dir, QString current_
     QStringListModel *model = new QStringListModel();
     model->setStringList(projects);
     ui->projectList->setModel(model);
-    connect(ui->deleteButton, SIGNAL(clicked()), this, SLOT(deleteProject()));
+    connect(ui->cancelButton, SIGNAL(clicked()), this, SLOT(onCloseProjectSelection()));
 }
 
-QString ProjectSelectionDialog::getProject(){
+LoadProjectSelectionDialog::LoadProjectSelectionDialog(QString app_dir, QString current_project, QStringList projects, QWidget *parent) :
+    ProjectSelectionDialog(app_dir, current_project, projects, parent)
+{
+    ui->actionButton->setText("Load");
+    connect(ui->actionButton, SIGNAL(clicked()), this, SLOT(loadProject()));
+}
+
+DeleteProjectSelectionDialog::DeleteProjectSelectionDialog(QString app_dir, QString current_project, QStringList projects, QWidget *parent) :
+    ProjectSelectionDialog(app_dir, current_project, projects, parent)
+{
+    ui->actionButton->setText("Delete");
+    connect(ui->actionButton, SIGNAL(clicked()), this, SLOT(deleteProject()));
+}
+
+
+
+void LoadProjectSelectionDialog::loadProject(){
+    selected_project = getProject();
+    if(!selected_project.isEmpty()){
+        close();
+        this->setResult(QDialog::Accepted);
+    }
+}
+QString LoadProjectSelectionDialog::getProject(){
     auto selection = ui->projectList->selectionModel()->selectedIndexes();
     if(selection.size() == 0) return "";
     return selection[0].data(Qt::DisplayRole).toString();
 }
 
-void ProjectSelectionDialog::deleteProject(){
+
+void DeleteProjectSelectionDialog::deleteProject(){
     auto selection = ui->projectList->selectionModel()->selectedIndexes();
     if(selection.size() == 0) return;
     QString project = selection[0].data(Qt::DisplayRole).toString();
     if(project == current_project) {
         QMessageBox::critical(this, "Delete project", "Current project can't be deleted", QMessageBox::StandardButton::Ok, QMessageBox::Ok);
+        return;
+    }else if(project.isEmpty()){
         return;
     }
     DbConnection dbc(app_dir);
@@ -41,9 +67,23 @@ void ProjectSelectionDialog::deleteProject(){
     deleteStat = deleteStat.arg(project);
     dbc.execQuery(deleteStat);
     ui->projectList->model()->removeRow(selection[0].row(),QModelIndex());
+    close();
+}
+
+DeleteProjectSelectionDialog::~DeleteProjectSelectionDialog()
+{
+}
+
+LoadProjectSelectionDialog::~LoadProjectSelectionDialog()
+{
 }
 
 ProjectSelectionDialog::~ProjectSelectionDialog()
 {
     delete ui;
+}
+void ProjectSelectionDialog::onCloseProjectSelection()
+{
+    close();
+    this->setResult(QDialog::Rejected);
 }

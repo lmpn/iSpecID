@@ -42,8 +42,14 @@ MainWindow::MainWindow(QString app_dir, QWidget *parent)
             this, SLOT(onRecordTableClick(const QModelIndex& )));
     connect(ui->new_project_action, SIGNAL(triggered()),
             this, SLOT(onNewProject()));
+    connect(ui->export_distance_matrix_action, SIGNAL(triggered()),
+            this, SLOT(onExportDistanceMatrix()));
+    connect(ui->export_results_action, SIGNAL(triggered()),
+            this, SLOT(onExportResults()));
     connect(ui->load_project_action, SIGNAL(triggered()),
             this, SLOT(onLoadProject()));
+    connect(ui->delete_project_action, SIGNAL(triggered()),
+            this, SLOT(onDeleteProject()));
     connect(ui->save_as_project_action, SIGNAL(triggered()),
             this, SLOT(onSaveAsProject()));
     connect(ui->save_project_action, SIGNAL(triggered()),
@@ -80,6 +86,7 @@ MainWindow::MainWindow(QString app_dir, QWidget *parent)
     });
     connect(ui->load_distance_matrix_action, SIGNAL(triggered()), this,SLOT(loadDistanceMatrix()));
     connect(ui->close_project_action, &QAction::triggered, [this](){
+        save_distances = true;
         project = "";
         data->clear();
         distances.clear();
@@ -201,6 +208,7 @@ void MainWindow::loadDistanceMatrix(){
         return;
     }
     loading(true, "Loading file...");
+    save_distances = false;
     QtConcurrent::run(
                 std::function<void(QString)>([this](QString filename){
                     QFile file(filename);
@@ -555,19 +563,40 @@ void MainWindow::onLoadProject()
         QMessageBox::critical( this, "Load project error", "There was an error loading the project names", QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok );
         return;
     }
-    ProjectSelectionDialog *psd = new ProjectSelectionDialog(app_dir, project, projects, this);
+    LoadProjectSelectionDialog *psd = new LoadProjectSelectionDialog(app_dir, project, projects, this);
     int exit = psd->exec();
     if(exit == 1){
-        project = psd->getProject();
-        if(!project.isEmpty()){
-            params = params_list[projects.indexOf(project)];
+        save_distances = true;
+        project = psd->selected_project;
+        params = params_list[projects.indexOf(project)];
             loading(true, "Loading project");
             QtConcurrent::run(std::function<void(void)>([this](){
                 loadRecords();
             }
-            ));
-        }
+        ));
     }
+    psd->deleteLater();
+}
+
+
+void MainWindow::onDeleteProject()
+{
+    DbConnection dbc(app_dir);
+    QStringList projects;
+    QList<GradingParameters> params_list;
+    if(dbc.createConnection()){
+        auto result = dbc.execQuery("select name, sources, records, max_dist from projects");
+        for(auto& record : result){
+            projects << record.first();
+            GradingParameters gp = {record[1].toInt(), record[2].toInt(), record[3].toDouble()};
+            params_list << gp;
+        }
+    }else{
+        QMessageBox::critical( this, "Load project error", "There was an error loading the project names", QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok );
+        return;
+    }
+    DeleteProjectSelectionDialog *psd = new DeleteProjectSelectionDialog(app_dir, project, projects, this);
+    psd->exec();
     psd->deleteLater();
 }
 
@@ -1077,6 +1106,159 @@ void MainWindow::updateApp()
     ui->record_table->resizeColumnsToContents();
     auto first = createCompleter();
     emit showComponent(first);
+}
+
+void MainWindow::exportResultsHelper(QString path){
+    std::vector<Record> records;
+    std::for_each(data->begin(),data->end(),[&records](QRecord item){records.push_back(item.record);});
+    auto dataset = utils::group(records,Record::getSpeciesName,Species::addRecord,Species::fromRecord);
+    std::map<QString, QStringList> bin_group;
+    for(auto& rec: records){
+        auto key = QString::fromStdString(rec.getCluster());
+        auto value = QString::fromStdString(rec.getSpeciesName());
+        if(!bin_group[key].contains(value)){
+            bin_group[key] << value;
+        }
+
+    }
+
+
+    auto results_filename = path+"/"+project+"_stats.tsv";
+    QFile results_file(results_filename);
+    if (!results_file.open(QIODevice::WriteOnly)) {
+        QString error_msg = "File %1 couldn't be open.";
+        error_msg = error_msg.arg(results_filename);
+        emit error("File open error", error_msg);
+        return;
+    }
+
+    QTextStream results_stream(&results_file);
+    auto tab = "\t";
+    auto model = ui->current_results_table->model();
+    auto rows = model->rowCount();
+    for(int i=0; i < rows; i++){
+        QModelIndex grade_idx = model->index(i, 0, QModelIndex());
+        QModelIndex count_idx = model->index(i, 1, QModelIndex());
+        QModelIndex perc_idx = model->index(i, 2, QModelIndex());
+        QString grade = model->data(grade_idx).toString();
+        QString count = QString::number(model->data(count_idx).toInt());
+        QString perc = QString::number(model->data(perc_idx).toDouble());
+        results_stream << grade+tab+count+tab+perc+"\n";
+    }
+    results_stream.flush();
+    results_file.close();
+    /*
+        Export stats
+    */
+    /*
+        Export group by species
+    */
+    auto species_filename = path+"/"+project+"_species.tsv";
+    QFile species_file(species_filename);
+    if (!species_file.open(QIODevice::WriteOnly)) {
+        QString error_msg = "File %1 couldn't be open.";
+        error_msg = error_msg.arg(species_filename);
+        emit error("File open error", error_msg);
+        return;
+    }
+
+    QTextStream species_stream(&species_file);
+    for(auto& species : dataset){
+        auto sp = species.second;
+        auto sp_clusters = sp.getClusters();
+        auto row = QString::fromStdString(sp.getSpeciesName()) + tab
+                + QString::number(sp.clustersCount()) + tab;
+        for(auto cluster : sp_clusters)
+            row += QString::fromStdString(cluster)+";";
+        species_stream << row + "\n";
+    }
+    species_stream.flush();
+    species_file.close();
+    /*
+        Export group by bins
+    */
+    auto bins_filename = path+"/"+project+"_bins.tsv";
+    QFile bins_file(bins_filename);
+    if (!bins_file.open(QIODevice::ReadWrite | QIODevice::Text)) {
+        QString error_msg = "File %1 couldn't be open.";
+        error_msg = error_msg.arg(bins_filename);
+        emit error("File open error", error_msg);
+        return;
+    }
+
+    QTextStream bins_stream(&bins_file);
+    for(auto& bin : bin_group){
+        auto cluster = bin.first;
+        auto species = bin.second;
+        auto row = cluster + tab
+                + QString::number(species.size()) + tab
+                + species.join(";");
+        bins_stream << row + "\n";
+    }
+    bins_stream.flush();
+    bins_file.close();
+}
+
+void MainWindow::onExportResults(){
+    if(data->size() == 0){
+        QMessageBox::critical( this, "Export error", "Error no data found", QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok );
+        return;
+    }
+    QString path = QFileDialog::getExistingDirectory(
+                this, tr("Save Project"), QDir::homePath(), QFileDialog::DontUseNativeDialog | QFileDialog::ShowDirsOnly);
+    if(path.isEmpty()) {
+        return;
+    }
+
+    loading(true, "Exporting results...");
+    QtConcurrent::run(std::function<void(QString)>(
+                          [this](QString path){
+                          saveProjectHelper();
+                          exportResultsHelper(path);
+                      }), path);
+}
+
+void MainWindow::exportDistancesHelper(QString path){
+
+        QString filename = path+this->project + ".tsv";
+        QFile file(filename);
+        if (!file.open(QIODevice::WriteOnly)) {
+            QString error_msg = "File %1 couldn't be open.";
+            error_msg = error_msg.arg(filename);
+            emit error("File open error", error_msg);
+            return;
+        }
+
+        QTextStream stream(&file);
+        auto tab = "\t";
+    for(auto& neighbour : distances){
+        auto binA = QString::fromStdString(neighbour.second.clusterA);
+        auto binB = QString::fromStdString(neighbour.second.clusterB);
+        auto dist = QString::number(neighbour.second.distance);
+        stream << binA+tab+binB+tab+dist+"\n";
+    }
+    file.close();
+}
+
+void MainWindow::onExportDistanceMatrix(){
+    if(data->size() == 0){
+        QMessageBox::critical( this, "Export error", "Error no data found", QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok );
+        return;
+    }
+    QString file_path = QFileDialog::getSaveFileName(this,
+                                                     tr("Save Project"), "",
+                                                     tr("Tab Separated File (*.tsv);;All Files (*)"),
+                                                     0, QFileDialog::DontUseNativeDialog);
+    if(file_path.isEmpty()) {
+        return;
+    }
+
+    loading(true, "Exporting distance matrix...");
+    QtConcurrent::run(std::function<void(QString)>(
+                          [this](QString filename){
+                          saveProjectHelper();
+                          exportDistancesHelper(filename);
+                      }), file_path);
 }
 
 MainWindow::~MainWindow()

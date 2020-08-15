@@ -39,8 +39,8 @@ public:
     };
 
     std::vector<std::string> annotate(Dataset& data, DistanceMatrix& distances, GradingParameters& parametes);
-    std::vector<std::string> annotate(std::vector<Record>& data, DistanceMatrix& distances, GradingParameters& parametes);
-    std::vector<std::string> annotateMPI(Dataset& sub_data, Dataset& data, DistanceMatrix& distances, GradingParameters& params);
+    // std::vector<std::string> annotate(std::vector<Record>& data, DistanceMatrix& distances, GradingParameters& parametes);
+    // std::vector<std::string> annotateMPI(Dataset& sub_data, Dataset& data, DistanceMatrix& distances, GradingParameters& params);
 
 private:
     bool speciesPerBIN(Dataset& data, const std::string& bin);

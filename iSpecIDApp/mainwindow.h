@@ -41,6 +41,8 @@ public:
     QString createCompleter();
     void exportDataToTSVHelper(QString dir_path, bool full = true);
     void saveProjectHelper();
+    void exportResultsHelper(QString path);
+    void exportDistancesHelper(QString path);
 
 signals:
     void updateGraph();
@@ -78,6 +80,9 @@ private slots:
     void zoomIn();
     void zoomOut();
     void onLoadProject();
+    void onDeleteProject();
+    void onExportResults();
+    void onExportDistanceMatrix();
     void onSaveProject();
     void onNewProject();
     void saveGraph();
@@ -100,6 +105,7 @@ private:
     QTimer* timer;
     std::vector<std::string> errors;
     ispecid::IEngine* engine;
+    bool save_distances = true;
 };
 
 #include <QUndoCommand>

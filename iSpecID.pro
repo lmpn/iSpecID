@@ -86,8 +86,8 @@ macx:{
         CONFIG += c++17 app_bundle
         INCLUDEPATH += "iSpecIDCore/include"
         #Boost
-        INCLUDEPATH += "/usr/local/Cellar/boost/1.72.0_2/include/"
-        LIBS += -L/usr/local/Cellar/boost/1.72.0_2/lib/ -lboost_regex -lboost_thread-mt
+        INCLUDEPATH += "/usr/local/Cellar/boost/1.72.0_3/include/"
+        LIBS += -L/usr/local/Cellar/boost/1.72.0_3/lib/ -lboost_regex -lboost_thread-mt
         #Curl
         LIBS += -L/usr/local/opt/curl/lib/ -lcurl.4
         INCLUDEPATH += "/usr/local/opt/curl/include"

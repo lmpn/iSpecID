@@ -725,11 +725,13 @@ height: 25px
     </property>
     <addaction name="new_project_action"/>
     <addaction name="load_project_action"/>
+    <addaction name="delete_project_action"/>
     <addaction name="save_project_action"/>
     <addaction name="save_as_project_action"/>
     <addaction name="export_to_TSV_action"/>
     <addaction name="export_full_project_to_TSV_action"/>
-    <addaction name="close_project_action"/>
+    <addaction name="export_results_action"/>
+    <addaction name="export_distance_matrix_action"/>
    </widget>
    <widget class="QMenu" name="menu_data">
     <property name="title">
@@ -806,6 +808,21 @@ height: 25px
   <action name="export_full_project_to_TSV_action">
    <property name="text">
     <string>Export full project to TSV</string>
+   </property>
+  </action>
+  <action name="delete_project_action">
+   <property name="text">
+    <string>Delete project</string>
+   </property>
+  </action>
+  <action name="export_results_action">
+   <property name="text">
+    <string>Export results</string>
+   </property>
+  </action>
+  <action name="export_distance_matrix_action">
+   <property name="text">
+    <string>Export distance matrix</string>
    </property>
   </action>
  </widget>
