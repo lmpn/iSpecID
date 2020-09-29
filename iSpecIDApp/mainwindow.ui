@@ -740,6 +740,7 @@ height: 25px
     <addaction name="filter_action"/>
     <addaction name="gradind_options_action"/>
     <addaction name="load_distance_matrix_action"/>
+    <addaction name="auto_correction_action"/>
    </widget>
    <addaction name="menu_file"/>
    <addaction name="menu_data"/>
@@ -823,6 +824,11 @@ height: 25px
   <action name="export_distance_matrix_action">
    <property name="text">
     <string>Export distance matrix</string>
+   </property>
+  </action>
+  <action name="auto_correction_action">
+   <property name="text">
+    <string>Auto correction</string>
    </property>
   </action>
  </widget>

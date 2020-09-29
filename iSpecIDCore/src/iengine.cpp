@@ -184,7 +184,7 @@ std::vector<std::string> IEngine::annotate(Dataset& data, DistanceMatrix& distan
     }
     return errors; 
 }
-
+/*
 std::vector<std::string> IEngine::annotateMPI(Dataset& sub_data, Dataset& data, DistanceMatrix& distances, GradingParameters& params){
     errors.clear();
     tasks = sub_data.size();
@@ -224,5 +224,6 @@ std::vector<std::string> IEngine::annotate(std::vector<Record>& data, DistanceMa
     auto dataset = utils::group(data,Record::getSpeciesName,Species::addRecord,Species::fromRecord);
     return annotate(dataset, distances, params); 
 }
+*/
 //END ispecid
 }

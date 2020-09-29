@@ -6,6 +6,8 @@
 #include <qdebug.h>
 #include "graphscene.h"
 #include "utils.h"
+#include <unordered_set>
+#include <QApplication>
 
 
 
@@ -68,8 +70,8 @@ void GraphScene::generateItems(){
 void GraphScene::mousePressEvent(QGraphicsSceneMouseEvent* pMouseEvent) {
     QGraphicsItem* pItemUnderMouse = itemAt( pMouseEvent->scenePos().x(), pMouseEvent->scenePos().y(), QTransform());
     if (pItemUnderMouse != nullptr && pItemUnderMouse->isEnabled() &&
-        pMouseEvent->modifiers() &  Qt::ControlModifier &&
-        pItemUnderMouse->flags() & QGraphicsItem::ItemIsSelectable){
+            pMouseEvent->modifiers() &  Qt::ControlModifier &&
+            pItemUnderMouse->flags() & QGraphicsItem::ItemIsSelectable){
         auto m = qgraphicsitem_cast<Node *>(pItemUnderMouse);
         m->setSelectNode(!pItemUnderMouse->isSelected());
         return;
@@ -83,12 +85,13 @@ void GraphScene::onGraphChanged(){
     generateItems();
     setSceneRect(itemsBoundingRect());                          // Re-shrink the scene to it's bounding contents
 }
+
+
 void GraphScene::onGraphColorChanged(){
     for(auto& qrec: *records){
         auto key = QString::fromStdString(qrec.record.getSpeciesName());
         auto node = qgraphicsitem_cast<Node *>(nodes[key]);
         node->setColor(QString::fromStdString(qrec.record.getGrade()));
-
     }
     update();
 }
@@ -122,51 +125,69 @@ void GraphScene::onRemoveEdge(Edge *edge){
     emit updateResults();
 }
 
+QList<Node*> getDestNode(QSet<Edge*> edges){
+    QList<Node*> nodes;
+    for (auto e : edges) {
+        nodes << e->destNode();
+    }
+    return nodes;
+}
+QList<Node*> getSrcNode(QSet<Edge*> edges){
+    QList<Node*> nodes;
+    for (auto e : edges) {
+        nodes << e->sourceNode();
+    }
+    return nodes;
+}
 
+QList<Node*> getNextNodes(Node* node){
+    auto edges = node->edges();
+    if( !edges.empty() ){
+        auto e = edges.begin();
+        if( (*e)->destNode() == node){
+            return getSrcNode(edges);
+        }
+        else{
+            return getDestNode(edges);
+        }
+    }
+    return QList<Node*>();
+}
 
 void GraphScene::setComponentVisibleDFS( Node *root, bool visible){
-    if(root->isVisible() == visible) return;
-    QRectF scene_rect;
-    root->setVisible(visible);
-    QSet<Edge*> current = root->edges();
-    QSet<Edge*> next;
-    float w = this->sceneRect().width();
-    int size = current.size();
-    float offset = w/size;
-    float s_w = 50+(w - offset*size)/2;
-    float s_h = 75;
-    auto it = current.begin();
-    root->setPos(w/2,0);
-    scene_rect |= root->sceneBoundingRect();
+    QList<Node*> next;
+    QList<Node*> current;
+    current << root;
+    qreal stride_w = 150;
+    qreal stride_h = 40;
+    qreal sub_stride_h = 30;
+    qreal ax = 0;
+    qreal ay = -100;
     while(current.size() > 0){
-        for(int i = 0; i < size; i++){
-            auto edge = *(it + i);
-            auto dest = edge->destNode();
-            auto src = edge->sourceNode();
-            edge->setVisible(visible);
-            if(dest->isVisible() != visible){
-                dest->setVisible(visible);
-                next += dest->edges();
-                dest->setPos(s_w+i*offset,s_h);
+        for (auto node : current){
+            if(node->isVisible() != visible){
+                node->setVisible(visible);
+                auto nodes = getNextNodes(node);
+                next += nodes;
+                node->setPos(ax,ay);
+                ax += stride_w;
+                ay += sub_stride_h;
+                auto edges = node->edges();
+                for(auto e : edges){
+                    e->setVisible(visible);
+                }
             }
-            if(src->isVisible() != visible){
-                src->setVisible(visible);
-                next += src->edges();
-                src->setPos(s_w+i*offset,s_h);
-            }
-            scene_rect |= src->sceneBoundingRect();
-            scene_rect |= dest->sceneBoundingRect();
         }
         current = next;
-        next = QSet<Edge*>();
-        s_h += 75;
-        size = current.size();
-        offset = w/size;
-        s_w = 50 + (w - offset*size)/2;
-        it = current.begin();
+
+        next = QList<Node*>();
+        ax = 0;
+        ay += stride_h;
     }
-    setSceneRect(scene_rect);
+    root->touch();
 }
+
+
 
 void GraphScene::setComponentVisible(QString key){
     if(!key.isEmpty()) {
@@ -208,7 +229,5 @@ void GraphScene::drawBackground(QPainter *painter, const QRectF &rect)
 {
     Q_UNUSED(rect);
     Q_UNUSED(painter);
-//    painter->setPen(Qt::black);
-//    painter->drawRect(sceneRect());
 }
 

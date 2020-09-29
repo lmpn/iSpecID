@@ -132,16 +132,15 @@ QRectF Node::boundingRect() const
     QRectF nodeRect( -10 - adjust, -10 - adjust, 23 + adjust, 23 + adjust);
     QString text;
     if(grade.isEmpty()){
-         text = this->name;
+        text = this->name;
     }else{
-         text = this->name + "(" + this->grade + ")";
+        text = this->name + "(" + this->grade + ")";
     }
     QFontMetricsF fontMetrics(f);
     QRectF textRect = fontMetrics.boundingRect(text);
     textRect.setWidth(textRect.width()*1.5);
     return nodeRect.united(textRect);
 }
-
 
 
 
@@ -180,9 +179,9 @@ void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     QFontMetricsF fontMetrics(f);
     QString text;
     if(grade.isEmpty()){
-         text = this->name;
+        text = this->name;
     }else{
-         text = this->name + "(" + this->grade + ")";
+        text = this->name + "(" + this->grade + ")";
     }
 
     painter->setBrush(Qt::white);
@@ -204,7 +203,6 @@ QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)
     case ItemPositionHasChanged:
         for (Edge *edge : qAsConst(edge_set))
             edge->adjust();
-        //graph->itemMoved();
         break;
     default:
         break;
@@ -219,9 +217,7 @@ void Node::mousePressEvent(QGraphicsSceneMouseEvent *event)
     QGraphicsItem::mousePressEvent(event);
 }
 
-void Node::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
-{
-    update();
+void Node::touch(){
     auto sc = scene();
     QRectF sc_rect = sceneBoundingRect();
     QSet<Node*> current;
@@ -248,43 +244,16 @@ void Node::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
         current.swap(next);
         next.clear();
     }
-
     sc->setSceneRect(sc_rect);
+}
+
+void Node::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
+{
+    update();
+    touch();
     QGraphicsItem::mouseReleaseEvent(event);
 }
 
-
-void Node::calculateForces()
-{
-    if (!scene() || scene()->mouseGrabberItem() == this || !this->isVisible()) {
-        new_pos = pos();
-        return;
-    }
-
-    qreal xvel = 0;
-    qreal yvel = 0;
-    int count = 0;
-    for (auto& edge : edge_set) {
-        Node *node = edge->destNode() != this ? edge->destNode() : edge->sourceNode();
-        count++;
-        qreal dx = this->pos().x() - node->pos().x();
-        qreal dy = this->pos().y() - node->pos().y();
-        xvel += dx;
-        yvel += dy;
-    }
-
-    if(count > 0){
-        xvel = -1*xvel/(count);
-        yvel = -1*yvel/(count);
-    }
-    if (qAbs(xvel) <= 200 && qAbs(yvel) <= 200)
-        xvel = yvel = 0;
-
-    QRectF sceneRect = scene()->sceneRect();
-    new_pos = pos() + QPointF(xvel, yvel);
-    new_pos.setX(qMin(qMax(new_pos.x(), sceneRect.left() + 10), sceneRect.right() - 10));
-    new_pos.setY(qMin(qMax(new_pos.y(), sceneRect.top() + 10), sceneRect.bottom() - 10));
-}
 
 bool Node::advancePosition()
 {

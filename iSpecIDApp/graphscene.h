@@ -31,6 +31,7 @@ private:
     void clean();
     void clearScene();
     void setComponentVisibleDFS( Node *root, bool visible = true);
+    void drawComponent(Node *root, bool visible =  true);
     void generateItems();
     std::vector<QRecord> * records;
     QMap<QString, QGraphicsItem*> nodes;

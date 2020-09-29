@@ -129,15 +129,6 @@ QRectF Edge::boundingRect() const
                 .adjusted(-extra, -extra, extra, extra);
 }
 
-//QPainterPath Edge::shape() const
-//{
-//    QPainterPath path;
-//    path.addRect(QRectF(sourcePoint,destPoint));
-
-//    return path;
-//}
-
-
 void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *)
 {
     painter->setPen(m_pen);

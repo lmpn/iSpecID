@@ -17,7 +17,6 @@ public:
     bool removeRow(int row, const QModelIndex &parent = QModelIndex());
     bool removeRows(int position, int row, const QModelIndex &parent = QModelIndex()) override;
     bool remove;
-
 public slots:
     void onRecordsChanged();
     void sortBySection(int col = 0);

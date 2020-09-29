@@ -81,6 +81,7 @@ public:
     void setColor(QString grade);
     QString getName() { return name;}
     void setSelectNode(bool selected);
+    void touch();
 
 
 protected:

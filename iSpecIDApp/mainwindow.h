@@ -87,6 +87,7 @@ private slots:
     void onNewProject();
     void saveGraph();
     void showGradingOptions();
+    void autoCorrection();
     void showFilter();
     void onSaveConfig(double, int, int);
     void onRecordTableClick(const QModelIndex&  index);
