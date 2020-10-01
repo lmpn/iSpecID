@@ -17,74 +17,74 @@ RecordModel::RecordModel(std::vector<QRecord> *records, QObject *parent)
 
 void RecordModel::sortBySection(int col){
     if(col== 0){
-            if(last_col == col) sort_order[col]=!sort_order[col];
-            if(sort_order[col]){
-                std::sort(records->begin(), records->end(), [](QRecord a, QRecord b){
-                    return a.record.getSpeciesName().compare(b.record.getSpeciesName())<0;
-                });
-            }
-            else{
-                std::sort(records->begin(), records->end(), [](QRecord a, QRecord b){
-                    return a.record.getSpeciesName().compare(b.record.getSpeciesName())>0;
-                });
-            }
+        if(last_col == col) sort_order[col]=!sort_order[col];
+        if(sort_order[col]){
+            std::sort(records->begin(), records->end(), [](QRecord a, QRecord b){
+                return a.record.getSpeciesName().compare(b.record.getSpeciesName())<0;
+            });
         }
-        else if(col== 1){
-            if(last_col == col) sort_order[col]=!sort_order[col];
-            if(sort_order[col]){
-                std::sort(records->begin(), records->end(), [](QRecord a, QRecord b){
-                    return a.record.getCluster().compare(b.record.getCluster())<0;
-                });
-            }
-            else{
-                std::sort(records->begin(), records->end(), [](QRecord a, QRecord b){
-                    return a.record.getCluster().compare(b.record.getCluster())>0;
-                });
-            }
+        else{
+            std::sort(records->begin(), records->end(), [](QRecord a, QRecord b){
+                return a.record.getSpeciesName().compare(b.record.getSpeciesName())>0;
+            });
         }
-        else if(col== 2){
-            if(last_col == col) sort_order[col]=!sort_order[col];
-            if(sort_order[col]){
-                std::sort(records->begin(), records->end(), [](QRecord a, QRecord b){
-                    return a.record.getGrade().compare(b.record.getGrade())<0;
-                });
-            }
-            else{
-                std::sort(records->begin(), records->end(), [](QRecord a, QRecord b){
-                    return a.record.getGrade().compare(b.record.getGrade())>0;
-                });
-            }
+    }
+    else if(col== 1){
+        if(last_col == col) sort_order[col]=!sort_order[col];
+        if(sort_order[col]){
+            std::sort(records->begin(), records->end(), [](QRecord a, QRecord b){
+                return a.record.getCluster().compare(b.record.getCluster())<0;
+            });
         }
-        else if(col== 3){
-            if(last_col == col) sort_order[col]=!sort_order[col];
-            if(sort_order[col]){
-                std::sort(records->begin(), records->end(), [](QRecord a, QRecord b){
-                    return a.record.getSource().compare(b.record.getSource())<0;
-                });
-            }
-            else{
-                std::sort(records->begin(), records->end(), [](QRecord a, QRecord b){
-                    return a.record.getSource().compare(b.record.getSource())>0;
-                });
-            }
+        else{
+            std::sort(records->begin(), records->end(), [](QRecord a, QRecord b){
+                return a.record.getCluster().compare(b.record.getCluster())>0;
+            });
         }
-        else if(col== 4){
-            if(last_col == col) sort_order[col]=!sort_order[col];
-            if(sort_order[col]){
-                std::sort(records->begin(), records->end(), [](QRecord a, QRecord b){
-                    return a.record.count() > b.record.count();
-                });
-            }
-            else{
-                std::sort(records->begin(), records->end(), [](QRecord a, QRecord b){
-                    return a.record.count() < b.record.count();
-                });
-            }
+    }
+    else if(col== 2){
+        if(last_col == col) sort_order[col]=!sort_order[col];
+        if(sort_order[col]){
+            std::sort(records->begin(), records->end(), [](QRecord a, QRecord b){
+                return a.record.getGrade().compare(b.record.getGrade())<0;
+            });
         }
-        last_col = col;
-        auto topLeft = this->index(0,0);
-        auto rightBottom = this->index(records->size(),columnCount());
-        emit dataChanged(topLeft, rightBottom, {Qt::DisplayRole});
+        else{
+            std::sort(records->begin(), records->end(), [](QRecord a, QRecord b){
+                return a.record.getGrade().compare(b.record.getGrade())>0;
+            });
+        }
+    }
+    else if(col== 3){
+        if(last_col == col) sort_order[col]=!sort_order[col];
+        if(sort_order[col]){
+            std::sort(records->begin(), records->end(), [](QRecord a, QRecord b){
+                return a.record.getSource().compare(b.record.getSource())<0;
+            });
+        }
+        else{
+            std::sort(records->begin(), records->end(), [](QRecord a, QRecord b){
+                return a.record.getSource().compare(b.record.getSource())>0;
+            });
+        }
+    }
+    else if(col== 4){
+        if(last_col == col) sort_order[col]=!sort_order[col];
+        if(sort_order[col]){
+            std::sort(records->begin(), records->end(), [](QRecord a, QRecord b){
+                return a.record.count() > b.record.count();
+            });
+        }
+        else{
+            std::sort(records->begin(), records->end(), [](QRecord a, QRecord b){
+                return a.record.count() < b.record.count();
+            });
+        }
+    }
+    last_col = col;
+    auto topLeft = this->index(0,0);
+    auto rightBottom = this->index(records->size(),columnCount());
+    emit dataChanged(topLeft, rightBottom, {Qt::DisplayRole});
 }
 
 int RecordModel::rowCount(const QModelIndex & /*parent*/) const

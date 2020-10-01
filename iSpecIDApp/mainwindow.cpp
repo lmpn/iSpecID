@@ -92,6 +92,7 @@ MainWindow::MainWindow(QString app_dir, QWidget *parent)
         save_distances = true;
         project = "";
         data->clear();
+        deleted->clear();
         distances.clear();
         undoStack->clear();
         ui->results_frame->hide();
@@ -101,6 +102,7 @@ MainWindow::MainWindow(QString app_dir, QWidget *parent)
     ui->results_frame->hide();
     enableMenuDataActions(false);
     data = new std::vector<QRecord>();
+    deleted = new std::vector<QRecord>();
     engine = new ispecid::IEngine(4);
     showMaximized();
 
@@ -201,7 +203,6 @@ void MainWindow::exportDataToTSVHelper(QString filename, bool full){
         stream << row.join("\t")+ "\n";
     }
     file.close();
-    emit stopLoading();
 }
 
 void MainWindow::exportDataToTSV(bool full){
@@ -222,6 +223,7 @@ void MainWindow::exportDataToTSV(bool full){
                           [this](QString filename, bool full){
                           saveProjectHelper();
                           exportDataToTSVHelper(filename, full);
+                          emit stopLoading();
                       }), file_path, full);
 
 }
@@ -728,10 +730,9 @@ void MainWindow::saveProjectHelper(){
         if(dbc.createConnection()){
             QStringList updated_ids;
             for(auto& qrec : *data){
-                updated_ids << qrec.ids;
                 auto ids = qrec.ids.join("\",\"");
                 auto mod = qrec.modification;
-                QString updateStat="update \"%1\" set species_name= \"%2\", bin_uri = \"%3\", institution_storing = \"%4\", grade = \"%5\", modification = \"%6\" where ispecID in (\"%7\")";
+                QString updateStat  = "update \"%1\" set species_name= \"%2\", bin_uri = \"%3\", institution_storing = \"%4\", grade = \"%5\", modification = \"%6\" where species_name= \"%7\" and bin_uri = \"%8\" and institution_storing = \"%9\"";
                 updateStat = updateStat
                         .arg(project)
                         .arg(QString::fromStdString(qrec.record.getSpeciesName()))
@@ -739,13 +740,18 @@ void MainWindow::saveProjectHelper(){
                         .arg(QString::fromStdString(qrec.record.getSource()))
                         .arg(QString::fromStdString(qrec.record.getGrade()))
                         .arg(mod)
-                        .arg(ids);
+                        .arg(QString::fromStdString(qrec.record.getSpeciesName()))
+                        .arg(QString::fromStdString(qrec.record.getCluster()))
+                        .arg(QString::fromStdString(qrec.record.getSource()));
                 dbc.execQuery(updateStat);
                 if (!dbc.success()) {
                     emit error("Save project error", "There was an error saving the project");
                 }
             }
-            QString updateStat="update \"%1\" set modification = \"DELETED by user;\" where ispecID not in (\"%2\") and modification not like \"%DELETED%\"";
+            for(auto& qrec : *deleted){
+                updated_ids << qrec.ids;
+            }
+            QString updateStat="update \"%1\" set modification = \"DELETED by user;\" where ispecID in (\"%2\")";
             updateStat = updateStat
                     .arg(project)
                     .arg(updated_ids.join("\",\""));
@@ -783,7 +789,6 @@ void MainWindow::saveProjectHelper(){
             if (!dbc.success()) {
                 emit error("Save project error", "There was an error saving the project");
             }
-        emit saveFinished();
     }
 }
 
@@ -792,6 +797,7 @@ void MainWindow::onSaveProject(){
     if(project.isEmpty()) return;
     QtConcurrent::run(std::function<void(void)>([this](){
         saveProjectHelper();
+        emit saveFinished();
     }));
 }
 
@@ -881,6 +887,7 @@ void MainWindow::deleteRecordRows()
     if(rows.size() > 0){
         onActionPerformed();
         for (auto row : rows) {
+            deleted->push_back(data->operator[](row-removed));
             data->erase(data->begin()+row-removed);
             removed++;
         }
@@ -1120,7 +1127,7 @@ void MainWindow::showGradingErrors(std::vector<std::string> &errors)
 }
 
 void MainWindow::onActionPerformed(){
-    ActionCommand * action = new ActionCommand(data, *data);
+    ActionCommand * action = new ActionCommand(data, *data, deleted, *deleted);
     undoStack->push(action);
 }
 
@@ -1236,12 +1243,12 @@ void MainWindow::onExportResults(){
         return;
     }
 
-    loading(true, "Save project...");
+    loading(true, "Export results...");
     QtConcurrent::run(std::function<void(QString)>(
                           [this](QString path){
                           saveProjectHelper();
-                          loading(true, "Export results...");
                           exportResultsHelper(path);
+                          stopLoading();
                       }), path);
 }
 
@@ -1265,6 +1272,7 @@ void MainWindow::exportDistancesHelper(QString path){
         stream << binA+tab+binB+tab+dist+"\n";
     }
     file.close();
+    emit stopLoading();
 }
 
 void MainWindow::onExportDistanceMatrix(){
@@ -1280,12 +1288,12 @@ void MainWindow::onExportDistanceMatrix(){
         return;
     }
 
-                          loading(true, "Saving project...");
+      loading(true, "Export distances...");
     QtConcurrent::run(std::function<void(QString)>(
                           [this](QString filename){
                           saveProjectHelper();
-                        loading(true, "Exporting distance matrix...");
                           exportDistancesHelper(filename);
+                          stopLoading();
                       }), file_path);
 }
 

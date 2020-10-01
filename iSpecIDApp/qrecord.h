@@ -7,6 +7,7 @@ typedef struct qrecord{
     QStringList ids;
     QString modification;
     ispecid::datatypes::Record record;
+    bool deleted = false;
 
     bool joinRecord(qrecord& rec){
         if(rec.record.getCluster() == record.getCluster()

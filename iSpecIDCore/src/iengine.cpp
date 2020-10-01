@@ -180,52 +180,6 @@ std::vector<std::string> IEngine::annotate(Dataset& data, DistanceMatrix& distan
             annotateItem(species, data, distances, params);
         }
     }
-    {
-        auto ul = std::unique_lock<std::mutex>(task_lock);
-        task_cv.wait(ul, [&](){return tasks == completed_tasks;});
-    }
     return errors; 
 }
-/*
-std::vector<std::string> IEngine::annotateMPI(Dataset& sub_data, Dataset& data, DistanceMatrix& distances, GradingParameters& params){
-    errors.clear();
-    tasks = sub_data.size();
-    completed_tasks = 0;
-    for(auto& pair : sub_data){
-        auto& species = pair.second;
-        boost::asio::post(*pool, [&](){
-            annotateItem(species, data, distances, params);
-            {
-                completed_tasks++;
-                if(completed_tasks == tasks){
-                    task_cv.notify_one();
-                }
-            }
-        });
-    }
-    {
-        auto ul = std::unique_lock<std::mutex>(task_lock);
-        task_cv.wait(ul, [&](){return tasks == completed_tasks;});
-    }
-    for(auto& pair : sub_data){
-        auto& species = pair.second;
-        if(species.getGrade() == "Z"){
-            annotateItem(species, data, distances, params);
-        }
-    }
-    {
-        auto ul = std::unique_lock<std::mutex>(task_lock);
-        task_cv.wait(ul, [&](){return tasks == completed_tasks;});
-    }
-    return errors; 
-}
-
-
-
-std::vector<std::string> IEngine::annotate(std::vector<Record>& data, DistanceMatrix& distances, GradingParameters& params){
-    auto dataset = utils::group(data,Record::getSpeciesName,Species::addRecord,Species::fromRecord);
-    return annotate(dataset, distances, params); 
-}
-*/
-//END ispecid
 }

@@ -100,6 +100,7 @@ private:
     GradingParameters params;
     DistanceMatrix distances;
     std::vector<QRecord>* data;
+    std::vector<QRecord>* deleted;
     GraphScene* graph;
     Ui::MainWindow* ui;
     QUndoStack* undoStack;
@@ -119,24 +120,34 @@ class ActionCommand : public QUndoCommand
 public:
 
     ActionCommand(std::vector<QRecord> *data, std::vector<QRecord> old,
+                  std::vector<QRecord> *deleted, std::vector<QRecord> old_d,
                   QUndoCommand *parent = nullptr): QUndoCommand(parent){
         this->old = old;
         this->current = *data;
         this->data = data;
+        this->old_d = old_d;
+        this->current_d = *deleted;
+        this->deleted = deleted;
     }
 
 
     void undo() override{
         *data = old;
+        *deleted = old_d;
     };
     void redo() override{
         *data = current;
+        *deleted = current_d;
     };
 
 private:
     std::vector<QRecord> *data;
     std::vector<QRecord> old;
     std::vector<QRecord> current;
+
+    std::vector<QRecord> *deleted;
+    std::vector<QRecord> old_d;
+    std::vector<QRecord> current_d;
 };
 
 
