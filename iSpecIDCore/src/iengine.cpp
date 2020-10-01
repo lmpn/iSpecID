@@ -85,8 +85,8 @@ std::string IEngine::findBinsNeighbour(Species& species, Dataset& data, Distance
     auto cluster_end = clusters.end();
     auto neighbours = getNeighbours(distances, clusters);
     if(neighbours.size() != clusters.size() && species.getGrade() != "Z"){
+    tasks+=clusters.size();
         for(auto& cluster : clusters){
-            tasks++;
             boost::asio::post(*pool, [&,cluster](){
                 std::string error;
                 try{
@@ -108,6 +108,8 @@ std::string IEngine::findBinsNeighbour(Species& species, Dataset& data, Distance
             });
         }
         return "Z";
+    }else if(neighbours.size() != clusters.size() && species.getGrade() == "Z"){
+        return grade;
     }else{
         int i = 0;
         ugraph graph(neighbours.size());

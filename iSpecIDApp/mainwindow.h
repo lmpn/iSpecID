@@ -43,6 +43,7 @@ public:
     void saveProjectHelper();
     void exportResultsHelper(QString path);
     void exportDistancesHelper(QString path);
+    void autoCorrectionHelper();
 
 signals:
     void updateGraph();

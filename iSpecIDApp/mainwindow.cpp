@@ -106,8 +106,8 @@ MainWindow::MainWindow(QString app_dir, QWidget *parent)
 
 }
 
-void MainWindow::autoCorrection(){
-    onActionPerformed();
+
+void MainWindow::autoCorrectionHelper(){
     std::vector<QRecord> records;
     for(auto &record: *data){
         if(record.ids.size() > 1){
@@ -115,7 +115,16 @@ void MainWindow::autoCorrection(){
         }
     }
     data->swap(records);
-    updateApp();
+}
+
+void MainWindow::autoCorrection(){
+    onActionPerformed();
+    loading("Auto correcting...");
+    QtConcurrent::run(std::function<void(void)>(
+                          [this](){
+        autoCorrectionHelper();
+        emit stopLoading();
+                      }));
 }
 void MainWindow::onRecordTableClick(const QModelIndex& index){
     int col = index.column();
@@ -128,6 +137,7 @@ void MainWindow::onRecordTableClick(const QModelIndex& index){
 
 void MainWindow::onStopLoading(){
     loading(false, "");
+    updateApp();
 }
 
 void MainWindow::onError(QString error_type, QString error){
@@ -374,218 +384,6 @@ void MainWindow::onSaveAsProject(){
         project = new_project;
     }
 }
-/*
-ispecid::fileio::InMapper<QStringList> QSListMapper(){
-    ispecid::fileio::InMapper<QStringList> toQSList = [](csv::CSVRow& row) {
-        QStringList fields;
-        auto species_name = row["species_name"].get();
-        auto source = row["institution_storing"].get();
-        auto cluster = row["bin_uri"].get();
-        auto ispecid = row["ispecID"].get();
-        fields
-        << QString::fromStdString(species_name)
-        << QString::fromStdString(source)
-        << QString::fromStdString(cluster)
-        << QString::fromStdString("U");
-        return fields;
-    };
-    return toQSList;
-}*/
-/*
-void MainWindow::onNewProject()
-{
-    bool ok;
-    QString new_project = QInputDialog::getText( this, tr("New project"), tr("Project name:"), QLineEdit::Normal, "", &ok );
-    if(!ok){
-        return;
-    }
-    else if(ok && new_project.isEmpty()){
-        QMessageBox::critical( this, "New project error", "Error trying to create project", QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok );
-        return;
-    }
-    else if(ok && !new_project.isEmpty()){
-        QString stat = "select * from projects where name = \"%1\"";
-        stat = stat.arg(new_project);
-        DbConnection dbc(app_dir);
-        if(dbc.createConnection()){
-            auto list = dbc.execQuery(stat);
-            if(dbc.success() && list.size() > 0){
-                QMessageBox::critical( this, "New project error", "Project already exists", QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok );
-                return;
-            }
-            if(!dbc.success()){
-                QMessageBox::critical( this, "SQLite error", "Creating project error", QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok );
-                return;
-            }
-        }
-        QString filename = QFileDialog::getOpenFileName( this, tr("Open File"), QDir::homePath(), tr("SV (*.txt *.tsv)"), 0, QFileDialog::DontUseNativeDialog );
-        if(filename.isEmpty()){
-            return;
-        }
-
-
-        project = new_project;
-        loading(true, "Loading file...");
-        QtConcurrent::run(
-                    std::function<void(QString)>([this](QString filename){
-                        DbConnection dbc(app_dir);
-                        auto toQSList = QSListMapper();
-                        std::vector<std::string> cols;
-                        QStringList header;
-                        ispecid::fileio::Format format;
-
-
-                        if(filename.contains("csv")){
-                            format = ispecid::fileio::Format::CSV;
-                        }
-                        else if(filename.contains("tsv")){
-                            format = ispecid::fileio::Format::TSV;
-                        }else{
-                            emit error("Load file error", "Incorrect format file");
-                            return;
-                        }
-
-                        auto records = ispecid::fileio::loadFile<QStringList>(
-                            filename.toStdString(),
-                            cols,
-                            toQSList,
-                            format
-                        );
-
-                        auto it_species =  std::find(cols.begin(), cols.end(), "species_name");
-                        auto it_bin =  std::find(cols.begin(), cols.end(), "bin_uri");
-                        auto it_inst =  std::find(cols.begin(), cols.end(), "institution_storing");
-                        auto it_grade =  std::find(cols.begin(), cols.end(), "grade");
-                        auto it_mod =  std::find(cols.begin(), cols.end(), "modification");
-                        auto it_id =  std::find(cols.begin(), cols.end(), "ispecID");
-                        auto it_end = cols.end();
-
-                        int current_size = 0;
-                        bool no_grade = false;
-                        bool no_mod = false;
-                        bool no_id = false;
-
-                        if(it_species == it_end){
-                            emit error("Load file error", "Header doesn't have species_name");
-                            return;
-                        }
-                        if(it_bin == it_end){
-                            emit error("Load file error", "Header doesn't have bin_uri");
-                            return;
-                        }
-                        if(it_inst == it_end){
-                            emit error("Load file error", "Header doesn't have institution_storing");
-                            return;
-                        }
-                        if(it_grade == it_end){
-                            cols.push_back("grade");
-                            no_grade = true;
-                        }
-                        if(it_mod == it_end){
-                            cols.push_back("modification");
-                            no_mod = true;
-                        }
-                        if(it_id == it_end){
-                            cols.push_back("ispecID");
-                            no_id = true;
-                        }
-                        if(dbc.createConnection()){
-                            QString newProjectStat = "insert into projects (name, max_dist, sources, records) values (\"%1\", 2.0, 2, 3)";
-                            newProjectStat = newProjectStat.arg(project);
-                            dbc.execQuery(newProjectStat);
-                            if(!dbc.success()){
-                                emit error("SQLite error", "Error project");
-                                return;
-                            }
-                        }else{
-                            emit error("SQLite error", "Error project");
-                            return;
-                        }
-                        QString header_join = header.join(",");
-                        QString stat = "create table \"%1\" ";
-                        stat += "(" + header_join +")";
-                        stat = stat.arg(project);
-                        dbc.execQuery(stat);
-                        if(!dbc.success()){
-                            emit error("SQLite error", "Error creating table");
-                            return;
-                        }
-                        QString base_stat = "insert into \"%1\" (" + header_join + ") values ";
-                        base_stat = base_stat.arg(project);
-                        stat = base_stat;
-                        int idx = 0;
-                        while (!in.atEnd()) {
-                            QString line = in.readLine();
-                            auto line_split = line.replace("\"","").split("\t");
-                            if(no_id)
-                            {
-                                line_split.prepend(QString::number(idx));}
-                            line = line_split.join("\",\"");
-                            if(no_grade){
-                                line += "\",\"U";
-                            }
-                            if(no_mod){
-
-                                line += "\",\"";
-
-                            }
-                            line = "\"" + line + "\"";
-                            stat += "(" + line +")";
-                            current_size++;
-                            idx++;
-                            if(current_size == 500){
-                                dbc.execQuery(stat);
-                                if(!dbc.success()){
-                                    emit error("SQLite error", "Error inserting in table");
-                                    return;
-                                }
-                                stat = base_stat;
-                                current_size = 0;
-                            }else{
-                                stat +=",";
-                            }
-                        }
-                        if(current_size != 0){
-                            stat.chop(1);
-                            dbc.execQuery(stat);
-                            if(!dbc.success()){
-                                emit error("SQLite error", "Error inserting in table");
-                                return;
-                            }
-
-                        }
-                        file.close();
-
-                        QString updateSourceStat="update \"%1\" set modification= \"DELETED: empty source\" where institution_storing == \"\"";
-                        updateSourceStat = updateSourceStat.arg(project);
-                        dbc.execQuery(updateSourceStat);
-                        if(!dbc.success()){
-                            emit error("SQLite error", "Error inserting in table");
-                            return;
-                        }
-                        QString updateClusterStat="update \"%1\" set modification= \"DELETED: empty cluster/bin_uri\" where bin_uri == \"\"";
-                        updateClusterStat = updateClusterStat.arg(project);
-                        dbc.execQuery(updateClusterStat);
-                        if(!dbc.success()){
-                            emit error("SQLite error", "Error inserting in table");
-                            return;
-                        }
-                        QString updateSpeciesNameStat="update \"%1\" set modification= \"DELETED: empty name\" where species_name == \"\"";
-                        updateSpeciesNameStat= updateSpeciesNameStat.arg(project);
-                        dbc.execQuery(updateSpeciesNameStat);
-                        if(!dbc.success()){
-                            emit error("SQLite error", "Error inserting in table");
-                            return;
-                        }
-                        loadRecords();
-                    }
-                    ),filename);
-
-    }
-
-}
-*/
-
 
 void MainWindow::onNewProject()
 {
@@ -698,6 +496,7 @@ void MainWindow::onNewProject()
                             emit error("SQLite error", "Error creating table");
                             return;
                         }
+                        header[0] = header[0] + " primary key";
                         QString base_stat = "insert into \"%1\" (" + header_join + ") values ";
                         base_stat = base_stat.arg(project);
                         stat = base_stat;
@@ -925,7 +724,6 @@ void MainWindow::onSaveFinished(){
 }
 
 void MainWindow::saveProjectHelper(){
-    if(undoStack->count() == 0){
         DbConnection dbc(app_dir);
         if(dbc.createConnection()){
             QStringList updated_ids;
@@ -985,8 +783,6 @@ void MainWindow::saveProjectHelper(){
             if (!dbc.success()) {
                 emit error("Save project error", "There was an error saving the project");
             }
-            undoStack->clear();
-        }
         emit saveFinished();
     }
 }
@@ -1440,10 +1236,11 @@ void MainWindow::onExportResults(){
         return;
     }
 
-    loading(true, "Exporting results...");
+    loading(true, "Save project...");
     QtConcurrent::run(std::function<void(QString)>(
                           [this](QString path){
                           saveProjectHelper();
+                          loading(true, "Export results...");
                           exportResultsHelper(path);
                       }), path);
 }
@@ -1483,10 +1280,11 @@ void MainWindow::onExportDistanceMatrix(){
         return;
     }
 
-    loading(true, "Exporting distance matrix...");
+                          loading(true, "Saving project...");
     QtConcurrent::run(std::function<void(QString)>(
                           [this](QString filename){
                           saveProjectHelper();
+                        loading(true, "Exporting distance matrix...");
                           exportDistancesHelper(filename);
                       }), file_path);
 }
