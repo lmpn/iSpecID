@@ -64,6 +64,11 @@ FORMS += \
 RESOURCES += icons.qrc
 
 win32:{
+        contains(QT_ARCH, i386) {
+            message("32-bit")
+        } else {
+            message("64-bit")
+        }
         CONFIG += c++17
         INCLUDEPATH += "iSpecIDCore/include"
         INCLUDEPATH += $$PWD/../../../vcpkg/installed/x64-windows/include/boost
