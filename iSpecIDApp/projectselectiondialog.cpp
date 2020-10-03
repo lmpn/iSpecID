@@ -60,9 +60,12 @@ void DeleteProjectSelectionDialog::deleteProject(){
     }
     DbConnection dbc(app_dir);
     if(!dbc.createConnection()) return;
-    QString dropStat = "drop table '%1'";
+    QString dropStat = "drop table \"%1\"";
     dropStat = dropStat.arg(project);
     dbc.execQuery(dropStat);
+    QString dropStat2 = "drop table Ex\"%1\"";
+    dropStat = dropStat2.arg(project);
+    dbc.execQuery(dropStat2);
     QString deleteStat = "delete from projects where name = '%1'";
     deleteStat = deleteStat.arg(project);
     dbc.execQuery(deleteStat);

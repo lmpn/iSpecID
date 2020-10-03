@@ -431,29 +431,23 @@ void MainWindow::newProjectHelper(QString filename){
             emit error("Load file error", "Header doesn't have species_name, bin_uri or institution_storing");
             return;
         }else{
-            header.removeOne("species_name");
-            header.removeOne("bin_uri");
-            header.removeOne("institution_storing");
             exheader << std::make_tuple("species_name",species)
-                     <<std::make_tuple("bin_uri",bin)
-                    <<std::make_tuple("institution_storing",institution);
+                     << std::make_tuple("bin_uri",bin)
+                     << std::make_tuple("institution_storing",institution);
         }
         if(g == -1) {
             no_grade = true;
-            header.removeOne("grade");
-
+            header << "grade";
         }
         exheader << std::make_tuple("grade",g);
         if(mod == -1){
             no_mod = true;
-            header.removeOne("modification");
+            header << "modification";
         }
         exheader << std::make_tuple("modification",mod);
         if(id == -1){
             no_id = true;
-            header.removeOne("ispecID");
         }
-        exheader << std::make_tuple("modification",id);
         std::sort(exheader.begin(), exheader.end(), [](std::tuple<QString, int> a, std::tuple<QString, int> b){
             return std::get<1>(a) > std::get<1>(b);
         });
@@ -479,8 +473,12 @@ void MainWindow::newProjectHelper(QString filename){
 
 
 
+    cols.prepend("ispecID");
     cols[0] = cols[0] + " primary key ";
+    cols << "ex_id";
     cols << "FOREIGN KEY(ex_id) REFERENCES Ex"+project+"(id)";
+    header.prepend("ispecID");
+    header << "ex_id";
     QString header_join = header.join(",");
     QString createProjectQuery = "create table \""+ project +"\" (" + cols.join(",") +")";
     QString createExProjectQuery = "create table \"Ex"+ project +"\" (id primary key," + exCols.join(",") +")";
@@ -495,20 +493,19 @@ void MainWindow::newProjectHelper(QString filename){
         return;
     }
 
-    int sz = exheader.size();
     int current = 0;
     int idx = 0;
     int ex_idx = 0;
-    int batch = 500;
+    int batch = 1;
     QMap<std::tuple<QString, QString, QString>, int> fr_keys;
     QString species, institution, cluster, grade, modification;
     std::tuple<QString, QString, QString> key;
 
-    QString insertBase = "insert into \"" + project +"\" (" + cols.join(",") + ") values ";
-    QString insertEx = "insert into \"Ex" + project +"\" (id primary key, " + exCols.join(",") + ") values ";
+    QString insertBase = "insert into \"" + project +"\" (" + header.join(",") + ") values ";
+    QString insertEx = "insert into \"Ex" + project +"\" (" + exCols.join(",") + ", id) values ";
     QString insert = insertBase;
 
-
+    int fr_key;
 
     while (!in.atEnd()) {
         QString record = in.readLine();
@@ -519,7 +516,6 @@ void MainWindow::newProjectHelper(QString filename){
             int idx = std::get<1>(exh);
             if(idx != -1){
                 exValues << values[idx];
-                values.removeAt(idx);
                 if(field == "species_name"){
                     species = values[idx];
                 }
@@ -530,28 +526,47 @@ void MainWindow::newProjectHelper(QString filename){
                     cluster = values[idx];
                 }
             }else{
-                exValues << "";
+                if(field == "modification"){
+                    exValues << "";
+                }
+                else if(field == "grade"){
+                    exValues << "U";
+                }
             }
         }
 
-        key = std::make_tuple(species, cluster, institution);
-        auto find_it = fr_keys.find(key);
-        if(find_it == fr_keys.end()){
-            ex_idx++;
-            fr_keys[key] = ex_idx;
-            exValues << QString::number(ex_idx);
-            dbc.execQuery(insertEx+"(\"" + exValues.join("\",\"") + "\")");
-            if(!dbc.success()){
-                emit error("SQLite error", "Error creating table");
-                return;
+        if(species != "" && cluster != "" && institution != ""){
+            key = std::make_tuple(species, cluster, institution);
+            auto find_it = fr_keys.find(key);
+            if(find_it == fr_keys.end()){
+                ex_idx++;
+                fr_keys[key] = ex_idx;
+                fr_key = ex_idx;
+                exValues << QString::number(ex_idx);
+                dbc.execQuery(insertEx+"(\"" + exValues.join("\",\"") + "\")");
+                if(!dbc.success()){
+                    emit error("SQLite error", "Error creating table");
+                    return;
+                }
             }
+            fr_key = find_it.value();
+        }else{
+            fr_key = 0;
         }
 
 
-        if(no_id) values.prepend(QString::number(idx));
-        if(no_grade) values.append("U");
-        if(no_mod) values.append("");
-        values.append(QString::number(fr_keys[key]));
+        if(no_id){
+            values.prepend(QString::number(idx));
+        }
+        if(no_grade){
+            values.append("U");
+        }
+        if(no_mod){
+            values.append("");
+        }
+        idx++;
+        values.append(QString::number(fr_key));
+        qDebug() << fr_key;
         QString valuesStr = "(\"" + values.join("\",\"") + "\")";
         insert += valuesStr;
         if(current == batch){
@@ -576,24 +591,6 @@ void MainWindow::newProjectHelper(QString filename){
             return;
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     file.close();
 
@@ -745,8 +742,23 @@ void MainWindow::loadRecords(){
         undoStack->clear();
         ui->results_frame->hide();
         QSqlQuery query;
-        QString loadStat = "select species_name , bin_uri, institution_storing, grade, count(*), group_concat(ispecID), modification from \"%1\" group by species_name, bin_uri, institution_storing;";
-        loadStat = loadStat.arg(project);
+        QString loadStat = "SELECT Ex%1.species_name , Ex%2.bin_uri, Ex%3.institution_storing, Ex%4.grade, count(*), Ex%5.modification, Ex%6.id from Ex%7"
+                " JOIN %9 on Ex%8.id = %10.ex_id "
+                "group by Ex%11.species_name, Ex%12.bin_uri, Ex%13.institution_storing;";
+        loadStat = loadStat
+                .arg(project)
+                .arg(project)
+                .arg(project)
+                .arg(project)
+                .arg(project)
+                .arg(project)
+                .arg(project)
+                .arg(project)
+                .arg(project)
+                .arg(project)
+                .arg(project)
+                .arg(project)
+                .arg(project);
         auto result = dbc.execQuery(loadStat);
         if(!dbc.success()){
             emit error("SQLite error", QString("Error loading in table %1").arg(project));
@@ -759,8 +771,8 @@ void MainWindow::loadRecords(){
             QString source =  record[2];
             QString grade = record[3];
             int count = record[4].toInt();
-            QStringList ids = record[5].split(",");
-            QString modification = record[6];
+            QString modification = record[5];
+            QStringList ids = {record[6]};
             if(species_name.isEmpty()) bad_species+=count;
             else if(cluster.isEmpty()) bad_cluster+=count;
             else if(source.isEmpty()) bad_source+=count;
@@ -820,7 +832,7 @@ void MainWindow::saveProjectHelper(){
         for(auto& qrec : *data){
             auto ids = qrec.ids.join("\",\"");
             auto mod = qrec.modification;
-            QString updateStat  = "update \"%1\" set species_name= \"%2\", bin_uri = \"%3\", institution_storing = \"%4\", grade = \"%5\", modification = \"%6\" where species_name= \"%7\" and bin_uri = \"%8\" and institution_storing = \"%9\"";
+            QString updateStat  = "update Ex\"%1\" set species_name= \"%2\", bin_uri = \"%3\", institution_storing = \"%4\", grade = \"%5\", modification = \"%6\" where id= \"%7\"";
             updateStat = updateStat
                     .arg(project)
                     .arg(QString::fromStdString(qrec.record.getSpeciesName()))
@@ -828,9 +840,7 @@ void MainWindow::saveProjectHelper(){
                     .arg(QString::fromStdString(qrec.record.getSource()))
                     .arg(QString::fromStdString(qrec.record.getGrade()))
                     .arg(mod)
-                    .arg(QString::fromStdString(qrec.record.getSpeciesName()))
-                    .arg(QString::fromStdString(qrec.record.getCluster()))
-                    .arg(QString::fromStdString(qrec.record.getSource()));
+                    .arg(qrec.ids[0]);
             dbc.execQuery(updateStat);
             if (!dbc.success()) {
                 emit error("Save project error", "There was an error saving the project");
