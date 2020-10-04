@@ -112,8 +112,10 @@ MainWindow::MainWindow(QString app_dir, QWidget *parent)
 void MainWindow::autoCorrectionHelper(){
     std::vector<QRecord> records;
     for(auto &record: *data){
-        if(record.ids.size() > 1){
+        if(record.record.count() > 1){
             records.push_back(record);
+        }else{
+            deleted->push_back(record);
         }
     }
     data->swap(records);
@@ -146,7 +148,7 @@ void MainWindow::onError(QString error_type, QString error){
     QMessageBox::critical( this, error_type, error, QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok );
     onStopLoading();
 }
-
+//REDO
 void MainWindow::exportDataToTSVHelper(QString filename, bool full){
     DbConnection dbc(app_dir);
     if(!dbc.createConnection()){
@@ -165,8 +167,7 @@ void MainWindow::exportDataToTSVHelper(QString filename, bool full){
         filename = filename + "_pruned"+".tsv";
     }
     valuesStat = valuesStat.arg(project);
-    QString headerStat = "SELECT group_concat(name) FROM PRAGMA_TABLE_INFO(\"%1\")";
-    headerStat = headerStat.arg(project);
+
     QFile file(filename);
     if (!file.open(QIODevice::WriteOnly)) {
         QString error_msg = "File %1 couldn't be open.";
@@ -191,10 +192,38 @@ void MainWindow::exportDataToTSVHelper(QString filename, bool full){
     file_params.close();
 
     QTextStream stream(&file);
-    auto header = dbc.execQuery(headerStat)[0][0];
-    int index = header.split(',').indexOf("grade");
-    auto values = dbc.execQuery(valuesStat);
+    QString header_query = "SELECT group_concat(name) FROM PRAGMA_TABLE_INFO(\"%1\")";
+    QString update_query =
+            "UPDATE %1 "
+            "SET species_name        = (SELECT species_name "
+            "                                   FROM ex%1 "
+            "                                   WHERE ex%1.id = %1.ex_id),"
+            "    bin_uri             = (SELECT bin_uri"
+            "                                   FROM ex%1 "
+            "                                   WHERE ex%1.id = %1.ex_id), "
+            "    grade               = (SELECT grade"
+            "                                   FROM ex%1 "
+            "                                   WHERE ex%1.id = %1.ex_id),"
+            "    institution_storing = (SELECT institution_storing "
+            "                                   FROM ex%1 "
+            "                                   WHERE ex%1.id = %1.ex_id),"
+            "    modification        = (SELECT modification"
+            "                                   FROM ex%1 "
+            "                                   WHERE ex%1.id = %1.ex_id)"
+            "where EXISTS (SELECT grade, institution_storing, bin_uri, species_name"
+            "                  FROM ex%1 "
+            "                  WHERE ex%1.id = %1.ex_id)";
+
+
+    header_query = header_query.arg(project);
+    update_query = update_query.arg(project);
+
+    dbc.execQuery(update_query);
+    QString header = dbc.execQuery(header_query)[0][0];
+    QStringList header_values = header.split(',');
+    QVector<QStringList> values = dbc.execQuery(valuesStat);
     stream << header.replace(",","\t")+"\n";
+    int index = header_values.indexOf("grade");
     QString grade_ast = "";
     if(params.min_sources == 1)
         grade_ast = "*";
@@ -374,6 +403,14 @@ void MainWindow::onSaveAsProject(){
             return;
         }
 
+        QString insertExStat = "create table Ex%1 as select * from Ex%2;";
+        insertExStat = insertExStat.arg(new_project);
+        insertExStat = insertExStat.arg(project);
+        dbc.execQuery(insertExStat);
+        if(!dbc.success()){
+            emit error("SQLite error", "Error project");
+            return;
+        }
 
         QString insertStat = "create table \"%1\" as select * from \"%2\";";
         insertStat = insertStat.arg(new_project);
@@ -496,7 +533,7 @@ void MainWindow::newProjectHelper(QString filename){
     int current = 0;
     int idx = 0;
     int ex_idx = 0;
-    int batch = 1;
+    int batch = 500;
     QMap<std::tuple<QString, QString, QString>, int> fr_keys;
     QString species, institution, cluster, grade, modification;
     std::tuple<QString, QString, QString> key;
@@ -548,8 +585,9 @@ void MainWindow::newProjectHelper(QString filename){
                     emit error("SQLite error", "Error creating table");
                     return;
                 }
+            }else{
+                fr_key = find_it.value();
             }
-            fr_key = find_it.value();
         }else{
             fr_key = 0;
         }
@@ -566,7 +604,6 @@ void MainWindow::newProjectHelper(QString filename){
         }
         idx++;
         values.append(QString::number(fr_key));
-        qDebug() << fr_key;
         QString valuesStr = "(\"" + values.join("\",\"") + "\")";
         insert += valuesStr;
         if(current == batch){
@@ -743,8 +780,8 @@ void MainWindow::loadRecords(){
         ui->results_frame->hide();
         QSqlQuery query;
         QString loadStat = "SELECT Ex%1.species_name , Ex%2.bin_uri, Ex%3.institution_storing, Ex%4.grade, count(*), Ex%5.modification, Ex%6.id from Ex%7"
-                " JOIN %9 on Ex%8.id = %10.ex_id "
-                "group by Ex%11.species_name, Ex%12.bin_uri, Ex%13.institution_storing;";
+                           " JOIN %9 on Ex%8.id = %10.ex_id "
+                           "group by Ex%11.species_name, Ex%12.bin_uri, Ex%13.institution_storing;";
         loadStat = loadStat
                 .arg(project)
                 .arg(project)
@@ -772,20 +809,31 @@ void MainWindow::loadRecords(){
             QString grade = record[3];
             int count = record[4].toInt();
             QString modification = record[5];
-            QStringList ids = {record[6]};
-            if(species_name.isEmpty()) bad_species+=count;
-            else if(cluster.isEmpty()) bad_cluster+=count;
-            else if(source.isEmpty()) bad_source+=count;
-            else if(modification == "DELETED by user;"){
-                deleted+=count;
-            }
-            else{
+            if(modification.contains("DELETED")){
+                deleted += count;
+            }else{
+                QStringList ids = {record[6]};
                 Record rec(species_name.toStdString(),cluster.toStdString(),source.toStdString(),grade.toStdString(),count);
                 QRecord qrec({ids, modification, rec});
                 clusters << cluster;
                 data->push_back(qrec);
             }
         }
+
+        QString badRecords = "select "
+                             "sum(case when species_name is \"\" then 1 else 0 end) A,"
+                             "sum(case when bin_uri is \"\" then 1 else 0 end) B,"
+                             "sum(case when institution_storing is \"\" then 1 else 0 end) C "
+                             "from \"%1\"";
+        result = dbc.execQuery(badRecords.arg(project));
+        if(!dbc.success()){
+            emit error("SQLite error", QString("Error loading in table %1").arg(project));
+            return;
+        }
+
+        bad_species = result[0][0].toInt();
+        bad_cluster = result[0][1].toInt();
+        bad_source = result[0][2].toInt();
         auto cluster_ids = clusters.values();
         auto cluster_ids_str = cluster_ids.join("\",\"");
         QString clustersLoadStat = "select clusterA, clusterB, distance from neighbours where clusterA in (\"%1\") and strftime(\"%s\",\"now\") - time < 864000 ";
@@ -832,7 +880,7 @@ void MainWindow::saveProjectHelper(){
         for(auto& qrec : *data){
             auto ids = qrec.ids.join("\",\"");
             auto mod = qrec.modification;
-            QString updateStat  = "update Ex\"%1\" set species_name= \"%2\", bin_uri = \"%3\", institution_storing = \"%4\", grade = \"%5\", modification = \"%6\" where id= \"%7\"";
+            QString updateStat  = "update Ex%1 set species_name= \"%2\", bin_uri = \"%3\", institution_storing = \"%4\", grade = \"%5\", modification = \"%6\" where id in (\"%7\")";
             updateStat = updateStat
                     .arg(project)
                     .arg(QString::fromStdString(qrec.record.getSpeciesName()))
@@ -849,7 +897,7 @@ void MainWindow::saveProjectHelper(){
         for(auto& qrec : *deleted){
             updated_ids << qrec.ids;
         }
-        QString updateStat="update \"%1\" set modification = \"DELETED by user;\" where ispecID in (\"%2\")";
+        QString updateStat="update Ex%1 set modification = \"DELETED by user;\" where id in (\"%2\")";
         updateStat = updateStat
                 .arg(project)
                 .arg(updated_ids.join("\",\""));
@@ -1182,7 +1230,6 @@ void MainWindow::showFilter()
 
 void MainWindow::showGradingOptions()
 {
-    qDebug() << params.max_distance << params.min_size << params.min_sources ;
     GradingOptionsDialog * gopts = new GradingOptionsDialog(this->params);
     connect(gopts, SIGNAL(saveConfig(double, int, int)),
             this, SLOT(onSaveConfig(double, int, int)));
