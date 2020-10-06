@@ -445,7 +445,6 @@ void MainWindow::newProjectHelper(QString filename){
         emit error("Load file error", "Incorrect format file");
         return;
     }
-    int current_size = 0;
     QTextStream in(&file);
     QStringList header;
 
@@ -620,7 +619,7 @@ void MainWindow::newProjectHelper(QString filename){
         }
     }
 
-    if(current_size != 0){
+    if(current != 0){
         insert.chop(1);
         dbc.execQuery(insert);
         if(!dbc.success()){
@@ -1066,14 +1065,19 @@ void MainWindow::saveGraph()
     if (fileName.isEmpty())
         return;
     else {
-        auto area = graph->sceneRect();
-        auto image = new QImage(area.width()+100, area.height()+100, QImage::Format_ARGB32_Premultiplied);
-        auto painter = new QPainter(image);
-        painter->fillRect(image->rect(),Qt::white);
-        painter->translate(10,10);
-        graph->render(painter, image->rect(), area);
-        painter->end();
-        image->save(fileName+".png","PNG",100);
+        loading(true, "Saving image");
+        QtConcurrent::run(std::function<void(QString)>(
+                              [this](QString path){
+                              auto area = graph->sceneRect();
+                              auto image = new QImage(area.width()+100, area.height()+100, QImage::Format_ARGB32_Premultiplied);
+                              auto painter = new QPainter(image);
+                              painter->fillRect(image->rect(),Qt::white);
+                              painter->translate(10,10);
+                              graph->render(painter, image->rect(), area);
+                              painter->end();
+                              image->save(path+".png","PNG",100);
+                              emit stopLoading();
+                          }), fileName);
     }
 }
 
