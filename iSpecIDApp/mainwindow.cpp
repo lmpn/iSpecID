@@ -426,69 +426,68 @@ void MainWindow::onSaveAsProject(){
 
 void MainWindow::newProjectHelper(QString filename){
     DbConnection dbc(app_dir);
-
-    QFile file(filename);
-    if (!file.open(QIODevice::ReadOnly)) {
-        QString error_msg = "File %1 couldn't be open.";
-        error_msg = error_msg.arg(filename);
-        emit error("File open error", error_msg);
-        return;
-    }
-    QChar delim;
-    if(filename.contains("csv")){
-        delim = ';';
-    }
-    else if(filename.contains("tsv")){
-        delim = '\t';
-    }else{
-        file.close();
-        emit error("Load file error", "Incorrect format file");
-        return;
-    }
-    QTextStream in(&file);
-    QStringList header;
-
-    QList<std::tuple<QString, int>> exheader;
-    bool no_grade = false;
-    bool no_mod = false;
-    bool no_id = false;
-
-    if(!in.atEnd()){
-        QString line = in.readLine();
-        header = line.split(delim);
-        auto species = header.indexOf("species_name");
-        auto bin = header.indexOf("bin_uri");
-        auto institution = header.indexOf("institution_storing");
-        auto mod = header.indexOf("modification");
-        auto g = header.indexOf("grade");
-        auto id = header.indexOf("ispecID");
-        if(species == -1 || bin == -1 || institution == -1){
-            file.close();
-            emit error("Load file error", "Header doesn't have species_name, bin_uri or institution_storing");
+    if(dbc.createConnection() && dbc.transaction()){
+        QFile file(filename);
+        if (!file.open(QIODevice::ReadOnly)) {
+            QString error_msg = "File %1 couldn't be open.";
+            error_msg = error_msg.arg(filename);
+            emit error("File open error", error_msg);
             return;
+        }
+        QChar delim;
+        if(filename.contains("csv")){
+            delim = ';';
+        }
+        else if(filename.contains("tsv")){
+            delim = '\t';
         }else{
-            exheader << std::make_tuple("species_name",species)
-                     << std::make_tuple("bin_uri",bin)
-                     << std::make_tuple("institution_storing",institution);
+            file.close();
+            emit error("Load file error", "Incorrect format file");
+            return;
         }
-        if(g == -1) {
-            no_grade = true;
-            header << "grade";
+        QTextStream in(&file);
+        QStringList header;
+
+        QList<std::tuple<QString, int>> exheader;
+        bool no_grade = false;
+        bool no_mod = false;
+        bool no_id = false;
+
+        if(!in.atEnd()){
+            QString line = in.readLine();
+            header = line.split(delim);
+            auto species = header.indexOf("species_name");
+            auto bin = header.indexOf("bin_uri");
+            auto institution = header.indexOf("institution_storing");
+            auto mod = header.indexOf("modification");
+            auto g = header.indexOf("grade");
+            auto id = header.indexOf("ispecID");
+            if(species == -1 || bin == -1 || institution == -1){
+                file.close();
+                emit error("Load file error", "Header doesn't have species_name, bin_uri or institution_storing");
+                return;
+            }else{
+                exheader << std::make_tuple("species_name",species)
+                         << std::make_tuple("bin_uri",bin)
+                         << std::make_tuple("institution_storing",institution);
+            }
+            if(g == -1) {
+                no_grade = true;
+                header << "grade";
+            }
+            exheader << std::make_tuple("grade",g);
+            if(mod == -1){
+                no_mod = true;
+                header << "modification";
+            }
+            exheader << std::make_tuple("modification",mod);
+            if(id == -1){
+                no_id = true;
+            }
+            std::sort(exheader.begin(), exheader.end(), [](std::tuple<QString, int> a, std::tuple<QString, int> b){
+                return std::get<1>(a) > std::get<1>(b);
+            });
         }
-        exheader << std::make_tuple("grade",g);
-        if(mod == -1){
-            no_mod = true;
-            header << "modification";
-        }
-        exheader << std::make_tuple("modification",mod);
-        if(id == -1){
-            no_id = true;
-        }
-        std::sort(exheader.begin(), exheader.end(), [](std::tuple<QString, int> a, std::tuple<QString, int> b){
-            return std::get<1>(a) > std::get<1>(b);
-        });
-    }
-    if(dbc.createConnection()){
         QString newProjectStat = "insert into projects (name, max_dist, sources, records) values (\"%1\", 2.0, 2, 3)";
         newProjectStat = newProjectStat.arg(project);
         dbc.execQuery(newProjectStat);
@@ -496,161 +495,167 @@ void MainWindow::newProjectHelper(QString filename){
             emit error("SQLite error", "Error project");
             return;
         }
-    }else{
-        emit error("SQLite error", "Error project");
-        return;
-    }
 
-    QStringList cols = header;
-    QStringList exCols;
-    for(auto p : exheader){
-        exCols << std::get<0>(p);
-    }
-
-
-
-    cols.prepend("ispecID");
-    cols[0] = cols[0] + " primary key ";
-    cols << "ex_id";
-    cols << "FOREIGN KEY(ex_id) REFERENCES Ex"+project+"(id)";
-    header.prepend("ispecID");
-    header << "ex_id";
-    QString header_join = header.join(",");
-    QString createProjectQuery = "create table \""+ project +"\" (" + cols.join(",") +")";
-    QString createExProjectQuery = "create table \"Ex"+ project +"\" (id primary key," + exCols.join(",") +")";
-    dbc.execQuery(createExProjectQuery);
-    if(!dbc.success()){
-        emit error("SQLite error", "Error creating table");
-        return;
-    }
-    dbc.execQuery(createProjectQuery);
-    if(!dbc.success()){
-        emit error("SQLite error", "Error creating table");
-        return;
-    }
-
-    int current = 0;
-    int idx = 0;
-    int ex_idx = 0;
-    int batch = 500;
-    QMap<std::tuple<QString, QString, QString>, int> fr_keys;
-    QString species, institution, cluster, grade, modification;
-    std::tuple<QString, QString, QString> key;
-
-    QString insertBase = "insert into \"" + project +"\" (" + header.join(",") + ") values ";
-    QString insertEx = "insert into \"Ex" + project +"\" (" + exCols.join(",") + ", id) values ";
-    QString insert = insertBase;
-
-    int fr_key;
-
-    while (!in.atEnd()) {
-        QString record = in.readLine();
-        QStringList values = record.replace("\"","").split("\t");
-        QStringList exValues;
-        for(auto exh : exheader){
-            QString field = std::get<0>(exh);
-            int idx = std::get<1>(exh);
-            if(idx != -1){
-                exValues << values[idx];
-                if(field == "species_name"){
-                    species = values[idx];
-                }
-                else if(field == "institution_storing"){
-                    institution = values[idx];
-                }
-                else if(field == "bin_uri"){
-                    cluster = values[idx];
-                }
-            }else{
-                if(field == "modification"){
-                    exValues << "";
-                }
-                else if(field == "grade"){
-                    exValues << "U";
-                }
-            }
+        QStringList cols = header;
+        QStringList exCols;
+        for(auto p : exheader){
+            exCols << std::get<0>(p);
         }
 
-        if(species != "" && cluster != "" && institution != ""){
-            key = std::make_tuple(species, cluster, institution);
-            auto find_it = fr_keys.find(key);
-            if(find_it == fr_keys.end()){
-                ex_idx++;
-                fr_keys[key] = ex_idx;
-                fr_key = ex_idx;
-                exValues << QString::number(ex_idx);
-                dbc.execQuery(insertEx+"(\"" + exValues.join("\",\"") + "\")");
+
+
+        cols.prepend("ispecID");
+        cols[0] = cols[0] + " primary key ";
+        cols << "ex_id";
+        cols << "FOREIGN KEY(ex_id) REFERENCES Ex"+project+"(id)";
+        header.prepend("ispecID");
+        header << "ex_id";
+        QString header_join = header.join(",");
+        QString createProjectQuery = "create table \""+ project +"\" (" + cols.join(",") +")";
+        QString createExProjectQuery = "create table \"Ex"+ project +"\" (id primary key," + exCols.join(",") +")";
+        dbc.execQuery(createExProjectQuery);
+        if(!dbc.success()){
+            emit error("SQLite error", "Error creating table");
+            return;
+        }
+        dbc.execQuery(createProjectQuery);
+        if(!dbc.success()){
+            emit error("SQLite error", "Error creating table");
+            return;
+        }
+
+        int current = 0;
+        int idx = 0;
+        int ex_idx = 0;
+        int batch = 500;
+        QMap<std::tuple<QString, QString, QString>, int> fr_keys;
+        QString species, institution, cluster, grade, modification;
+        std::tuple<QString, QString, QString> key;
+
+        QString insertBase = "insert into \"" + project +"\" (" + header.join(",") + ") values ";
+        QString insertEx = "insert into \"Ex" + project +"\" (" + exCols.join(",") + ", id) values ";
+        QString insert = insertBase;
+
+        int fr_key;
+
+        while (!in.atEnd()) {
+            QString record = in.readLine();
+            QStringList values = record.replace("\"","").split("\t");
+            QStringList exValues;
+            for(auto exh : exheader){
+                QString field = std::get<0>(exh);
+                int idx = std::get<1>(exh);
+                if(idx != -1){
+                    exValues << values[idx];
+                    if(field == "species_name"){
+                        species = values[idx];
+                    }
+                    else if(field == "institution_storing"){
+                        institution = values[idx];
+                    }
+                    else if(field == "bin_uri"){
+                        cluster = values[idx];
+                    }
+                }else{
+                    if(field == "modification"){
+                        exValues << "";
+                    }
+                    else if(field == "grade"){
+                        exValues << "U";
+                    }
+                }
+            }
+
+            if(species != "" && cluster != "" && institution != ""){
+                key = std::make_tuple(species, cluster, institution);
+                auto find_it = fr_keys.find(key);
+                if(find_it == fr_keys.end()){
+                    ex_idx++;
+                    fr_keys[key] = ex_idx;
+                    fr_key = ex_idx;
+                    exValues << QString::number(ex_idx);
+                    dbc.execQuery(insertEx+"(\"" + exValues.join("\",\"") + "\")");
+                    if(!dbc.success()){
+                        emit error("SQLite error", "Error creating table");
+                        return;
+                    }
+                }else{
+                    fr_key = find_it.value();
+                }
+            }else{
+                fr_key = 0;
+            }
+
+
+            if(no_id){
+                values.prepend(QString::number(idx));
+            }
+            if(no_grade){
+                values.append("U");
+            }
+            if(no_mod){
+                values.append("");
+            }
+            idx++;
+            values.append(QString::number(fr_key));
+            QString valuesStr = "(\"" + values.join("\",\"") + "\")";
+            insert += valuesStr;
+            if(current == batch){
+                current = 0;
+                dbc.execQuery(insert);
+                insert = insertBase;
                 if(!dbc.success()){
-                    emit error("SQLite error", "Error creating table");
+                    emit error("SQLite error", "Error inserting in table");
                     return;
                 }
             }else{
-                fr_key = find_it.value();
+                current++;
+                insert += ",";
             }
-        }else{
-            fr_key = 0;
         }
 
-
-        if(no_id){
-            values.prepend(QString::number(idx));
-        }
-        if(no_grade){
-            values.append("U");
-        }
-        if(no_mod){
-            values.append("");
-        }
-        idx++;
-        values.append(QString::number(fr_key));
-        QString valuesStr = "(\"" + values.join("\",\"") + "\")";
-        insert += valuesStr;
-        if(current == batch){
-            current = 0;
+        if(current != 0){
+            insert.chop(1);
             dbc.execQuery(insert);
-            insert = insertBase;
             if(!dbc.success()){
                 emit error("SQLite error", "Error inserting in table");
                 return;
             }
-        }else{
-            current++;
-            insert += ",";
         }
-    }
 
-    if(current != 0){
-        insert.chop(1);
-        dbc.execQuery(insert);
+        file.close();
+
+        QString updateSourceStat="update \"%1\" set modification= \"DELETED: empty source\" where institution_storing == \"\"";
+        updateSourceStat = updateSourceStat.arg(project);
+        dbc.execQuery(updateSourceStat);
         if(!dbc.success()){
             emit error("SQLite error", "Error inserting in table");
             return;
         }
+        QString updateClusterStat="update \"%1\" set modification= \"DELETED: empty cluster/bin_uri\" where bin_uri == \"\"";
+        updateClusterStat = updateClusterStat.arg(project);
+        dbc.execQuery(updateClusterStat);
+        if(!dbc.success()){
+            emit error("SQLite error", "Error inserting in table");
+            return;
+        }
+        QString updateSpeciesNameStat="update \"%1\" set modification= \"DELETED: empty name\" where species_name == \"\"";
+        updateSpeciesNameStat= updateSpeciesNameStat.arg(project);
+        dbc.execQuery(updateSpeciesNameStat);
+        if(!dbc.success()){
+            emit error("SQLite error", "Error inserting in table");
+            return;
+        }
+        if(!dbc.commit()){
+            dbc.rollback();
+        }
+    }
+    else{
+        emit error("SQLite error: no transaction", "Error inserting in table");
+        return;
     }
 
-    file.close();
 
-    QString updateSourceStat="update \"%1\" set modification= \"DELETED: empty source\" where institution_storing == \"\"";
-    updateSourceStat = updateSourceStat.arg(project);
-    dbc.execQuery(updateSourceStat);
-    if(!dbc.success()){
-        emit error("SQLite error", "Error inserting in table");
-        return;
-    }
-    QString updateClusterStat="update \"%1\" set modification= \"DELETED: empty cluster/bin_uri\" where bin_uri == \"\"";
-    updateClusterStat = updateClusterStat.arg(project);
-    dbc.execQuery(updateClusterStat);
-    if(!dbc.success()){
-        emit error("SQLite error", "Error inserting in table");
-        return;
-    }
-    QString updateSpeciesNameStat="update \"%1\" set modification= \"DELETED: empty name\" where species_name == \"\"";
-    updateSpeciesNameStat= updateSpeciesNameStat.arg(project);
-    dbc.execQuery(updateSpeciesNameStat);
-    if(!dbc.success()){
-        emit error("SQLite error", "Error inserting in table");
-        return;
-    }
     loadRecords();
 }
 

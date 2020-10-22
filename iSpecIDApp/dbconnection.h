@@ -82,6 +82,15 @@ public:
     QString query() {return lastQuery;}
     QVector<QStringList> execQuery(QString statement);
     void setup();
+    bool transaction(){
+        return db.transaction();
+    }
+    bool commit(){
+        return db.commit();
+    }
+    bool rollback(){
+        return db.rollback();
+    }
 
 private:
     QString lastError, lastQuery;
