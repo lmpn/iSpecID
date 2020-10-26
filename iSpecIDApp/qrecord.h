@@ -6,7 +6,7 @@
 typedef struct qrecord{
     QStringList ids;
     QString modification;
-    ispecid::datatypes::Record record;
+    ispecid::datatypes::record record;
     bool deleted = false;
 
     bool joinRecord(qrecord& rec){

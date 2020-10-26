@@ -61,12 +61,14 @@ signals:
     void errorOccured();
     void stopLoading();
     void error(QString, QString);
+    void analysisComplete(QMap<QString, int> records_per_species,QMap<QString, int> records_per_bin,QMap<QString, QSet<QString>> sources_per_species,QMap<QString, QSet<QString>> sources_per_bin);
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
     void scaleView(qreal scaleFactor);
 
 private slots:
+    void onAnalysisComplete(QMap<QString, int> records_per_species,QMap<QString, int> records_per_bin,QMap<QString, QSet<QString>> sources_per_species,QMap<QString, QSet<QString>> sources_per_bin);
     void onError(QString error_type, QString error);
     void onStopLoading();
     void onSaveAsProject();
@@ -89,6 +91,7 @@ private slots:
     void onNewProject();
     void saveGraph();
     void showGradingOptions();
+    void showDatasetAnalysis();
     void autoCorrection();
     void showFilter();
     void onSaveConfig(double, int, int);
@@ -98,8 +101,8 @@ private slots:
 private:
     QString app_dir;
     QString project;
-    GradingParameters params;
-    DistanceMatrix distances;
+    grading_parameters params;
+    distance_matrix distances;
     std::vector<QRecord>* data;
     std::vector<QRecord>* deleted;
     GraphScene* graph;
@@ -108,7 +111,7 @@ private:
     QMovie* movie;
     QTimer* timer;
     std::vector<std::string> errors;
-    ispecid::IEngine* engine;
+    ispecid::execution::iengine* engine;
     bool save_distances = true;
 };
 

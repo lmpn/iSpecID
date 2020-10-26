@@ -15,6 +15,7 @@
 #include "recordmodel.h"
 #include "resultsmodel.h"
 #include "gradingoptionsdialog.h"
+#include "datasetanalysisdialog.h"
 #include "filterdialog.h"
 #include "utils.h"
 #include "fileio.h"
@@ -24,6 +25,8 @@ MainWindow::MainWindow(QString app_dir, QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
+    qRegisterMetaType<QMap<QString,int>>("QMap<QString,int>");
+    qRegisterMetaType<QMap<QString,QSet<QString>>>("QMap<QString,QSet<QString>>");
     ui->setupUi(this);
     this->app_dir = app_dir;
     undoStack = new QUndoStack(this);
@@ -65,8 +68,13 @@ MainWindow::MainWindow(QString app_dir, QWidget *parent)
             this, SLOT(showFilter()));
     connect(ui->gradind_options_action, SIGNAL(triggered()),
             this, SLOT(showGradingOptions()));
+    connect(ui->dataset_analysis_action, SIGNAL(triggered()),
+            this, SLOT(showDatasetAnalysis()));
     connect(ui->auto_correction_action, SIGNAL(triggered()),
             this, SLOT(autoCorrection()));
+    connect(this, SIGNAL(
+                analysisComplete(QMap<QString, int> ,QMap<QString, int> ,QMap<QString, QSet<QString>> ,QMap<QString, QSet<QString>> )),
+            this, SLOT(onAnalysisComplete(QMap<QString, int> ,QMap<QString, int> ,QMap<QString, QSet<QString>> ,QMap<QString, QSet<QString>> )));
     connect(ui->annotate_button, SIGNAL(clicked()),
             this, SLOT(onAnnotate()));
     connect(ui->undo_button, &QPushButton::clicked,
@@ -103,7 +111,7 @@ MainWindow::MainWindow(QString app_dir, QWidget *parent)
     enableMenuDataActions(false);
     data = new std::vector<QRecord>();
     deleted = new std::vector<QRecord>();
-    engine = new ispecid::IEngine(4);
+    engine = new ispecid::execution::iengine(4);
     showMaximized();
 
 }
@@ -112,7 +120,7 @@ MainWindow::MainWindow(QString app_dir, QWidget *parent)
 void MainWindow::autoCorrectionHelper(){
     std::vector<QRecord> records;
     for(auto &record: *data){
-        if(record.record.count() > 1){
+        if(record.record.count() > params.min_sources){
             records.push_back(record);
         }else{
             deleted->push_back(record);
@@ -294,8 +302,8 @@ void MainWindow::loadDistanceMatrix(){
                             bool ok;
                             double distance = elems[2].toDouble(&ok);
                             if (ok){
-                                Neighbour neighbour_a({elems[0].toStdString(), elems[1].toStdString(), distance});
-                                Neighbour neighbour_b({elems[1].toStdString(), elems[0].toStdString(), distance});
+                                neighbour neighbour_a({elems[0].toStdString(), elems[1].toStdString(), distance});
+                                neighbour neighbour_b({elems[1].toStdString(), elems[0].toStdString(), distance});
                                 auto it_a = distances.find(elems[0].toStdString());
                                 if(it_a != distances.end()){
                                     if(it_a->second.distance > distance){
@@ -334,17 +342,20 @@ void MainWindow::onAnnotate(){
     if(data->size() == 0) return;
     onActionPerformed();
     loading(true, "Grading...");
-    std::vector<Record> records;
+    std::vector<record> records;
     std::for_each(data->begin(),data->end(),[&records](QRecord item){records.push_back(item.record);});
-    auto dataset = utils::group(records,Record::getSpeciesName,Species::addRecord,Species::fromRecord);
+    auto dataset = utils::group(records,record::getSpeciesName,species::addRecord,species::fromRecord);
     QtConcurrent::run(
-                std::function<void(Dataset&)>(
-                    [this](Dataset& dataset){
-                    this->errors = engine->annotate(dataset,this->distances,this->params);
+                std::function<void(ispecid::datatypes::dataset&)>(
+                    [this](ispecid::datatypes::dataset& ds){
+                    ispecid::execution::auditor auditor(this->params, this->distances, this->engine);
+                     auditor.execute(ds);
+                    this->errors = auditor.errors();
+                    this->distances = auditor.get_distances();
                     for(auto& item : *data){
                         std::string key = item.record.getSpeciesName();
-                        auto grade_it = dataset.find(key);
-                        if(grade_it != dataset.end()){
+                        auto grade_it = ds.find(key);
+                        if(grade_it != ds.end()){
                             item.record.setGrade(grade_it->second.getGrade());
                         }
                     }
@@ -700,12 +711,12 @@ void MainWindow::onLoadProject()
 {
     DbConnection dbc(app_dir);
     QStringList projects;
-    QList<GradingParameters> params_list;
+    QList<grading_parameters> params_list;
     if(dbc.createConnection()){
         auto result = dbc.execQuery("select name, sources, records, max_dist from projects");
         for(auto& record : result){
             projects << record.first();
-            GradingParameters gp = {record[1].toInt(), record[2].toInt(), record[3].toDouble()};
+            grading_parameters gp = {record[1].toInt(), record[2].toInt(), record[3].toDouble()};
             params_list << gp;
         }
     }else{
@@ -732,12 +743,12 @@ void MainWindow::onDeleteProject()
 {
     DbConnection dbc(app_dir);
     QStringList projects;
-    QList<GradingParameters> params_list;
+    QList<grading_parameters> params_list;
     if(dbc.createConnection()){
         auto result = dbc.execQuery("select name, sources, records, max_dist from projects");
         for(auto& record : result){
             projects << record.first();
-            GradingParameters gp = {record[1].toInt(), record[2].toInt(), record[3].toDouble()};
+            grading_parameters gp = {record[1].toInt(), record[2].toInt(), record[3].toDouble()};
             params_list << gp;
         }
     }else{
@@ -801,18 +812,18 @@ void MainWindow::loadRecords(){
             return;
         }
         QSet<QString> clusters;
-        for(auto& record : result){
-            QString species_name = record[0];
-            QString cluster = record[1];
-            QString source =  record[2];
-            QString grade = record[3];
-            int count = record[4].toInt();
-            QString modification = record[5];
+        for(auto& item : result){
+            QString species_name = item[0];
+            QString cluster = item[1];
+            QString source =  item[2];
+            QString grade = item[3];
+            int count = item[4].toInt();
+            QString modification = item[5];
             if(modification.contains("DELETED")){
                 deleted += count;
             }else{
-                QStringList ids = {record[6]};
-                Record rec(species_name.toStdString(),cluster.toStdString(),source.toStdString(),grade.toStdString(),count);
+                QStringList ids = {item[6]};
+                record rec(species_name.toStdString(),cluster.toStdString(),source.toStdString(),grade.toStdString(),count);
                 QRecord qrec({ids, modification, rec});
                 clusters << cluster;
                 data->push_back(qrec);
@@ -846,7 +857,7 @@ void MainWindow::loadRecords(){
             std::string clusterA = record[0].toStdString();
             std::string clusterB = record[1].toStdString();
             double distance =  record[2].toDouble();
-            Neighbour neighbour = {clusterA,clusterB,distance};
+            neighbour neighbour = {clusterA,clusterB,distance};
             distances.insert({clusterA, neighbour});
         }
     }
@@ -1240,6 +1251,36 @@ void MainWindow::showGradingOptions()
     gopts->exec();
     gopts->deleteLater();
 }
+void MainWindow::onAnalysisComplete(QMap<QString, int> records_per_species,QMap<QString, int> records_per_bin,QMap<QString, QSet<QString>> sources_per_species,QMap<QString, QSet<QString>> sources_per_bin){
+
+    DatasetAnalysisDialog* dad = new DatasetAnalysisDialog(records_per_species, records_per_bin, sources_per_species, sources_per_bin);
+    dad->exec();
+    dad->deleteLater();
+}
+
+void MainWindow::showDatasetAnalysis()
+{
+    loading(true, "Creating analysis");
+    QtConcurrent::run(std::function<void()>(
+                          [this]( ){
+        QMap<QString, int> records_per_species;
+        QMap<QString, int> records_per_bin;
+        QMap<QString, QSet<QString>> sources_per_species;
+        QMap<QString, QSet<QString>> sources_per_bin;
+        for(auto &record : *data){
+            auto sp = QString::fromStdString(record.record.getSpeciesName());
+            auto bin = QString::fromStdString(record.record.getCluster());
+            auto source = QString::fromStdString(record.record.getSource());
+            auto sz = record.record.count();
+            records_per_species[sp] += sz;
+            records_per_bin[bin] += sz;
+            sources_per_species[sp] << source;
+            sources_per_bin[bin] << source;
+        }
+        emit stopLoading();
+        emit analysisComplete(records_per_species,records_per_bin, sources_per_species, sources_per_bin);
+    }));
+}
 
 void MainWindow::onSaveConfig(double max_dist, int min_labs, int min_seqs)
 {
@@ -1291,9 +1332,9 @@ void MainWindow::updateApp()
 }
 
 void MainWindow::exportResultsHelper(QString path){
-    std::vector<Record> records;
+    std::vector<record> records;
     std::for_each(data->begin(),data->end(),[&records](QRecord item){records.push_back(item.record);});
-    auto dataset = utils::group(records,Record::getSpeciesName,Species::addRecord,Species::fromRecord);
+    auto dataset = utils::group(records,record::getSpeciesName,species::addRecord,species::fromRecord);
     std::map<QString, QStringList> bin_group;
     for(auto& rec: records){
         auto key = QString::fromStdString(rec.getCluster());

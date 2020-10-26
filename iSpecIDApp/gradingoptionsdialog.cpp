@@ -3,7 +3,7 @@
 #include <QMessageBox>
 #include <qdebug.h>
 
-GradingOptionsDialog::GradingOptionsDialog(ispecid::datatypes::GradingParameters params , QWidget *parent) :
+GradingOptionsDialog::GradingOptionsDialog(ispecid::datatypes::grading_parameters params , QWidget *parent) :
     QDialog(parent),
     ui(new Ui::GradingOptionsDialog)
 {

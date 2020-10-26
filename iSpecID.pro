@@ -1,6 +1,6 @@
 QT       += core gui concurrent sql
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets charts
 
 
 
@@ -17,6 +17,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
         app.cpp \
+        iSpecIDApp/datasetanalysisdialog.cpp \
         iSpecIDApp/dbconnection.cpp \
         iSpecIDApp/mainwindow.cpp \
         iSpecIDApp/projectselectiondialog.cpp \
@@ -27,11 +28,12 @@ SOURCES += \
         iSpecIDApp/graphscene.cpp \
         iSpecIDApp/gradingoptionsdialog.cpp \
         iSpecIDApp/filterdialog.cpp \
-        iSpecIDCore/src/iengine.cpp \
+        iSpecIDCore/src/auditor.cpp \
         iSpecIDCore/src/network.cpp
 
 
 HEADERS += \
+        iSpecIDApp/datasetanalysisdialog.h \
         iSpecIDApp/dbconnection.h \
         iSpecIDApp/projectselectiondialog.h \
         iSpecIDApp/recordmodel.h \
@@ -46,6 +48,8 @@ HEADERS += \
         iSpecIDApp/filterOp.h \
         iSpecIDApp/filterscrollarea.h \
         iSpecIDCore/include/iengine.h \
+        iSpecIDCore/include/engine_algorithm.h \
+        iSpecIDCore/include/auditor.h \
         iSpecIDCore/include/datatypes.h \
         iSpecIDCore/include/fileio.h \
         iSpecIDCore/include/network.h \
@@ -56,6 +60,7 @@ HEADERS += \
 
 
 FORMS += \
+    iSpecIDApp/datasetanalysisdialog.ui \
     iSpecIDApp/mainwindow.ui \
     iSpecIDApp/projectselectiondialog.ui \
     iSpecIDApp/gradingoptionsdialog.ui \

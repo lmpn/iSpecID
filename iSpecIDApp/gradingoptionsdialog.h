@@ -12,7 +12,7 @@ class GradingOptionsDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit GradingOptionsDialog(ispecid::datatypes::GradingParameters params, QWidget *parent = nullptr);
+    explicit GradingOptionsDialog(ispecid::datatypes::grading_parameters params, QWidget *parent = nullptr);
     ~GradingOptionsDialog();
     bool handleClick();
 

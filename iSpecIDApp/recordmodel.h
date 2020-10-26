@@ -27,7 +27,7 @@ signals:
     void updateCombobox();
 
 private:
-    //QVector<Record> records;
+    //QVector<record> records;
     size_t cur_count;
     std::vector<QRecord> *records;
     QVector<bool> sort_order;
