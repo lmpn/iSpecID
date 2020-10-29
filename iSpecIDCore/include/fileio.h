@@ -24,13 +24,22 @@ namespace ispecid
         template <class T>
         using InMapper = std::function<T(csv::CSVRow &)>;
 
-        inline InMapper<Record> toRecord =
+        inline InMapper<record> toRecord =
             [](csv::CSVRow &row) {
                 auto species_name = row["species_name"].get();
                 auto source = row["institution_storing"].get();
                 auto cluster = row["bin_uri"].get();
-                Record rec(species_name, cluster, source, "U");
+                record rec(species_name, cluster, source, "U");
                 return rec;
+            };
+
+        inline InMapper<neighbour> toNeighbour =
+            [](csv::CSVRow &row) {
+                auto nA = row["neighbour_a"].get();
+                auto nB = row["neighbour_b"].get();
+                auto dist = std::atof(row["distance"].get().c_str());
+                neighbour n{nA, nB, dist};
+                return n;
             };
 
         template <class T>

@@ -66,7 +66,7 @@ public slots:
 private:
     Func getPred(QString name, QString value){
         auto std_value = value.toStdString();
-        if(name == "Species"){
+        if(name == "species"){
             return [std_value](QRecord qrec){
                  return qrec.record.getSpeciesName() == std_value;
             };
@@ -88,7 +88,7 @@ private:
         }
     }
     std::string convertToColumnName(QString name){
-        if(name == "Species"){
+        if(name == "species"){
             return "species_name";
         }
         if(name == "Bin"){

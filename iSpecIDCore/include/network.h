@@ -3,7 +3,7 @@
 #include <curl/curl.h>
 #include <string>
 namespace ispecid{ namespace network{
-    void prepareNetwork();
-    std::string getPage(const char* url);
+    void prepare_network();
+    std::string get_page(const char* url);
 }}
 #endif

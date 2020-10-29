@@ -62,16 +62,6 @@ namespace utils{
         return defaultValue;
     }
 
-    template <class _ForwardIterator, class _Tp>
-    int findIndex(_ForwardIterator __first, _ForwardIterator __last, const _Tp &__value)
-    {
-        auto elem = std::find(__first, __last, __value);
-        auto dist = std::distance(__first, elem);
-        auto size = std::distance(__first, __last);
-        return dist < size ? dist : -1;
-    }
-
-
     template<class K, class V>
     bool hasIntersection(std::unordered_map<K,V>& o1, std::unordered_map<K,V>& o2){
         size_t o1s = o1.size();
@@ -107,14 +97,6 @@ namespace utils{
         }
         return false;
     }
-
-
-    std::shared_ptr<std::unordered_map<std::string, size_t>>  createIndexedHeader(std::vector<std::string> header);
-
-    double kbest(const std::vector<double>& vec);
-    std::vector<std::string> split(const std::string& str, const std::string& delims = "\t");
-
-
 
     template<class Key, class Value>
     using Aggregation  = std::unordered_map<Key, Value>;

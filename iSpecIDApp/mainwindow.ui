@@ -741,6 +741,7 @@ height: 25px
     <addaction name="gradind_options_action"/>
     <addaction name="load_distance_matrix_action"/>
     <addaction name="auto_correction_action"/>
+    <addaction name="dataset_analysis_action"/>
    </widget>
    <addaction name="menu_file"/>
    <addaction name="menu_data"/>
@@ -829,6 +830,11 @@ height: 25px
   <action name="auto_correction_action">
    <property name="text">
     <string>Auto correction</string>
+   </property>
+  </action>
+  <action name="dataset_analysis_action">
+   <property name="text">
+    <string>Dataset analysis</string>
    </property>
   </action>
  </widget>
