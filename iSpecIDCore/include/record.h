@@ -58,6 +58,7 @@ namespace ispecid{ namespace datatypes{
         std::string toString(){
             return species_name + ";" + cluster+ ";" +source+ ";" + grade;
         }
+        
     };
 }}
 #endif

@@ -33,6 +33,15 @@ namespace ispecid
                 return rec;
             };
 
+        inline InMapper<neighbour> toNeighbour =
+            [](csv::CSVRow &row) {
+                auto nA = row["neighbour_a"].get();
+                auto nB = row["neighbour_b"].get();
+                auto dist = std::atof(row["distance"].get().c_str());
+                neighbour n{nA, nB, dist};
+                return n;
+            };
+
         template <class T>
         std::vector<T> loadFile(std::string file_path, InMapper<T> mapper, Format file_format = Format::TSV)
         {
