@@ -1,5 +1,5 @@
 #include "datasetanalysisdialog.h"
-#include "ui_DatasetAnalysisDialog.h"
+#include "ui_datasetAnalysisDialog.h"
 #include <qtconcurrentrun.h>
 #include <QStandardItemModel>
 #include <QStandardItem>
@@ -42,7 +42,7 @@ void DatasetAnalysisDialog::create_records_per_bin(QMap<QString, int> records_pe
         table_model->setItem(row, 1, value_2);
         row++;
     }
-    table_model->setHeaderData( 0, Qt::Horizontal, QObject::tr("Bin") );
+    table_model->setHeaderData( 0, Qt::Horizontal, QObject::tr("BIN") );
     table_model->setHeaderData( 1, Qt::Horizontal, QObject::tr("Number of records") );
     ui->table_2->horizontalHeader()->setStretchLastSection(true);
     ui->table_2->setModel(table_model);
@@ -62,7 +62,7 @@ void DatasetAnalysisDialog::create_sources_per_species(QMap<QString, QSet<QStrin
         row++;
     }
     table_model->setHeaderData( 0, Qt::Horizontal, QObject::tr("Species") );
-    table_model->setHeaderData( 1, Qt::Horizontal, QObject::tr("Number of institutions") );
+    table_model->setHeaderData( 1, Qt::Horizontal, QObject::tr("Number of sources") );
     ui->table_3->horizontalHeader()->setStretchLastSection(true);
     ui->table_3->setModel(table_model);
     ui->table_3->resizeColumnsToContents();
@@ -80,8 +80,8 @@ void DatasetAnalysisDialog::create_sources_per_bin(QMap<QString, QSet<QString>> 
         table_model->setItem(row, 1, value_2);
         row++;
     }
-    table_model->setHeaderData( 0, Qt::Horizontal, QObject::tr("Bin") );
-    table_model->setHeaderData( 1, Qt::Horizontal, QObject::tr("Number of institutions") );
+    table_model->setHeaderData( 0, Qt::Horizontal, QObject::tr("BIN") );
+    table_model->setHeaderData( 1, Qt::Horizontal, QObject::tr("Number of sources") );
     ui->table_4->horizontalHeader()->setStretchLastSection(true);
     ui->table_4->setModel(table_model);
     ui->table_4->resizeColumnsToContents();
@@ -125,9 +125,9 @@ DatasetAnalysisDialog::DatasetAnalysisDialog(QMap<QString, int> records_per_spec
     create_sources_per_species(sources_per_species);
     create_sources_per_bin(sources_per_bin);
     ui->tabWidget->setTabText(0,"Records per species");
-    ui->tabWidget->setTabText(1,"Records per bin");
+    ui->tabWidget->setTabText(1,"Records per BIN");
     ui->tabWidget->setTabText(2,"Institution per species");
-    ui->tabWidget->setTabText(3,"Institution per species");
+    ui->tabWidget->setTabText(3,"Institution per BIN");
     ui->table_1->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->table_2->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->table_3->setEditTriggers(QAbstractItemView::NoEditTriggers);

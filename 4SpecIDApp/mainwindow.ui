@@ -17,7 +17,7 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>iSpecID</string>
+   <string>4SpecID</string>
   </property>
   <property name="styleSheet">
    <string notr="true"/>
@@ -740,7 +740,6 @@ height: 25px
     <addaction name="filter_action"/>
     <addaction name="gradind_options_action"/>
     <addaction name="load_distance_matrix_action"/>
-    <addaction name="auto_correction_action"/>
     <addaction name="dataset_analysis_action"/>
    </widget>
    <addaction name="menu_file"/>

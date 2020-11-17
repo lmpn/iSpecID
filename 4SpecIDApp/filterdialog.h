@@ -2,7 +2,7 @@
 #define FILTERDIALOG_H
 
 #include <QDialog>
-#include "iSpecIDApp/filterscrollarea.h"
+#include "4SpecIDApp/filterscrollarea.h"
 #include "ui_filterdialog.h"
 #include "qrecord.h"
 

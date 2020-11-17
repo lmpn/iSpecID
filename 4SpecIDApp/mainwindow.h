@@ -45,6 +45,7 @@ public:
     void exportDistancesHelper(QString path);
     void autoCorrectionHelper();
     void newProjectHelper(QString filename);
+    void analysis(QString path);
 
 signals:
     void updateGraph();
