@@ -6,7 +6,6 @@ using namespace ispecid::datatypes;
 using namespace ispecid::fileio;
 
 int main(int argc, char **argv) {
-  auto t1 = std::chrono::high_resolution_clock::now();
   std::string file_path = utils::argParse<std::string>(
       argc, argv,
       "--data=", "/Users/lmpn/Desktop/diss/datasets/tsv/canidae.tsv");
@@ -28,6 +27,7 @@ int main(int argc, char **argv) {
   grading_parameters params;
   ispecid::execution::iengine engine(threads);
   ispecid::execution::auditor auditor(params, &engine);
+  auto t1 = std::chrono::high_resolution_clock::now();
   auditor.execute_with_distances(data,distances);
   // auto errors = engine.annotate(data,distances,params);
   auto t2 = std::chrono::high_resolution_clock::now();

@@ -1,4 +1,4 @@
-#include "iSpecIDApp/mainwindow.h"
+#include "4SpecIDApp/mainwindow.h"
 #include <QMessageBox>
 #include <QApplication>
 

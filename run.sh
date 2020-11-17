@@ -1,7 +1,7 @@
 #!/usr/local/bin/zsh
-for i in {1..4..1}
+for i in {1..48..1}
 do
-    build/isid --data=/Users/lmpn/Desktop/diss/datasets/tsv/canidae.tsv --threads=$i --matrix=/Users/lmpn/Desktop/diss/datasets/tsv/dist_canidae.csv
-    build/isid --data=/Users/lmpn/Desktop/diss/datasets/tsv/aves.tsv --threads=$i --matrix=/Users/lmpn/Desktop/diss/datasets/tsv/dist_aves.csv
-    build/isid --data=/Users/lmpn/Desktop/diss/datasets/tsv/culicidae.tsv --threads=$i  --matrix=/Users/lmpn/Desktop/diss/datasets/tsv/dist_culicidae.csv
+    build/isid --data=/home/a77763t/dissertation/playground/datasets/canidae.tsv --threads=$i --matrix=/home/a77763t/dissertation/playground/datasets/dist_canidae.csv
+    build/isid --data=/home/a77763t/dissertation/playground/datasets/aves.tsv --threads=$i --matrix=/home/a77763t/dissertation/playground/datasets/dist_aves.csv
+    build/isid --data=/home/a77763t/dissertation/playground/datasets/culicidae.tsv --threads=$i  --matrix=/home/a77763t/dissertation/playground/datasets/dist_culicidae.csv
 done

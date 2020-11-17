@@ -156,6 +156,98 @@ void MainWindow::onError(QString error_type, QString error){
     QMessageBox::critical( this, error_type, error, QMessageBox::StandardButton::Ok, QMessageBox::StandardButton::Ok );
     onStopLoading();
 }
+
+
+void MainWindow::analysis(QString path){
+    QMap<QString, int> records_per_species;
+    QMap<QString, int> records_per_bin;
+    QMap<QString, QSet<QString>> sources_per_species;
+    QMap<QString, QSet<QString>> sources_per_bin;
+    for(auto &record : *data){
+        auto sp = QString::fromStdString(record.record.getSpeciesName());
+        auto bin = QString::fromStdString(record.record.getCluster());
+        auto source = QString::fromStdString(record.record.getSource());
+        auto sz = record.record.count();
+        records_per_species[sp] += sz;
+        records_per_bin[bin] += sz;
+        sources_per_species[sp] << source;
+        sources_per_bin[bin] << source;
+    }
+
+    QFile file_spb(path+"_sources_per_bin.tsv");
+    if (!file_spb.open(QIODevice::WriteOnly)) {
+        QString error_msg = "File %1 couldn't be open.";
+        error_msg = error_msg.arg(path+"_sources_per_bin.tsv");
+        emit error("File open error", error_msg);
+        return;
+    }
+    QTextStream stream(&file_spb);
+    stream << "BIN\t#Sources\n";
+    auto keys_spb = sources_per_bin.keys();
+    for (auto& key : keys_spb) {
+        stream <<key << "\t" << QString::number(sources_per_bin[key].size()) << "\n";
+    }
+    stream.flush();
+    file_spb.close();
+
+//-------------------------------------------------
+
+    QFile file_sps(path+"_sources_per_species.tsv");
+    if (!file_sps.open(QIODevice::WriteOnly)) {
+        QString error_msg = "File %1 couldn't be open.";
+        error_msg = error_msg.arg(path+"sources_per_species.tsv");
+        emit error("File open error", error_msg);
+        return;
+    }
+    QTextStream stream_sps(&file_sps);
+    stream_sps << "Species\t#Sources\n";
+    auto keys_sps = sources_per_species.keys();
+    for (auto& key : keys_sps) {
+        stream_sps <<key << "\t" << QString::number(sources_per_species[key].size()) << "\n";
+    }
+    stream_sps.flush();
+    file_sps.close();
+
+//-------------------------------------------------
+
+    QFile file_rps(path+"_records_per_species.tsv");
+    if (!file_rps.open(QIODevice::WriteOnly)) {
+        QString error_msg = "File %1 couldn't be open.";
+        error_msg = error_msg.arg(path+"records_per_species.tsv");
+        emit error("File open error", error_msg);
+        return;
+    }
+    QTextStream stream_rps(&file_rps);
+    stream_rps << "Species\t#Records\n";
+    auto keys_rps = records_per_species.keys();
+    for (auto& key : keys_rps) {
+        stream_rps <<key << "\t" << records_per_species[key] << "\n";
+    }
+    stream_rps.flush();
+    file_rps.close();
+
+//-------------------------------------------------
+
+    QFile file_rpb(path+"_records_per_bin.tsv");
+    if (!file_rpb.open(QIODevice::WriteOnly)) {
+        QString error_msg = "File %1 couldn't be open.";
+        error_msg = error_msg.arg(path+"_records_per_bin.tsv");
+        emit error("File open error", error_msg);
+        return;
+    }
+    QTextStream stream_rpb(&file_rpb);
+    stream_rpb << "BIN\t#Records\n";
+    auto keys_rpb = records_per_bin.keys();
+    for (auto& key : keys_rpb) {
+        stream_rpb <<key << "\t" << records_per_bin[key] << "\n";
+    }
+    stream_rpb.flush();
+    file_rpb.close();
+}
+
+
+
+
 //REDO
 void MainWindow::exportDataToTSVHelper(QString filename, bool full){
     DbConnection dbc(app_dir);
@@ -166,6 +258,7 @@ void MainWindow::exportDataToTSVHelper(QString filename, bool full){
     QString valuesStat;
     filename = filename.replace(".tsv","");
     QString params_filename = filename + "_params.txt";
+    analysis(filename);
     if(full){
         valuesStat = "select * from \"%1\"";
         filename = filename + ".tsv";

@@ -17,54 +17,54 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
         app.cpp \
-        iSpecIDApp/datasetanalysisdialog.cpp \
-        iSpecIDApp/dbconnection.cpp \
-        iSpecIDApp/mainwindow.cpp \
-        iSpecIDApp/projectselectiondialog.cpp \
-        iSpecIDApp/recordmodel.cpp \
-        iSpecIDApp/resultsmodel.cpp \
-        iSpecIDApp/node.cpp \
-        iSpecIDApp/edge.cpp \
-        iSpecIDApp/graphscene.cpp \
-        iSpecIDApp/gradingoptionsdialog.cpp \
-        iSpecIDApp/filterdialog.cpp \
-        iSpecIDCore/src/auditor.cpp \
-        iSpecIDCore/src/network.cpp
+        4SpecIDApp/datasetanalysisdialog.cpp \
+        4SpecIDApp/dbconnection.cpp \
+        4SpecIDApp/mainwindow.cpp \
+        4SpecIDApp/projectselectiondialog.cpp \
+        4SpecIDApp/recordmodel.cpp \
+        4SpecIDApp/resultsmodel.cpp \
+        4SpecIDApp/node.cpp \
+        4SpecIDApp/edge.cpp \
+        4SpecIDApp/graphscene.cpp \
+        4SpecIDApp/gradingoptionsdialog.cpp \
+        4SpecIDApp/filterdialog.cpp \
+        4SpecIDCore/src/auditor.cpp \
+        4SpecIDCore/src/network.cpp
 
 
 HEADERS += \
-        iSpecIDApp/datasetanalysisdialog.h \
-        iSpecIDApp/dbconnection.h \
-        iSpecIDApp/projectselectiondialog.h \
-        iSpecIDApp/recordmodel.h \
-        iSpecIDApp/resultsmodel.h \
-        iSpecIDApp/qrecord.h \
-        iSpecIDApp/node.h \
-        iSpecIDApp/edge.h \
-        iSpecIDApp/graphscene.h \
-        iSpecIDApp/filterItem.h \
-        iSpecIDApp/gradingoptionsdialog.h \
-        iSpecIDApp/filterdialog.h \
-        iSpecIDApp/filterOp.h \
-        iSpecIDApp/filterscrollarea.h \
-        iSpecIDCore/include/iengine.h \
-        iSpecIDCore/include/engine_algorithm.h \
-        iSpecIDCore/include/auditor.h \
-        iSpecIDCore/include/datatypes.h \
-        iSpecIDCore/include/fileio.h \
-        iSpecIDCore/include/network.h \
-        iSpecIDCore/include/ispecid.h \
-        iSpecIDCore/include/utils.h \
-        iSpecIDCore/include/csv.hpp \
-        iSpecIDApp/mainwindow.h
+        4SpecIDApp/datasetanalysisdialog.h \
+        4SpecIDApp/dbconnection.h \
+        4SpecIDApp/projectselectiondialog.h \
+        4SpecIDApp/recordmodel.h \
+        4SpecIDApp/resultsmodel.h \
+        4SpecIDApp/qrecord.h \
+        4SpecIDApp/node.h \
+        4SpecIDApp/edge.h \
+        4SpecIDApp/graphscene.h \
+        4SpecIDApp/filterItem.h \
+        4SpecIDApp/gradingoptionsdialog.h \
+        4SpecIDApp/filterdialog.h \
+        4SpecIDApp/filterOp.h \
+        4SpecIDApp/filterscrollarea.h \
+        4SpecIDCore/include/iengine.h \
+        4SpecIDCore/include/engine_algorithm.h \
+        4SpecIDCore/include/auditor.h \
+        4SpecIDCore/include/datatypes.h \
+        4SpecIDCore/include/fileio.h \
+        4SpecIDCore/include/network.h \
+        4SpecIDCore/include/4Specid.h \
+        4SpecIDCore/include/utils.h \
+        4SpecIDCore/include/csv.hpp \
+        4SpecIDApp/mainwindow.h
 
 
 FORMS += \
-    iSpecIDApp/datasetanalysisdialog.ui \
-    iSpecIDApp/mainwindow.ui \
-    iSpecIDApp/projectselectiondialog.ui \
-    iSpecIDApp/gradingoptionsdialog.ui \
-    iSpecIDApp/filterdialog.ui
+    4SpecIDApp/datasetanalysisdialog.ui \
+    4SpecIDApp/mainwindow.ui \
+    4SpecIDApp/projectselectiondialog.ui \
+    4SpecIDApp/gradingoptionsdialog.ui \
+    4SpecIDApp/filterdialog.ui
 
 RESOURCES += icons.qrc
 
@@ -75,7 +75,7 @@ win32:{
             message("64-bit")
         }
         CONFIG += c++17
-        INCLUDEPATH += "iSpecIDCore/include"
+        INCLUDEPATH += "4SpecIDCore/include"
         INCLUDEPATH += $$PWD/../../../vcpkg/installed/x64-windows/include/boost
 
         LIBS += -L$$PWD/../../../vcpkg/installed/x64-windows/lib/ -lboost_thread-vc140-mt
@@ -94,7 +94,7 @@ win32:{
 }
 macx:{
         CONFIG += c++17 app_bundle
-        INCLUDEPATH += "iSpecIDCore/include"
+        INCLUDEPATH += "4SpecIDCore/include"
         #Boost
         INCLUDEPATH += "/usr/local/Cellar/boost/1.72.0_3/include/"
         LIBS += -L/usr/local/Cellar/boost/1.72.0_3/lib/ -lboost_regex -lboost_thread-mt
