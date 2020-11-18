@@ -115,14 +115,10 @@ void GraphScene::onRemoveEdge(Edge *edge){
         delete nodes[bin];
     }
     delete edge;
-    records->erase(std::remove_if(records->begin(), records->end(),
-                                  [species_str, bin_str](QRecord qrec){
-        return qrec.record.getSpeciesName() == species_str && qrec.record.getCluster() == bin_str;
-    }),records->end());
+
+
     cur_node_key = "";
-    emit updateCombobox();
-    emit updateRecords();
-    emit updateResults();
+    emit deleteCells(species_str, bin_str);
 }
 
 QList<Node*> getDestNode(QSet<Edge*> edges){

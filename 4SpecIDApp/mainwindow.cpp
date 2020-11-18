@@ -1054,18 +1054,19 @@ void MainWindow::setupRecordsTable(){
     RecordModel *record_model = new RecordModel(data);
     auto model = ui->record_table->model();
     if(model != nullptr){
-        disconnect(ui->record_table->horizontalHeader(), &QHeaderView::sectionClicked, model, nullptr);
         delete model;
+    }else{
+        connect(ui->record_table->horizontalHeader(), &QHeaderView::sectionPressed,
+                [this](int column){
+            (( RecordModel *)ui->record_table->model())->sortBySection(column);
+            //        ui->record_table->resizeColumnsToContents();
+        });
     }
     ui->record_table->setModel(record_model);
     ui->record_table->setSelectionBehavior(QAbstractItemView::SelectionBehavior::SelectRows);
     connect(this, SIGNAL(updateRecords()),
             record_model,SLOT(onRecordsChanged()));
-    connect(ui->record_table->horizontalHeader(), &QHeaderView::sectionPressed,
-            [this](int column){
-        (( RecordModel *)ui->record_table->model())->sortBySection(column);
-        //        ui->record_table->resizeColumnsToContents();
-    });
+
     connect(record_model, SIGNAL(updateCombobox()),
             this, SLOT(onComboBoxChanged()));
 }
@@ -1260,6 +1261,8 @@ void MainWindow::setupGraphScene()
     ui->graph_viewer->setTransformationAnchor(QGraphicsView::ViewportAnchor::AnchorViewCenter);
     connect(this, SIGNAL(updateGraph()),
             graph,SLOT(onGraphChanged()));
+    connect(graph, SIGNAL(deleteCells(std::string, std::string)),
+            this,SLOT(onDeleteCells(std::string, std::string)));
     connect(this, SIGNAL(updateColorGraph()),
             graph,SLOT(onGraphColorChanged()));
     connect(this, SIGNAL(showComponent(const QString&)),
@@ -1328,7 +1331,15 @@ void MainWindow::showFilter()
         int apply = msgBox->result();
         if(apply == 1024){
             onActionPerformed();
-            data->erase(std::remove_if(data->begin(), data->end(), pred), data->end());
+            std::vector<QRecord> new_data;
+            for(auto& qrec : *data){
+                if(pred(qrec)){
+                    deleted->push_back(qrec);
+                }else{
+                    new_data.push_back(qrec);
+                }
+            }
+            data->swap(new_data);
             updateApp();
         }
         msgBox->deleteLater();
@@ -1578,6 +1589,23 @@ void MainWindow::onExportDistanceMatrix(){
                           exportDistancesHelper(filename);
                           stopLoading();
                       }), file_path);
+}
+
+void MainWindow::onDeleteCells(std::string sp, std::string bin){
+    onActionPerformed();
+    std::vector<QRecord> new_data;
+    new_data.reserve(data->size());
+    for(auto& qrec : *data){
+        if(qrec.record.getSpeciesName() == sp && qrec.record.getCluster() == bin){
+            deleted->push_back(qrec);
+        }else{
+            new_data.push_back(qrec);
+        }
+    }
+    data->swap(new_data);
+    onComboBoxChanged();
+    emit updateRecords();
+    emit updateResults();
 }
 
 MainWindow::~MainWindow()

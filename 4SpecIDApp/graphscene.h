@@ -22,6 +22,7 @@ public slots:
     void onGraphColorChanged();
 
 signals:
+    void deleteCells(std::string, std::string);
     void updateRecords();
     void updateResults();
     void updateCombobox();

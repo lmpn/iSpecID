@@ -177,7 +177,7 @@ height: 25px
   <customwidget>
    <class>FilterScrollArea</class>
    <extends>QWidget</extends>
-   <header>iSpecIDApp/filterscrollarea.h</header>
+   <header>4SpecIDApp/filterscrollarea.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

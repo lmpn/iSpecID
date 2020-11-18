@@ -200,8 +200,6 @@ void RecordModel::onRecordsChanged(){
     cur_count = records->size();
     insertRows(0, cur_count, QModelIndex());
     endResetModel();
-
-
 }
 
 bool RecordModel::setData(const QModelIndex &index, const QVariant &value, int role){
