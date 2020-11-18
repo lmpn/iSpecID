@@ -69,6 +69,7 @@ protected:
     void scaleView(qreal scaleFactor);
 
 private slots:
+    void onDeleteCells(std::string sp, std::string bin);
     void onAnalysisComplete(QMap<QString, int> records_per_species,QMap<QString, int> records_per_bin,QMap<QString, QSet<QString>> sources_per_species,QMap<QString, QSet<QString>> sources_per_bin);
     void onError(QString error_type, QString error);
     void onStopLoading();
