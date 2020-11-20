@@ -1317,11 +1317,12 @@ void MainWindow::showFilter()
     ff->exec();
     if(ff->accepted()){
         auto pred = ff->getFilterFunc();
-        auto temp = std::vector<QRecord>(data->begin(), data->end());
         int removeCount = 0;
-        std::for_each(temp.begin(), temp.end(),[&removeCount](QRecord rec){removeCount += rec.record.count();});
-        temp.erase(std::remove_if(temp.begin(), temp.end(), pred), temp.end());
-        std::for_each(temp.begin(), temp.end(),[&removeCount](QRecord rec){removeCount -= rec.record.count();});
+        for(auto& qrec : *data){
+            if(pred(qrec)){
+                removeCount += qrec.record.count();
+            }
+        }
         QMessageBox* msgBox = new QMessageBox(this);
         msgBox->setText("Filter report.");
         msgBox->setInformativeText(QString("Number of removed records: %1").arg(removeCount));
