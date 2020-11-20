@@ -66,7 +66,7 @@ public slots:
 private:
     Func getPred(QString name, QString value){
         auto std_value = value.toStdString();
-        if(name == "species"){
+        if(name == "Species"){
             return [std_value](QRecord qrec){
                  return qrec.record.getSpeciesName() == std_value;
             };
